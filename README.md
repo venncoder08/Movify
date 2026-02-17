@@ -50,8 +50,3 @@ At the same time, this project helps the team gain hands-on experience in mobile
 - Practice real-world mobile app development  
 - Integrate maps, realtime tracking & digital payment  
 - Explore AI applications in transportation technology  
-
----
-
-## 📄 License
-(Add license information here if needed)
