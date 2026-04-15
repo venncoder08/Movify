@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="TextAppearance.App" parent="TextAppearance.MaterialComponents.Body1" />
+
+    <style name="TextAppearance.App.Label">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">@dimen/text_label</item>
+    </style>
+
+    <style name="TextAppearance.App.Link">
+        <item name="android:textColor">@color/text_link</item>
+        <item name="android:textSize">@dimen/text_caption</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.App.Footer">
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">@dimen/text_caption</item>
+    </style>
+
+    <style name="Widget.App.AuthCard" parent="Widget.MaterialComponents.CardView">
+        <item name="cardCornerRadius">@dimen/radius_card</item>
+        <item name="cardElevation">6dp</item>
+        <item name="cardUseCompatPadding">true</item>
+    </style>
+
+    <style name="Widget.App.PrimaryButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/button_height</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textStyle">bold</item>
+        <item name="cornerRadius">@dimen/radius_button</item>
+        <item name="backgroundTint">@null</item>
+        <item name="rippleColor">@color/ripple_light</item>
+    </style>
+
+    <style name="Widget.App.SmallButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:layout_width">70dp</item>
+        <item name="android:layout_height">@dimen/button_small_height</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textStyle">bold</item>
+        <item name="cornerRadius">@dimen/radius_button</item>
+        <item name="backgroundTint">@null</item>
+    </style>
+
+    <style name="Widget.App.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundColor">@color/input_bg</item>
+        <item name="boxCornerRadiusTopStart">@dimen/radius_input</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/radius_input</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/radius_input</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/radius_input</item>
+        <item name="boxStrokeColor">@color/input_stroke</item>
+        <item name="hintTextColor">@color/text_hint</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+    </style>
+
+    <style name="Widget.App.TextInputEditText" parent="Widget.MaterialComponents.TextInputEditText.OutlinedBox">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textColorHint">@color/text_hint</item>
+        <item name="android:textSize">@dimen/text_label</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+    </style>
+
+</resources>

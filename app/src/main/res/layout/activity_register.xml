@@ -3,11 +3,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFF"
+    android:background="@color/white"
     android:fillViewport="true"
     android:overScrollMode="never">
 
-    <!-- Wrapper để canh giữa CardView giống Login -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -27,7 +26,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Header giống Login -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="120dp"
@@ -37,28 +35,25 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Đăng ký"
-                        android:textColor="#FFFFFF"
+                        android:text="@string/register"
+                        android:textColor="@android:color/white"
                         android:textSize="28sp"
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Form -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="24dp">
 
-                    <!-- Email label -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Email"
-                        android:textColor="#777"
+                        android:text="@string/email"
+                        android:textColor="#777777"
                         android:textSize="14sp" />
 
-                    <!-- Email input -->
                     <EditText
                         android:id="@+id/edtEmail"
                         android:layout_width="match_parent"
@@ -67,19 +62,19 @@
                         android:background="@drawable/bg_input"
                         android:drawableStart="@drawable/ic_email"
                         android:drawablePadding="10dp"
-                        android:hint="Nhập địa chỉ email"
-                        android:paddingStart="16dp" />
+                        android:hint="@string/email_input"
+                        android:inputType="textEmailAddress"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp" />
 
-                    <!-- Password label -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:text="Mật khẩu"
-                        android:textColor="#777"
+                        android:text="@string/password"
+                        android:textColor="#777777"
                         android:textSize="14sp" />
 
-                    <!-- Password input -->
                     <EditText
                         android:id="@+id/edtPassword"
                         android:layout_width="match_parent"
@@ -89,21 +84,19 @@
                         android:drawableStart="@drawable/ic_lock"
                         android:drawableEnd="@drawable/ic_eye"
                         android:drawablePadding="12dp"
-                        android:hint="Nhập mật khẩu"
+                        android:hint="@string/password_input"
                         android:inputType="textPassword"
                         android:paddingStart="16dp"
                         android:paddingEnd="16dp" />
 
-                    <!-- Confirm Password label -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:text="Xác nhận mật khẩu"
-                        android:textColor="#777"
+                        android:text="@string/confirm_password"
+                        android:textColor="#777777"
                         android:textSize="14sp" />
 
-                    <!-- Confirm Password input -->
                     <EditText
                         android:id="@+id/edtConfirmPassword"
                         android:layout_width="match_parent"
@@ -113,21 +106,19 @@
                         android:drawableStart="@drawable/ic_lock"
                         android:drawableEnd="@drawable/ic_eye"
                         android:drawablePadding="12dp"
-                        android:hint="Nhập lại mật khẩu"
+                        android:hint="@string/confirm_password_input"
                         android:inputType="textPassword"
                         android:paddingStart="16dp"
                         android:paddingEnd="16dp" />
 
-                    <!-- Verify code label -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:text="Mã xác thực"
-                        android:textColor="#777"
+                        android:text="@string/verify_code"
+                        android:textColor="#777777"
                         android:textSize="14sp" />
 
-                    <!-- Verify code row giống style input -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="52dp"
@@ -140,6 +131,7 @@
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
+                            android:contentDescription="@string/verify_code"
                             android:src="@drawable/ic_key" />
 
                         <EditText
@@ -148,7 +140,7 @@
                             android:layout_height="match_parent"
                             android:layout_weight="1"
                             android:background="@null"
-                            android:hint="Nhập mã xác thực"
+                            android:hint="@string/verify_code_input"
                             android:paddingStart="12dp" />
 
                         <com.google.android.material.button.MaterialButton
@@ -157,45 +149,62 @@
                             android:layout_height="36dp"
                             android:layout_marginEnd="8dp"
                             android:background="@drawable/bg_button_small"
-                            android:text="Gửi"
-                            android:textColor="#FFF"
+                            android:text="@string/send"
+                            android:textColor="@android:color/white"
                             android:textStyle="bold"
                             app:backgroundTint="@null"
                             app:cornerRadius="20dp" />
                     </LinearLayout>
 
-                    <!-- Terms -->
                     <CheckBox
                         android:id="@+id/cbTerms"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:text="Tôi đồng ý với điều khoản sử dụng"
+                        android:text="@string/agree_terms"
                         android:textSize="13sp" />
 
-                    <!-- Register button giống Login -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnRegister"
                         android:layout_width="match_parent"
                         android:layout_height="54dp"
                         android:layout_marginTop="20dp"
                         android:background="@drawable/bg_button"
-                        android:text="Đăng ký"
-                        android:textColor="#FFFFFF"
+                        android:text="@string/register"
+                        android:textColor="@android:color/white"
                         android:textStyle="bold"
                         app:backgroundTint="@null"
                         app:cornerRadius="20dp"
                         app:rippleColor="#33FFFFFF" />
 
-                    <!-- Login link -->
-                    <TextView
-                        android:id="@+id/tvLoginLink"
-                        android:layout_width="match_parent"
+                    <LinearLayout
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:text="Đã có tài khoản? Đăng nhập"
-                        android:textAlignment="center"
-                        android:textSize="13sp" />
+                        android:layout_gravity="center_horizontal"
+                        android:orientation="horizontal"
+                        android:gravity="center">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/have_account"
+                            android:textSize="13sp"
+                            android:textColor="#666666" />
+
+                        <TextView
+                            android:id="@+id/tvLogin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/login"
+                            android:layout_marginStart="6dp"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/primary"
+                            android:clickable="true"
+                            android:focusable="true" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 

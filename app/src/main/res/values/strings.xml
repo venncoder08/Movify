@@ -1,9 +1,29 @@
 <resources>
     <string name="app_name">Movify</string>
-    <string name="login">Đăng nhập</string>
-    <string name="register">Đăng ký</string>
-    <string name="email">Email</string>
-    <string name="password">Mật khẩu</string>
-    <string name="email_input">Nhập địa chỉ Email</string>
-    <string name="password_input">Nhập mật khẩu</string>
+    <string name="welcome_back">Chào mừng trở lại,</string>
+    <string name="user_name">Nguyễn Văn A</string>
+
+    <string name="pickup_hint">Nhập điểm đón</string>
+    <string name="destination_hint">Nhập điểm đến</string>
+
+    <string name="choose_vehicle">Chọn loại xe</string>
+    <string name="vehicle_bike">Xe Máy</string>
+    <string name="vehicle_bike_desc">Nhanh chóng, tiết kiệm</string>
+    <string name="vehicle_car">Ô tô</string>
+    <string name="vehicle_car_desc">Thoải mái, an toàn</string>
+
+    <string name="payment_method">Phương thức thanh toán</string>
+    <string name="cash">Tiền mặt</string>
+    <string name="bank_transfer">Chuyển khoản</string>
+
+    <string name="promo_title">Mã khuyến mãi</string>
+    <string name="apply_promo">Áp dụng khuyến mãi</string>
+    <string name="apply">Áp dụng</string>
+
+    <string name="find_driver">Tìm kiếm tài xế</string>
+
+    <string name="menu_home">Trang chủ</string>
+    <string name="menu_activity">Hoạt động</string>
+    <string name="menu_notification">Thông báo</string>
+    <string name="menu_account">Tài khoản</string>
 </resources>

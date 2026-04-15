@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_notification_item"
+    android:padding="16dp">
+
+    <View
+        android:id="@+id/viewLeftLine"
+        android:layout_width="4dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="-16dp"
+        android:layout_marginBottom="-16dp"
+        android:background="@android:color/black" />
+
+    <ImageView
+        android:id="@+id/imgIcon"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_toEndOf="@id/viewLeftLine"
+        android:layout_marginStart="16dp"
+        android:background="@drawable/bg_notification_icon"
+        android:padding="10dp"
+        android:src="@android:drawable/ic_menu_search"
+        android:tint="#0D5BD7" />
+
+    <ImageView
+        android:id="@+id/imgUnreadDot"
+        android:layout_width="10dp"
+        android:layout_height="10dp"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_unread_dot" />
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/imgIcon"
+        android:layout_toStartOf="@id/imgUnreadDot"
+        android:layout_marginStart="12dp"
+        android:text="Đang tìm tài xế gần bạn"
+        android:textColor="#1F1F1F"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/tvMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvTitle"
+        android:layout_toEndOf="@id/imgIcon"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="4dp"
+        android:layout_toStartOf="@id/imgUnreadDot"
+        android:text="Vui lòng chờ trong giây lát..."
+        android:textColor="#7A7A7A"
+        android:textSize="16sp"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/tvTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvMessage"
+        android:layout_toEndOf="@id/imgIcon"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="10dp"
+        android:text="1 phút trước"
+        android:textColor="#A0A0A0"
+        android:textSize="14sp" />
+
+</RelativeLayout>

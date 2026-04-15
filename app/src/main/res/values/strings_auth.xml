@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Login -->
+    <string name="login">Đăng nhập</string>
+    <string name="email">Email</string>
+    <string name="email_input">Nhập địa chỉ email</string>
+    <string name="password">Mật khẩu</string>
+    <string name="password_input">Nhập mật khẩu</string>
+    <string name="remember_login">Ghi nhớ đăng nhập</string>
+    <string name="forgot_password">Quên mật khẩu?</string>
+    <string name="no_account">Không có tài khoản?</string>
+
+    <!-- Register -->
+    <string name="register">Đăng ký</string>
+    <string name="confirm_password">Xác nhận mật khẩu</string>
+    <string name="confirm_password_input">Nhập lại mật khẩu</string>
+    <string name="verify_code">Mã xác thực</string>
+    <string name="verify_code_input">Nhập mã xác thực</string>
+    <string name="send">Gửi</string>
+    <string name="agree_terms">Tôi đồng ý với điều khoản sử dụng</string>
+    <string name="have_account">Đã có tài khoản?</string>
+
+</resources>

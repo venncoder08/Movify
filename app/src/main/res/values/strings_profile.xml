@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_title">Thông tin cá nhân</string>
+    <string name="user_phone">+84 123 456 789</string>
+    <string name="user_email">nguyenvana@email.com</string>
+    <string name="edit_profile">Chỉnh sửa hồ sơ</string>
+
+    <string name="account_info">Thông tin tài khoản</string>
+    <string name="settings">Cài đặt</string>
+    <string name="support">Hỗ trợ</string>
+
+    <string name="personal_info">Thông tin cá nhân</string>
+    <string name="personal_info_desc">Họ tên, ngày sinh, giới tính</string>
+
+    <string name="payment_method_desc">Thẻ, ví điện tử</string>
+
+    <string name="saved_address">Địa chỉ đã lưu</string>
+    <string name="saved_address_desc">Nhà, công ty, địa điểm yêu thích</string>
+
+    <string name="notifications">Thông báo</string>
+    <string name="notifications_desc">Quản lý thông báo ứng dụng</string>
+
+    <string name="location">Vị trí</string>
+    <string name="location_desc">Cho phép truy cập vị trí</string>
+
+    <string name="help_center">Trung tâm trợ giúp</string>
+    <string name="help_center_desc">Câu hỏi thường gặp, hướng dẫn</string>
+
+    <string name="terms_policy">Điều khoản &amp; Chính sách</string>
+    <string name="terms_policy_desc">Quy định sử dụng dịch vụ</string>
+</resources>
