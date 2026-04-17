@@ -1,4 +1,4 @@
-package vnuhcm.hcmus.movify;
+package vnuhcm.hcmus.movify.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -6,6 +6,9 @@ import android.os.Handler;
 import android.os.Looper;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import vnuhcm.hcmus.movify.R;
+import vnuhcm.hcmus.movify.activities.auth.LoginActivity;
 
 public class LoadingActivity extends AppCompatActivity {
     @Override

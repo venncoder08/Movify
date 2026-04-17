@@ -1,20 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:background="@color/white">
 
     <ScrollView
         android:id="@+id/scrollContent"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:fillViewport="true"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavContainer"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:layout_weight="1"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -23,6 +20,7 @@
 
             <!-- Header -->
             <RelativeLayout
+                android:id="@+id/headerLayout"
                 android:layout_width="match_parent"
                 android:layout_height="120dp"
                 android:background="@drawable/bg_primary"
@@ -38,6 +36,7 @@
                     android:orientation="vertical">
 
                     <TextView
+                        android:id="@+id/tvWelcome"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/welcome_back"
@@ -45,6 +44,7 @@
                         android:textSize="16sp" />
 
                     <TextView
+                        android:id="@+id/tvUserName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
@@ -68,6 +68,7 @@
 
             <!-- Điểm đi / điểm đến -->
             <LinearLayout
+                android:id="@+id/locationContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
@@ -112,6 +113,7 @@
                     android:orientation="vertical">
 
                     <LinearLayout
+                        android:id="@+id/pickupContainer"
                         android:layout_width="match_parent"
                         android:layout_height="58dp"
                         android:background="@drawable/bg_card_large"
@@ -126,16 +128,22 @@
                             android:src="@drawable/ic_location"
                             app:tint="@color/primary" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                        <EditText
+                            android:id="@+id/edtPickup"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
                             android:layout_marginStart="12dp"
-                            android:text="@string/pickup_hint"
-                            android:textColor="@color/text_hint"
+                            android:background="@android:color/transparent"
+                            android:hint="@string/pickup_hint"
+                            android:inputType="text"
+                            android:textColor="@color/text_secondary"
+                            android:textColorHint="@color/text_hint"
                             android:textSize="16sp" />
                     </LinearLayout>
 
                     <LinearLayout
+                        android:id="@+id/destinationContainer"
                         android:layout_width="match_parent"
                         android:layout_height="58dp"
                         android:layout_marginTop="16dp"
@@ -151,12 +159,17 @@
                             android:src="@drawable/ic_map"
                             app:tint="@color/primary" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                        <EditText
+                            android:id="@+id/edtDestination"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
                             android:layout_marginStart="12dp"
-                            android:text="@string/destination_hint"
-                            android:textColor="@color/text_hint"
+                            android:background="@android:color/transparent"
+                            android:hint="@string/destination_hint"
+                            android:inputType="text"
+                            android:textColor="@color/text_secondary"
+                            android:textColorHint="@color/text_hint"
                             android:textSize="16sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -164,6 +177,7 @@
 
             <!-- Chọn loại xe -->
             <TextView
+                android:id="@+id/tvChooseVehicle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
@@ -174,6 +188,7 @@
                 android:textStyle="bold" />
 
             <LinearLayout
+                android:id="@+id/vehicleContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
@@ -182,20 +197,25 @@
                 android:orientation="horizontal">
 
                 <LinearLayout
+                    android:id="@+id/btnMotorbike"
                     android:layout_width="0dp"
                     android:layout_height="160dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_selected"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:elevation="3dp"
                     android:gravity="center"
                     android:orientation="vertical">
 
                     <FrameLayout
+                        android:id="@+id/iconMotorbike"
                         android:layout_width="54dp"
                         android:layout_height="54dp"
                         android:background="@drawable/bg_icon_blue_soft">
 
                         <ImageView
+                            android:id="@+id/ivMotorbike"
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_gravity="center"
@@ -204,6 +224,7 @@
                     </FrameLayout>
 
                     <TextView
+                        android:id="@+id/tvBikeTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
@@ -213,6 +234,7 @@
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/tvBikeDesc"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
@@ -226,20 +248,25 @@
                     android:layout_height="wrap_content" />
 
                 <LinearLayout
+                    android:id="@+id/btnCar"
                     android:layout_width="0dp"
                     android:layout_height="160dp"
                     android:layout_weight="1"
                     android:background="@drawable/bg_unselected"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:elevation="2dp"
                     android:gravity="center"
                     android:orientation="vertical">
 
                     <FrameLayout
+                        android:id="@+id/iconCar"
                         android:layout_width="54dp"
                         android:layout_height="54dp"
                         android:background="@drawable/bg_input">
 
                         <ImageView
+                            android:id="@+id/ivCar"
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_gravity="center"
@@ -248,6 +275,7 @@
                     </FrameLayout>
 
                     <TextView
+                        android:id="@+id/tvCarTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
@@ -257,6 +285,7 @@
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/tvCarDesc"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
@@ -268,6 +297,7 @@
 
             <!-- Phương thức thanh toán -->
             <TextView
+                android:id="@+id/tvPaymentTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
@@ -278,12 +308,15 @@
                 android:textStyle="bold" />
 
             <LinearLayout
+                android:id="@+id/btnCash"
                 android:layout_width="match_parent"
                 android:layout_height="86dp"
                 android:layout_marginStart="20dp"
                 android:layout_marginTop="14dp"
                 android:layout_marginEnd="20dp"
                 android:background="@drawable/bg_selected"
+                android:clickable="true"
+                android:focusable="true"
                 android:elevation="3dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
@@ -291,11 +324,13 @@
                 android:paddingEnd="20dp">
 
                 <FrameLayout
+                    android:id="@+id/iconCash"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:background="@drawable/bg_icon_blue_soft">
 
                     <ImageView
+                        android:id="@+id/ivCash"
                         android:layout_width="22dp"
                         android:layout_height="22dp"
                         android:layout_gravity="center"
@@ -304,6 +339,7 @@
                 </FrameLayout>
 
                 <TextView
+                    android:id="@+id/tvCash"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
@@ -314,12 +350,15 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/btnBankTransfer"
                 android:layout_width="match_parent"
                 android:layout_height="86dp"
                 android:layout_marginStart="20dp"
                 android:layout_marginTop="16dp"
                 android:layout_marginEnd="20dp"
                 android:background="@drawable/bg_unselected"
+                android:clickable="true"
+                android:focusable="true"
                 android:elevation="2dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
@@ -327,11 +366,13 @@
                 android:paddingEnd="20dp">
 
                 <FrameLayout
+                    android:id="@+id/iconBank"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:background="@drawable/bg_input">
 
                     <ImageView
+                        android:id="@+id/ivBankTransfer"
                         android:layout_width="22dp"
                         android:layout_height="22dp"
                         android:layout_gravity="center"
@@ -340,6 +381,7 @@
                 </FrameLayout>
 
                 <TextView
+                    android:id="@+id/tvBankTransfer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
@@ -349,8 +391,9 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Mã khuyến mãi -->
+            <!-- Khuyến mãi -->
             <TextView
+                android:id="@+id/tvPromoTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
@@ -361,6 +404,7 @@
                 android:textStyle="bold" />
 
             <LinearLayout
+                android:id="@+id/promoContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
@@ -372,6 +416,7 @@
                 android:orientation="vertical">
 
                 <LinearLayout
+                    android:id="@+id/promoHeader"
                     android:layout_width="match_parent"
                     android:layout_height="70dp"
                     android:background="@drawable/bg_header"
@@ -404,6 +449,7 @@
                         android:textStyle="bold" />
 
                     <ImageView
+                        android:id="@+id/ivPromoArrow"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:rotation="180"
@@ -414,12 +460,14 @@
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvPromotions"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:nestedScrollingEnabled="false" />
+                    android:layout_height="216dp"
+                    android:nestedScrollingEnabled="true"
+                    android:overScrollMode="always" />
             </LinearLayout>
 
-            <!-- Button tìm tài xế -->
+            <!-- Tìm tài xế -->
             <LinearLayout
+                android:id="@+id/btnSearchDriver"
                 android:layout_width="match_parent"
                 android:layout_height="44dp"
                 android:layout_marginStart="20dp"
@@ -427,16 +475,18 @@
                 android:layout_marginEnd="20dp"
                 android:layout_marginBottom="24dp"
                 android:background="@drawable/bg_button"
+                android:clickable="true"
+                android:focusable="true"
                 android:elevation="2dp"
-                android:gravity="center_vertical"
+                android:gravity="center"
                 android:orientation="horizontal"
                 android:paddingStart="20dp"
                 android:paddingEnd="20dp">
 
                 <TextView
-                    android:layout_width="match_parent"
+                    android:id="@+id/tvSearchDriver"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:gravity="center"
                     android:text="@string/find_driver"
                     android:textColor="@color/text_primary"
                     android:textSize="18sp"
@@ -448,11 +498,8 @@
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/bottomNavContainer"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="72dp"
-        android:background="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:background="@color/white" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>
