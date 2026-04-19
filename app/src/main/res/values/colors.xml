@@ -27,5 +27,6 @@
     <color name="blue_soft">#2D6FE5</color>
     <color name="gray">#E4E4E4</color>
     <color name="ripple_light">#40FFFFFF</color>
+    <color name="green">#4CAF50</color>
 
 </resources>

@@ -7,11 +7,14 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import vnuhcm.hcmus.movify.utils.CustomToast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
+
+import com.google.android.material.snackbar.Snackbar;
 
 import vnuhcm.hcmus.movify.R;
 
@@ -66,7 +69,7 @@ public class ProfileFragment extends Fragment {
         tvEmail.setText("nguyenvana@email.com");
 
         btnEditProfile.setOnClickListener(v ->
-                Toast.makeText(requireContext(), "Mở chỉnh sửa hồ sơ", Toast.LENGTH_SHORT).show()
+                CustomToast.showSuccess(requireView(), requireContext(), "Chỉnh sửa hồ sơ")
         );
     }
 
