@@ -22,7 +22,7 @@
             android:exported="false" />
 
         <activity
-            android:name=".activities.BookingActivity"
+            android:name=".activities.HomeActivity"
             android:exported="false" />
 
         <activity

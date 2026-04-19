@@ -496,10 +496,4 @@
         </LinearLayout>
     </ScrollView>
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/bottomNavContainer"
-        android:layout_width="match_parent"
-        android:layout_height="72dp"
-        android:background="@color/white" />
-
 </LinearLayout>

@@ -7,7 +7,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import vnuhcm.hcmus.movify.R;
-import vnuhcm.hcmus.movify.activities.BookingActivity;
+import vnuhcm.hcmus.movify.activities.HomeActivity;
 
 import android.widget.Button;
 
@@ -29,8 +29,9 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         btnLogin.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, BookingActivity.class);
+            Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
             startActivity(intent);
+            finish();
         });
     }
 }

@@ -26,4 +26,8 @@
     <string name="menu_activity">Hoạt động</string>
     <string name="menu_notification">Thông báo</string>
     <string name="menu_account">Tài khoản</string>
+<!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="message_title">Tin nh&#x1EAF;n</string>
+    <string name="message_placeholder">T&#xED;nh n&#x103;ng nh&#x1EAF;n tin &#x111;ang &#x111;&#x1B0;&#x1EE3;c ho&#xE0;n thi&#x1EC7;n.</string>
 </resources>

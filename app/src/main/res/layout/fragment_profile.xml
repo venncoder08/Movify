@@ -12,7 +12,7 @@
         android:layout_height="0dp"
         android:fillViewport="true"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/bottomNavContainer"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -33,7 +33,6 @@
                     android:id="@+id/tvTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_centerInParent="true"
                     android:text="@string/profile_title"
                     android:textColor="@color/white"
                     android:textSize="22sp"
@@ -225,14 +224,4 @@
 
         </LinearLayout>
     </ScrollView>
-
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/bottomNavContainer"
-        android:layout_width="0dp"
-        android:layout_height="72dp"
-        android:background="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>
