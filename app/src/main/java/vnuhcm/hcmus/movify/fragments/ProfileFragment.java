@@ -1,12 +1,17 @@
 package vnuhcm.hcmus.movify.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import vnuhcm.hcmus.movify.activities.LoadingActivity;
+import vnuhcm.hcmus.movify.activities.auth.LoginActivity;
 import vnuhcm.hcmus.movify.utils.CustomToast;
 
 import androidx.annotation.NonNull;
@@ -25,6 +30,8 @@ public class ProfileFragment extends Fragment {
     private View itemPersonalInfo, itemPaymentMethod, itemSavedAddress;
     private View itemNotification, itemLocation;
     private View itemHelpCenter, itemPolicy;
+
+    private Button btnLogout;
 
     public ProfileFragment() {
     }
@@ -61,6 +68,8 @@ public class ProfileFragment extends Fragment {
 
         itemHelpCenter = view.findViewById(R.id.itemHelpCenter);
         itemPolicy = view.findViewById(R.id.itemPolicy);
+
+        btnLogout = view.findViewById(R.id.btnLogout);
     }
 
     private void setupProfileHeader() {
@@ -148,6 +157,20 @@ public class ProfileFragment extends Fragment {
         itemPolicy.setOnClickListener(v ->
                 Toast.makeText(requireContext(), "Mở Điều khoản & Chính sách", Toast.LENGTH_SHORT).show()
         );
+
+        btnLogout.setOnClickListener(v -> {
+            requireContext()
+                    .getSharedPreferences("USER_PREF", android.content.Context.MODE_PRIVATE)
+                    .edit()
+                    .clear()
+                    .apply();
+
+            Intent intent = new Intent(requireActivity(), LoadingActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+
+            requireActivity().finish();
+        });
     }
 
     private void setupArrowItem(View itemView, int iconRes, String title, String subtitle) {
