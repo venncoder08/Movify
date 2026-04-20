@@ -1,7 +1,11 @@
 package vnuhcm.hcmus.movify.fragments;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,27 +25,63 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import vnuhcm.hcmus.movify.R;
 import vnuhcm.hcmus.movify.adapters.PromotionAdapter;
+import vnuhcm.hcmus.movify.models.AccountProfile;
 import vnuhcm.hcmus.movify.models.Promotion;
+import vnuhcm.hcmus.movify.services.AuthApiService;
+import vnuhcm.hcmus.movify.services.PromotionService;
 import vnuhcm.hcmus.movify.utils.LocationData;
 import vnuhcm.hcmus.movify.utils.PlacesAutocompleteHelper;
 
 public class BookingFragment extends Fragment {
 
-    private AutoCompleteTextView edtPickup, edtDestination;
-    private android.widget.LinearLayout pickupContainer, destinationContainer;
+    private static final String TAG = "BookingFragment";
+    private static final String VEHICLE_MOTORBIKE = "motorbike";
+    private static final String VEHICLE_CAR = "car";
+    private static final String PAYMENT_CASH = "cash";
+    private static final String PAYMENT_BANK_TRANSFER = "bank_transfer";
 
-    private LinearLayout btnMotorbike, btnCar, btnCash, btnBankTransfer, btnSearchDriver;
-    private FrameLayout iconMotorbike, iconCar, iconCash, iconBank;
-    private ImageView ivMotorbike, ivCar, ivCash, ivBankTransfer;
-    private TextView tvBikeTitle, tvBikeDesc, tvCarTitle, tvCarDesc, tvCash, tvBankTransfer;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final List<Promotion> promotionList = new ArrayList<>();
+
+    private AutoCompleteTextView edtPickup;
+    private AutoCompleteTextView edtDestination;
+    private LinearLayout pickupContainer;
+    private LinearLayout destinationContainer;
+
+    private LinearLayout btnMotorbike;
+    private LinearLayout btnCar;
+    private LinearLayout btnCash;
+    private LinearLayout btnBankTransfer;
+    private LinearLayout btnSearchDriver;
+    private FrameLayout iconMotorbike;
+    private FrameLayout iconCar;
+    private FrameLayout iconCash;
+    private FrameLayout iconBank;
+    private ImageView ivMotorbike;
+    private ImageView ivCar;
+    private ImageView ivCash;
+    private ImageView ivBankTransfer;
+    private TextView tvBikeTitle;
+    private TextView tvBikeDesc;
+    private TextView tvCarTitle;
+    private TextView tvCarDesc;
+    private TextView tvCash;
+    private TextView tvBankTransfer;
+    private TextView tvHeaderUserName;
     private RecyclerView rvPromotions;
 
+    private PromotionAdapter promotionAdapter;
+    private ExecutorService promotionExecutor;
+    private AuthApiService authApiService;
+
     private String selectedPromo = "";
-    private String selectedVehicle = "Xe máy";
-    private String selectedPayment = "Tiền mặt";
+    private String selectedVehicle = VEHICLE_MOTORBIKE;
+    private String selectedPayment = PAYMENT_CASH;
 
     public BookingFragment() {
     }
@@ -56,19 +96,20 @@ public class BookingFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        promotionExecutor = Executors.newSingleThreadExecutor();
+        authApiService = new AuthApiService(requireContext());
         initViews(view);
-        
-        // Check LocationData BEFORE setting up autocomplete to avoid TextWatcher interference
+
         String pickupLocation = LocationData.getPickupLocation();
         String destinationLocation = LocationData.getDestinationLocation();
-        
+
         setupVehicleButtons();
         setupPaymentButtons();
+        loadHeaderProfile();
         setupPromotions();
         setupSearchDriverButton();
         setupPlacesAutocomplete();
 
-        // Populate location fields with data from MapBookingFragment
         if (pickupLocation != null && !pickupLocation.isEmpty()) {
             edtPickup.setText(pickupLocation);
         }
@@ -76,8 +117,18 @@ public class BookingFragment extends Fragment {
             edtDestination.setText(destinationLocation);
         }
 
-        // Clear the stored location data after use
         LocationData.clear();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+
+        mainHandler.removeCallbacksAndMessages(null);
+        if (promotionExecutor != null) {
+            promotionExecutor.shutdownNow();
+            promotionExecutor = null;
+        }
     }
 
     private void initViews(View view) {
@@ -108,26 +159,77 @@ public class BookingFragment extends Fragment {
         tvCarDesc = view.findViewById(R.id.tvCarDesc);
         tvCash = view.findViewById(R.id.tvCash);
         tvBankTransfer = view.findViewById(R.id.tvBankTransfer);
+        tvHeaderUserName = view.findViewById(R.id.tvUserName);
 
         rvPromotions = view.findViewById(R.id.rvPromotions);
+    }
+
+    private void loadHeaderProfile() {
+        if (promotionExecutor == null || promotionExecutor.isShutdown()) {
+            return;
+        }
+
+        promotionExecutor.execute(() -> {
+            try {
+                AccountProfile profile = authApiService.fetchCurrentUserProfile();
+                mainHandler.post(() -> renderHeaderProfile(profile));
+            } catch (Exception exception) {
+                Log.w(TAG, "Unable to load booking header profile", exception);
+                mainHandler.post(this::renderHeaderFallback);
+            }
+        });
+    }
+
+    private void renderHeaderProfile(@NonNull AccountProfile profile) {
+        if (!isAdded()) {
+            return;
+        }
+
+        String displayName = profile.getFullName();
+        if (TextUtils.isEmpty(displayName)) {
+            displayName = buildDisplayName(profile.getEmail());
+        }
+
+        tvHeaderUserName.setText(displayName);
+    }
+
+    private void renderHeaderFallback() {
+        if (!isAdded()) {
+            return;
+        }
+
+        tvHeaderUserName.setText(buildDisplayName(authApiService.getUserEmail()));
+    }
+
+    private String buildDisplayName(String email) {
+        if (TextUtils.isEmpty(email)) {
+            return getString(R.string.movify_account);
+        }
+
+        int separatorIndex = email.indexOf('@');
+        if (separatorIndex > 0) {
+            return email.substring(0, separatorIndex);
+        }
+
+        return email;
     }
 
     private void setupVehicleButtons() {
         updateVehicleUI();
 
         btnMotorbike.setOnClickListener(v -> {
-            selectedVehicle = "Xe máy";
+            selectedVehicle = VEHICLE_MOTORBIKE;
             updateVehicleUI();
         });
 
         btnCar.setOnClickListener(v -> {
-            selectedVehicle = "Ô tô";
+            selectedVehicle = VEHICLE_CAR;
             updateVehicleUI();
         });
     }
 
     private void updateVehicleUI() {
-        if ("Xe máy".equals(selectedVehicle)) {
+        if (VEHICLE_MOTORBIKE.equals(selectedVehicle)) {
             btnMotorbike.setBackgroundResource(R.drawable.bg_selected);
             btnCar.setBackgroundResource(R.drawable.bg_unselected);
 
@@ -162,18 +264,18 @@ public class BookingFragment extends Fragment {
         updatePaymentUI();
 
         btnCash.setOnClickListener(v -> {
-            selectedPayment = "Tiền mặt";
+            selectedPayment = PAYMENT_CASH;
             updatePaymentUI();
         });
 
         btnBankTransfer.setOnClickListener(v -> {
-            selectedPayment = "Chuyển khoản";
+            selectedPayment = PAYMENT_BANK_TRANSFER;
             updatePaymentUI();
         });
     }
 
     private void updatePaymentUI() {
-        if ("Tiền mặt".equals(selectedPayment)) {
+        if (PAYMENT_CASH.equals(selectedPayment)) {
             btnCash.setBackgroundResource(R.drawable.bg_selected);
             btnBankTransfer.setBackgroundResource(R.drawable.bg_unselected);
 
@@ -202,18 +304,44 @@ public class BookingFragment extends Fragment {
 
     private void setupPromotions() {
         rvPromotions.setLayoutManager(new LinearLayoutManager(requireContext()));
-
-        List<Promotion> promotionList = new ArrayList<>();
-        promotionList.add(new Promotion("GIAM10", "Giảm 10% cho chuyến đi"));
-        promotionList.add(new Promotion("FREESHIP", "Giảm 15.000đ"));
-        promotionList.add(new Promotion("NEWUSER", "Giảm 20%"));
-
-        PromotionAdapter adapter = new PromotionAdapter(promotionList, promotion -> {
+        promotionAdapter = new PromotionAdapter(promotionList, promotion -> {
             selectedPromo = promotion.getTitle();
-            Toast.makeText(requireContext(), "Đã chọn mã: " + selectedPromo, Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), getString(R.string.selected_promo) + selectedPromo, Toast.LENGTH_SHORT).show();
         });
+        rvPromotions.setAdapter(promotionAdapter);
+        loadPromotions();
+    }
 
-        rvPromotions.setAdapter(adapter);
+    private void loadPromotions() {
+        if (promotionExecutor == null || promotionExecutor.isShutdown()) {
+            return;
+        }
+
+        Context appContext = requireContext().getApplicationContext();
+        promotionExecutor.execute(() -> {
+            try {
+                List<Promotion> promotions = PromotionService.fetchPromotions(appContext);
+                mainHandler.post(() -> renderPromotions(promotions));
+            } catch (Exception exception) {
+                Log.e(TAG, "Unable to load promotions from backend", exception);
+                mainHandler.post(() -> {
+                    if (!isAdded()) {
+                        return;
+                    }
+                    Toast.makeText(requireContext(), R.string.load_promo_failed, Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void renderPromotions(@NonNull List<Promotion> promotions) {
+        if (!isAdded()) {
+            return;
+        }
+
+        promotionList.clear();
+        promotionList.addAll(promotions);
+        promotionAdapter.notifyDataSetChanged();
     }
 
     private void setupSearchDriverButton() {
@@ -222,59 +350,55 @@ public class BookingFragment extends Fragment {
             String destination = edtDestination.getText().toString().trim();
 
             if (TextUtils.isEmpty(pickup)) {
-                edtPickup.setError("Nhập điểm đón");
+                edtPickup.setError(getString(R.string.pickup_location_required));
                 return;
             }
 
             if (TextUtils.isEmpty(destination)) {
-                edtDestination.setError("Nhập điểm đến");
+                edtDestination.setError(getString(R.string.destination_required));
                 return;
             }
 
             Toast.makeText(
                     requireContext(),
-                    "Đang tìm tài xế...\n"
-                            + "Xe: " + selectedVehicle
-                            + "\nThanh toán: " + selectedPayment
+                    getString(R.string.finding_driver) + "\n"
+                            + "Xe: " + getVehicleLabel()
+                            + "\n" + getString(R.string.payment_label) + getPaymentLabel()
                             + (selectedPromo.isEmpty() ? "" : "\nKM: " + selectedPromo),
                     Toast.LENGTH_LONG
             ).show();
         });
     }
 
+    private String getVehicleLabel() {
+        if (VEHICLE_CAR.equals(selectedVehicle)) {
+            return "Ô tô";
+        }
+        return "Xe máy";
+    }
+
+    private String getPaymentLabel() {
+        if (PAYMENT_BANK_TRANSFER.equals(selectedPayment)) {
+            return "Chuyển khoản";
+        }
+        return "Tiền mặt";
+    }
+
     private void openMapBooking() {
-        // Gọi openMapBooking từ HomeActivity
         if (getActivity() instanceof vnuhcm.hcmus.movify.activities.HomeActivity) {
             ((vnuhcm.hcmus.movify.activities.HomeActivity) getActivity()).openMapBooking();
         }
     }
 
     private void setupPlacesAutocomplete() {
-        // Setup Places Autocomplete cho pickup
         new PlacesAutocompleteHelper(requireContext(), edtPickup);
-
-        // Setup Places Autocomplete cho destination
         new PlacesAutocompleteHelper(requireContext(), edtDestination);
 
-        // Add click listener to textboxes to open map
-        edtPickup.setOnClickListener(v -> {
-            openMapBooking();
-        });
+        edtPickup.setOnClickListener(v -> openMapBooking());
+        edtDestination.setOnClickListener(v -> openMapBooking());
+        pickupContainer.setOnClickListener(v -> openMapBooking());
+        destinationContainer.setOnClickListener(v -> openMapBooking());
 
-        edtDestination.setOnClickListener(v -> {
-            openMapBooking();
-        });
-
-        // Add click listener to containers to open map when clicking
-        pickupContainer.setOnClickListener(v -> {
-            openMapBooking();
-        });
-
-        destinationContainer.setOnClickListener(v -> {
-            openMapBooking();
-        });
-
-        // Add focus listeners as backup
         edtPickup.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
                 openMapBooking();

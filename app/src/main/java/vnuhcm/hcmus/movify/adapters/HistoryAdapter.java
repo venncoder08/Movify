@@ -8,6 +8,8 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.core.content.ContextCompat;
+
 import java.util.List;
 
 import vnuhcm.hcmus.movify.R;
@@ -40,9 +42,16 @@ public class HistoryAdapter extends BaseAdapter {
 
     static class ViewHolder {
         ImageView imgVehicle;
-        TextView tvTripId, tvStatus, tvDateTime, tvPrice, tvRating;
-        TextView tvPickupAddress, tvDestinationAddress;
-        TextView tvDriverInfo, tvDuration, tvDistance;
+        TextView tvTripId;
+        TextView tvStatus;
+        TextView tvDateTime;
+        TextView tvPrice;
+        TextView tvRating;
+        TextView tvPickupAddress;
+        TextView tvDestinationAddress;
+        TextView tvDriverInfo;
+        TextView tvDuration;
+        TextView tvDistance;
     }
 
     @Override
@@ -73,26 +82,31 @@ public class HistoryAdapter extends BaseAdapter {
 
         holder.imgVehicle.setImageResource(item.getVehicleIconResId());
         holder.tvTripId.setText("#" + item.getTripId());
+        holder.tvStatus.setText(item.getStatusLabel());
         holder.tvDateTime.setText(item.getDateTime());
         holder.tvPrice.setText(item.getPrice());
         holder.tvPickupAddress.setText(item.getPickupAddress());
         holder.tvDestinationAddress.setText(item.getDestinationAddress());
-        holder.tvDriverInfo.setText(item.getDriverName() + " • " + item.getDriverPlate());
+        holder.tvDriverInfo.setText(item.getDriverName() + " | " + item.getDriverPlate());
         holder.tvDuration.setText(item.getDuration());
         holder.tvDistance.setText(item.getDistance());
 
-        if ("Hoàn thành".equals(item.getStatus())) {
-            holder.tvStatus.setText("Hoàn thành");
+        if ("Completed".equals(item.getStatusCode())) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_success);
-            holder.tvStatus.setTextColor(context.getResources().getColor(android.R.color.holo_green_dark));
-            holder.tvRating.setVisibility(View.VISIBLE);
-            holder.tvRating.setText("★ 4.8");
-        } else {
-            holder.tvStatus.setText("Đã hủy");
+            holder.tvStatus.setTextColor(ContextCompat.getColor(context, android.R.color.holo_green_dark));
+        } else if ("Cancelled".equals(item.getStatusCode())) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_cancel);
-            holder.tvStatus.setTextColor(context.getResources().getColor(android.R.color.holo_red_dark));
+            holder.tvStatus.setTextColor(ContextCompat.getColor(context, android.R.color.holo_red_dark));
+        } else {
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_input);
+            holder.tvStatus.setTextColor(ContextCompat.getColor(context, R.color.primary));
+        }
+
+        if (item.getRatingText() == null || item.getRatingText().trim().isEmpty()) {
+            holder.tvRating.setVisibility(View.GONE);
+        } else {
             holder.tvRating.setVisibility(View.VISIBLE);
-            holder.tvRating.setText("★ 4.7");
+            holder.tvRating.setText(item.getRatingText());
         }
 
         return convertView;

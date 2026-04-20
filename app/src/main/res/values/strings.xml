@@ -28,6 +28,35 @@
     <string name="menu_account">Tài khoản</string>
 <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="message_title">Tin nh&#x1EAF;n</string>
-    <string name="message_placeholder">T&#xED;nh n&#x103;ng nh&#x1EAF;n tin &#x111;ang &#x111;&#x1B0;&#x1EE3;c ho&#xE0;n thi&#x1EC7;n.</string>
+    <string name="message_title">Tin nhắn</string>
+    <string name="message_placeholder">Tính năng nhắn tin đang được hoàn thiện.</string>
+
+    <!-- Feature Coming Soon Messages -->
+    <string name="payment_feature_coming">Tính năng thanh toán đang hoàn thiện</string>
+    <string name="profile_edit_feature_coming">Tính năng chỉnh sửa hồ sơ đang hoàn thiện</string>
+
+    <!-- Pickup and Destination Messages -->
+    <string name="enter_pickup_location">Nhập điểm đón</string>
+    <string name="enter_destination">Nhập điểm đến</string>
+
+    <!-- Promotion Messages -->
+    <string name="selected_promo">Đã chọn mã: </string>
+    <string name="load_promo_failed">Không tải được khuyến mãi</string>
+
+    <!-- Validation Messages -->
+    <string name="fill_required_fields">Vui lòng nhập đầy đủ thông tin</string>
+
+    <!-- Error Messages -->
+    <string name="backend_no_account_info">Backend không trả về thông tin tài khoản</string>
+    <string name="pickup_location_required">Nhập điểm đón</string>
+    <string name="destination_required">Nhập điểm đến</string>
+    <string name="finding_driver">Đang tìm tài xế...</string>
+    <string name="payment_label">Thanh toán: </string>
+    <string name="this_month">Tháng này</string>
+
+    <!-- General Messages -->
+    <string name="backend_error">Backend lỗi HTTP</string>
+    <string name="payment_method_label">Phương thức thanh toán</string>
+    <string name="location_permission_label">Cho phép truy cập vị trí</string>
+
 </resources>

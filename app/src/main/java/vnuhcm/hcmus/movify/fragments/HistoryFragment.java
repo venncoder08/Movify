@@ -1,10 +1,14 @@
 package vnuhcm.hcmus.movify.fragments;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -12,16 +16,28 @@ import androidx.fragment.app.Fragment;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import vnuhcm.hcmus.movify.R;
 import vnuhcm.hcmus.movify.adapters.HistoryAdapter;
 import vnuhcm.hcmus.movify.models.History;
+import vnuhcm.hcmus.movify.models.HistoryScreenData;
+import vnuhcm.hcmus.movify.services.HistoryService;
 
 public class HistoryFragment extends Fragment {
 
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+
     private ListView lvHistory;
+    private TextView tvSummarySub;
+    private TextView tvSummaryAmount;
+    private TextView tvTotalTrips;
+    private TextView tvTotalDistance;
+    private TextView tvEmptyState;
     private HistoryAdapter adapter;
-    private List<History> historyList;
+    private final List<History> historyList = new ArrayList<>();
+    private ExecutorService historyExecutor;
 
     public HistoryFragment() {
     }
@@ -32,71 +48,85 @@ public class HistoryFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_history, container, false);
 
         lvHistory = view.findViewById(R.id.lvHistory);
+        tvSummarySub = view.findViewById(R.id.tvSummarySub);
+        tvSummaryAmount = view.findViewById(R.id.tvSummaryAmount);
+        tvTotalTrips = view.findViewById(R.id.tvTotalTrips);
+        tvTotalDistance = view.findViewById(R.id.tvTotalDistance);
+        tvEmptyState = view.findViewById(R.id.tvEmptyState);
 
-        historyList = new ArrayList<>();
-        loadMockData();
-
+        historyExecutor = Executors.newSingleThreadExecutor();
         adapter = new HistoryAdapter(requireContext(), historyList);
         lvHistory.setAdapter(adapter);
+        lvHistory.setEmptyView(tvEmptyState);
+
+        renderSummary("0đ", "0", "0.0 km", getString(R.string.this_month));
+        loadHistory();
 
         return view;
     }
 
-    private void loadMockData() {
-        historyList.add(new History(
-                12345,
-                "Hoàn thành",
-                "15/03/2024 • 14:30",
-                "Số 123 Nguyễn Huệ, Q.1",
-                "Số 456 Lê Lợi, Q.3",
-                "Nguyễn Văn A",
-                "29A-12345",
-                "15 phút",
-                "5.2 km",
-                "45.000đ",
-                R.drawable.ic_motorbike
-        ));
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mainHandler.removeCallbacksAndMessages(null);
+        if (historyExecutor != null) {
+            historyExecutor.shutdownNow();
+            historyExecutor = null;
+        }
+    }
 
-        historyList.add(new History(
-                12344,
-                "Hoàn thành",
-                "14/03/2024 • 09:15",
-                "Số 789 Trần Hưng Đạo, Q.5",
-                "Số 321 Võ Văn Tần, Q.3",
-                "Trần Văn B",
-                "30B-67890",
-                "18 phút",
-                "6.8 km",
-                "52.000đ",
-                R.drawable.ic_motorbike
-        ));
+    private void loadHistory() {
+        if (historyExecutor == null || historyExecutor.isShutdown()) {
+            return;
+        }
 
-        historyList.add(new History(
-                12343,
-                "Đã hủy",
-                "13/03/2024 • 16:45",
-                "Số 555 Hai Bà Trưng, Q.1",
-                "Số 888 Điện Biên Phủ, Q.3",
-                "Lê Văn C",
-                "29C-11111",
-                "12 phút",
-                "4.1 km",
-                "38.000đ",
-                R.drawable.ic_car
-        ));
+        android.content.Context appContext = requireContext().getApplicationContext();
+        historyExecutor.execute(() -> {
+            try {
+                HistoryScreenData screenData = HistoryService.fetchHistory(appContext);
+                mainHandler.post(() -> bindHistory(screenData));
+            } catch (Exception exception) {
+                mainHandler.post(() -> renderHistoryError(exception));
+            }
+        });
+    }
 
-        historyList.add(new History(
-                12342,
-                "Hoàn thành",
-                "12/03/2024 • 20:10",
-                "Số 12 Phan Xích Long, Phú Nhuận",
-                "Số 90 Cộng Hòa, Tân Bình",
-                "Phạm Văn D",
-                "51H-22222",
-                "22 phút",
-                "8.4 km",
-                "67.000đ",
-                R.drawable.ic_car
-        ));
+    private void bindHistory(HistoryScreenData screenData) {
+        if (!isAdded()) {
+            return;
+        }
+
+        historyList.clear();
+        historyList.addAll(screenData.getItems());
+        adapter.notifyDataSetChanged();
+        renderSummary(
+                screenData.getTotalAmount(),
+                screenData.getTotalTrips(),
+                screenData.getTotalDistance(),
+                screenData.getPeriodLabel()
+        );
+    }
+
+    private void renderSummary(String totalAmount, String totalTrips, String totalDistance, String periodLabel) {
+        tvSummarySub.setText(periodLabel);
+        tvSummaryAmount.setText(totalAmount);
+        tvTotalTrips.setText(totalTrips);
+        tvTotalDistance.setText(totalDistance);
+    }
+
+    private void renderHistoryError(Exception exception) {
+        if (!isAdded()) {
+            return;
+        }
+
+        historyList.clear();
+        adapter.notifyDataSetChanged();
+        renderSummary("0đ", "0", "0.0 km", "Tháng này");
+
+        String message = exception.getMessage();
+        if (message == null || message.trim().isEmpty()) {
+            message = "Không tải được lịch sử";
+        }
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
     }
 }

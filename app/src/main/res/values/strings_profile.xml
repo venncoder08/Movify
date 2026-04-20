@@ -28,4 +28,49 @@
 
     <string name="terms_policy">Điều khoản &amp; Chính sách</string>
     <string name="terms_policy_desc">Quy định sử dụng dịch vụ</string>
+
+    <!-- Profile Status and Labels -->
+    <string name="not_updated">Chưa cập nhật</string>
+    <string name="become_driver">Trở thành tài xế</string>
+    <string name="profile_load_error">Không tải được thông tin cá nhân</string>
+    <string name="movify_account">Tài khoản Movify</string>
+
+    <!-- Driver Status Messages -->
+    <string name="already_driver">Đã là tài xế</string>
+    <string name="pending_approval">Đang chờ duyệt</string>
+    <string name="rejected_status">Đã bị từ chối</string>
+    <string name="not_registered">Chưa đăng ký</string>
+
+    <!-- Driver Button Texts -->
+    <string name="you_are_driver">Bạn đã là tài xế</string>
+    <string name="view_driver_profile">Xem hồ sơ tài xế</string>
+    <string name="resubmit_driver_profile">Gửi lại hồ sơ tài xế</string>
+
+    <!-- Become Driver Labels -->
+    <string name="become_driver_title">Trở thành tài xế</string>
+    <string name="profile_status">Trạng thái hồ sơ</string>
+    <string name="loading_dots">Đang tải...</string>
+    <string name="enter_info_to_submit">Nhập thông tin để gửi yêu cầu.</string>
+    <string name="id_card_hint">Nhập số giấy tờ</string>
+    <string name="driver_license_hint">Nhập số GPLX</string>
+    <string name="vehicle_registration_label">Đăng ký xe</string>
+    <string name="vehicle_registration_hint">Nhập biển số / đăng ký xe</string>
+
+    <!-- Driver Request Status -->
+    <string name="submit_request_failed">Không gửi được yêu cầu</string>
+    <string name="profile_pending">Hồ sơ đang chờ duyệt</string>
+    <string name="resubmit_request">Gửi lại yêu cầu</string>
+    <string name="submit_request">Gửi yêu cầu</string>
+    <string name="profile_pending_admin">Hồ sơ đang chờ admin duyệt</string>
+    <string name="profile_rejected">Hồ sơ đã bị từ chối</string>
+    <string name="driver_request_desc">Nhập CCCD, GPLX và đăng ký xe để gửi yêu cầu lên admin.</string>
+    <string name="request_submitted_at">Yêu cầu gần nhất đã được gửi vào </string>
+    <string name="submit_request_success">Gửi yêu cầu thành công</string>
+
+    <!-- Profile Menu Items -->
+    <string name="personal_info_title">Thông tin cá nhân</string>
+    <string name="loading_account_info">Đang tải thông tin tài khoản</string>
+    <string name="bank_transfer_desc">Ngân hàng, ví điện tử</string>
+    <string name="location_title">Vị trí</string>
+
 </resources>

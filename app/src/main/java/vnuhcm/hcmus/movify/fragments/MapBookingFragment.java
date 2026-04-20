@@ -312,12 +312,12 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
         String destinationText = edtMapDestination.getText().toString().trim();
 
         if (pickupText.isEmpty()) {
-            Toast.makeText(requireContext(), "Nhap diem don", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), R.string.enter_pickup_location, Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (destinationText.isEmpty()) {
-            Toast.makeText(requireContext(), "Nhap diem den", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), R.string.enter_destination, Toast.LENGTH_SHORT).show();
             return;
         }
 

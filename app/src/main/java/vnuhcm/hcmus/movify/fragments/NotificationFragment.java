@@ -1,11 +1,15 @@
 package vnuhcm.hcmus.movify.fragments;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,17 +17,26 @@ import androidx.fragment.app.Fragment;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import vnuhcm.hcmus.movify.R;
 import vnuhcm.hcmus.movify.adapters.NotificationAdapter;
 import vnuhcm.hcmus.movify.models.Notification;
+import vnuhcm.hcmus.movify.models.NotificationFeed;
+import vnuhcm.hcmus.movify.services.NotificationService;
 
 public class NotificationFragment extends Fragment {
 
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+
     private ListView lvNotifications;
     private TextView tvNewBadge;
+    private TextView tvMarkAllRead;
+    private TextView tvEmptyState;
     private NotificationAdapter adapter;
-    private List<Notification> notificationList;
+    private final List<Notification> notificationList = new ArrayList<>();
+    private ExecutorService notificationExecutor;
 
     public NotificationFragment() {
     }
@@ -35,27 +48,66 @@ public class NotificationFragment extends Fragment {
 
         lvNotifications = view.findViewById(R.id.lvNotifications);
         tvNewBadge = view.findViewById(R.id.tvNewBadge);
+        tvMarkAllRead = view.findViewById(R.id.tvMarkAllRead);
+        tvEmptyState = view.findViewById(R.id.tvEmptyState);
 
-        notificationList = new ArrayList<>();
-        loadMockData();
-
+        notificationExecutor = Executors.newSingleThreadExecutor();
         adapter = new NotificationAdapter(requireContext(), notificationList);
         lvNotifications.setAdapter(adapter);
+        lvNotifications.setEmptyView(tvEmptyState);
 
-        updateUnreadCount();
+        bindActions();
+        loadNotifications();
 
+        return view;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        mainHandler.removeCallbacksAndMessages(null);
+        if (notificationExecutor != null) {
+            notificationExecutor.shutdownNow();
+            notificationExecutor = null;
+        }
+    }
+
+    private void bindActions() {
         lvNotifications.setOnItemClickListener((parent, v, position, id) -> {
             Notification item = notificationList.get(position);
-
             if (item.isUnread()) {
-                item.setUnread(false);
-
-                adapter.notifyDataSetChanged();
-                updateUnreadCount();
+                markNotificationAsRead(item);
             }
         });
 
-        return view;
+        tvMarkAllRead.setOnClickListener(v -> markAllNotificationsAsRead());
+    }
+
+    private void loadNotifications() {
+        if (notificationExecutor == null || notificationExecutor.isShutdown()) {
+            return;
+        }
+
+        Context appContext = requireContext().getApplicationContext();
+        notificationExecutor.execute(() -> {
+            try {
+                NotificationFeed feed = NotificationService.fetchNotifications(appContext);
+                mainHandler.post(() -> bindNotifications(feed));
+            } catch (Exception exception) {
+                mainHandler.post(() -> renderNotificationError(exception));
+            }
+        });
+    }
+
+    private void bindNotifications(NotificationFeed feed) {
+        if (!isAdded()) {
+            return;
+        }
+
+        notificationList.clear();
+        notificationList.addAll(feed.getNotifications());
+        adapter.notifyDataSetChanged();
+        updateUnreadCount();
     }
 
     private void updateUnreadCount() {
@@ -65,88 +117,74 @@ public class NotificationFragment extends Fragment {
                 count++;
             }
         }
+
         tvNewBadge.setText(count + " mới");
+        tvMarkAllRead.setEnabled(count > 0);
+        tvMarkAllRead.setAlpha(count > 0 ? 1f : 0.5f);
     }
 
-    private void loadMockData() {
-        notificationList.add(new Notification(
-                R.drawable.ic_search,
-                "Đang tìm tài xế gần bạn",
-                "Vui lòng chờ trong giây lát...",
-                "1 phút trước",
-                "Tất cả",
-                true,
-                false
-        ));
+    private void markNotificationAsRead(Notification item) {
+        if (notificationExecutor == null || notificationExecutor.isShutdown()) {
+            return;
+        }
 
-        notificationList.add(new Notification(
-                R.drawable.ic_success,
-                "Tài xế đã nhận cuốc",
-                "Nguyễn Văn A - 29A-12345 - ⭐ 4.8",
-                "3 phút trước",
-                "Chuyến đi",
-                true,
-                false
-        ));
+        Context appContext = requireContext().getApplicationContext();
+        notificationExecutor.execute(() -> {
+            try {
+                NotificationService.markNotificationAsRead(appContext, item.getId());
+                mainHandler.post(() -> {
+                    item.setUnread(false);
+                    adapter.notifyDataSetChanged();
+                    updateUnreadCount();
+                });
+            } catch (Exception exception) {
+                mainHandler.post(() -> showError(exception, "Không cập nhật được thông báo"));
+            }
+        });
+    }
 
-        notificationList.add(new Notification(
-                R.drawable.ic_location,
-                "Tài xế đang đến điểm đón",
-                "Còn khoảng 5 phút nữa sẽ đến",
-                "5 phút trước",
-                "Chuyến đi",
-                true,
-                false
-        ));
+    private void markAllNotificationsAsRead() {
+        if (notificationExecutor == null || notificationExecutor.isShutdown()) {
+            return;
+        }
 
-        notificationList.add(new Notification(
-                R.drawable.ic_card,
-                "Thanh toán thành công",
-                "Số tiền: 45.000đ - Chuyến đi #12345",
-                "15 phút trước",
-                "Thanh toán",
-                false,
-                false
-        ));
+        Context appContext = requireContext().getApplicationContext();
+        notificationExecutor.execute(() -> {
+            try {
+                NotificationService.markAllNotificationsAsRead(appContext);
+                mainHandler.post(() -> {
+                    for (Notification notification : notificationList) {
+                        notification.setUnread(false);
+                    }
+                    adapter.notifyDataSetChanged();
+                    updateUnreadCount();
+                });
+            } catch (Exception exception) {
+                mainHandler.post(() -> showError(exception, "Không đánh dấu đã đọc được"));
+            }
+        });
+    }
 
-        notificationList.add(new Notification(
-                R.drawable.ic_flag,
-                "Chuyến đi đã hoàn thành",
-                "Cám ơn bạn đã sử dụng dịch vụ",
-                "20 phút trước",
-                "Chuyến đi",
-                false,
-                false
-        ));
+    private void renderNotificationError(Exception exception) {
+        if (!isAdded()) {
+            return;
+        }
 
-        notificationList.add(new Notification(
-                R.drawable.ic_star,
-                "Mời bạn đánh giá tài xế",
-                "Chia sẻ trải nghiệm của bạn",
-                "25 phút trước",
-                "Tất cả",
-                false,
-                false
-        ));
+        notificationList.clear();
+        adapter.notifyDataSetChanged();
+        updateUnreadCount();
+        showError(exception, "Không tải được thông báo");
+    }
 
-        notificationList.add(new Notification(
-                R.drawable.ic_close,
-                "Tài xế đã hủy chuyến",
-                "Vui lòng đặt lại chuyến đi",
-                "1 giờ trước",
-                "Hủy chuyến",
-                false,
-                true
-        ));
+    private void showError(Exception exception, String fallbackMessage) {
+        if (!isAdded()) {
+            return;
+        }
 
-        notificationList.add(new Notification(
-                R.drawable.ic_refresh,
-                "Tài xế thay đổi lộ trình",
-                "Do kẹt xe trên đường Nguyễn Huệ",
-                "3 ngày trước",
-                "Chuyến đi",
-                false,
-                false
-        ));
+        String message = exception.getMessage();
+        if (message == null || message.trim().isEmpty()) {
+            message = fallbackMessage;
+        }
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
     }
 }

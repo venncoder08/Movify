@@ -76,4 +76,16 @@
         android:clipToPadding="false"
         android:scrollbars="none" />
 
+    <TextView
+        android:id="@+id/tvEmptyState"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/layoutHeader"
+        android:gravity="center"
+        android:padding="24dp"
+        android:text="Chưa có thông báo nào"
+        android:textColor="@color/text_hint"
+        android:textSize="16sp"
+        android:visibility="gone" />
+
 </RelativeLayout>
