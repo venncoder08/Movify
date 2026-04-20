@@ -54,6 +54,8 @@ CREATE TABLE Trip (
     PickUpLocation      VARCHAR(500)   NOT NULL,
     DestinationLocation VARCHAR(500)   NOT NULL,
     Duration            NUMERIC(10, 2),                    -- in minutes
+    TripType            VARCHAR(50)    NOT NULL DEFAULT 'Motor'
+                            CHECK (TripType IN ('Motor', 'Taxi')),
     Status              VARCHAR(50)    NOT NULL DEFAULT 'Pending'
                             CHECK (Status IN ('Pending', 'Accepted', 'InProgress', 'Completed', 'Cancelled')),
     PickUpTime          TIMESTAMPTZ,
@@ -135,6 +137,7 @@ CREATE INDEX idx_account_deleted         ON Account(DeletedAt) WHERE DeletedAt I
 CREATE INDEX idx_trip_user               ON Trip(UserID);
 CREATE INDEX idx_trip_driver             ON Trip(DriverID);
 CREATE INDEX idx_trip_promotion          ON Trip(PromotionID);
+CREATE INDEX idx_trip_type               ON Trip(TripType);
 CREATE INDEX idx_trip_status             ON Trip(Status);
 CREATE INDEX idx_trip_payment_status     ON Trip(PaymentStatus);
 CREATE INDEX idx_trip_deleted            ON Trip(DeletedAt) WHERE DeletedAt IS NULL;

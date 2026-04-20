@@ -1,18 +1,23 @@
 const express = require("express");
+const cors = require("cors");
 
-const healthRoutes = require("./routes/healthRoutes");
-const placeRoutes = require("./routes/placeRoutes");
-const routeRoutes = require("./routes/routeRoutes");
+const { mountRoutes } = require("./routes");
 const errorHandler = require("./middlewares/errorHandler");
 const notFoundHandler = require("./middlewares/notFoundHandler");
 
 const app = express();
 
+// Enable CORS for all origins (adjust in production)
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  credentials: true
+}));
+
 app.use(express.json());
 
-app.use("/health", healthRoutes);
-app.use("/api/places", placeRoutes);
-app.use("/api/routes", routeRoutes);
+// Mount all routes
+mountRoutes(app);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

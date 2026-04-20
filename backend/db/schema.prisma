@@ -26,6 +26,11 @@ enum DriverApprovalStatus {
   Rejected
 }
 
+enum TripType {
+  Motor
+  Taxi
+}
+
 enum TripStatus {
   Pending
   Accepted
@@ -108,6 +113,7 @@ model Trip {
   pickUpLocation      String         @db.VarChar(500) @map("PickUpLocation")
   destinationLocation String         @db.VarChar(500) @map("DestinationLocation")
   duration            Decimal?       @db.Decimal(10, 2) @map("Duration")
+  tripType            TripType       @default(Motor) @map("TripType")
   status              TripStatus     @default(Pending) @map("Status")
   pickUpTime          DateTime?      @db.Timestamptz(6) @map("PickUpTime")
   completedTime       DateTime?      @db.Timestamptz(6) @map("CompletedTime")
@@ -128,6 +134,7 @@ model Trip {
   @@index([userId], map: "idx_trip_user")
   @@index([driverId], map: "idx_trip_driver")
   @@index([promotionId], map: "idx_trip_promotion")
+  @@index([tripType], map: "idx_trip_type")
   @@index([status], map: "idx_trip_status")
   @@index([paymentStatus], map: "idx_trip_payment_status")
   @@index([deletedAt], map: "idx_trip_deleted")

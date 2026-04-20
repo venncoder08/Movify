@@ -1,13 +1,12 @@
-const crypto = require("crypto");
-
 const { PrismaClient, Prisma } = require("@prisma/client");
+const bcrypt = require("bcryptjs");
 
 const mockData = require("./mock-data");
 
 const prisma = new PrismaClient();
 
-function hashPassword(password) {
-  return crypto.createHash("sha256").update(password).digest("hex");
+async function hashPassword(password) {
+  return bcrypt.hash(password, 10);
 }
 
 function decimal(value) {
@@ -15,11 +14,13 @@ function decimal(value) {
 }
 
 async function upsertAccount(account) {
+  const hashedPassword = await hashPassword(account.password);
+
   return prisma.account.upsert({
     where: { email: account.email },
     update: {
       phoneNumber: account.phoneNumber,
-      hashedPassword: hashPassword(account.password),
+      hashedPassword,
       role: account.role,
       fullName: account.fullName,
       gender: account.gender ?? null,
@@ -34,7 +35,7 @@ async function upsertAccount(account) {
     create: {
       email: account.email,
       phoneNumber: account.phoneNumber,
-      hashedPassword: hashPassword(account.password),
+      hashedPassword,
       role: account.role,
       fullName: account.fullName,
       gender: account.gender ?? null,
@@ -101,6 +102,7 @@ async function seedTrips(accountMap, promotionMap) {
           pickUpLocation: trip.pickUpLocation,
           destinationLocation: trip.destinationLocation,
           duration: trip.duration ? decimal(trip.duration) : null,
+          tripType: trip.tripType,
           status: trip.status,
           pickUpTime: trip.pickUpTime ? new Date(trip.pickUpTime) : null,
           completedTime: trip.completedTime ? new Date(trip.completedTime) : null,
@@ -119,6 +121,7 @@ async function seedTrips(accountMap, promotionMap) {
           pickUpLocation: trip.pickUpLocation,
           destinationLocation: trip.destinationLocation,
           duration: trip.duration ? decimal(trip.duration) : null,
+          tripType: trip.tripType,
           status: trip.status,
           pickUpTime: trip.pickUpTime ? new Date(trip.pickUpTime) : null,
           completedTime: trip.completedTime ? new Date(trip.completedTime) : null,
