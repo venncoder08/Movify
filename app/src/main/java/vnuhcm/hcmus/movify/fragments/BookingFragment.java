@@ -5,7 +5,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
+import android.widget.AutoCompleteTextView;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -25,10 +25,13 @@ import java.util.List;
 import vnuhcm.hcmus.movify.R;
 import vnuhcm.hcmus.movify.adapters.PromotionAdapter;
 import vnuhcm.hcmus.movify.models.Promotion;
+import vnuhcm.hcmus.movify.utils.LocationData;
+import vnuhcm.hcmus.movify.utils.PlacesAutocompleteHelper;
 
 public class BookingFragment extends Fragment {
 
-    private EditText edtPickup, edtDestination;
+    private AutoCompleteTextView edtPickup, edtDestination;
+    private android.widget.LinearLayout pickupContainer, destinationContainer;
 
     private LinearLayout btnMotorbike, btnCar, btnCash, btnBankTransfer, btnSearchDriver;
     private FrameLayout iconMotorbike, iconCar, iconCash, iconBank;
@@ -54,15 +57,34 @@ public class BookingFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         initViews(view);
+        
+        // Check LocationData BEFORE setting up autocomplete to avoid TextWatcher interference
+        String pickupLocation = LocationData.getPickupLocation();
+        String destinationLocation = LocationData.getDestinationLocation();
+        
         setupVehicleButtons();
         setupPaymentButtons();
         setupPromotions();
         setupSearchDriverButton();
+        setupPlacesAutocomplete();
+
+        // Populate location fields with data from MapBookingFragment
+        if (pickupLocation != null && !pickupLocation.isEmpty()) {
+            edtPickup.setText(pickupLocation);
+        }
+        if (destinationLocation != null && !destinationLocation.isEmpty()) {
+            edtDestination.setText(destinationLocation);
+        }
+
+        // Clear the stored location data after use
+        LocationData.clear();
     }
 
     private void initViews(View view) {
         edtPickup = view.findViewById(R.id.edtPickup);
         edtDestination = view.findViewById(R.id.edtDestination);
+        pickupContainer = view.findViewById(R.id.pickupContainer);
+        destinationContainer = view.findViewById(R.id.destinationContainer);
 
         btnMotorbike = view.findViewById(R.id.btnMotorbike);
         btnCar = view.findViewById(R.id.btnCar);
@@ -217,6 +239,52 @@ public class BookingFragment extends Fragment {
                             + (selectedPromo.isEmpty() ? "" : "\nKM: " + selectedPromo),
                     Toast.LENGTH_LONG
             ).show();
+        });
+    }
+
+    private void openMapBooking() {
+        // Gọi openMapBooking từ HomeActivity
+        if (getActivity() instanceof vnuhcm.hcmus.movify.activities.HomeActivity) {
+            ((vnuhcm.hcmus.movify.activities.HomeActivity) getActivity()).openMapBooking();
+        }
+    }
+
+    private void setupPlacesAutocomplete() {
+        // Setup Places Autocomplete cho pickup
+        new PlacesAutocompleteHelper(requireContext(), edtPickup);
+
+        // Setup Places Autocomplete cho destination
+        new PlacesAutocompleteHelper(requireContext(), edtDestination);
+
+        // Add click listener to textboxes to open map
+        edtPickup.setOnClickListener(v -> {
+            openMapBooking();
+        });
+
+        edtDestination.setOnClickListener(v -> {
+            openMapBooking();
+        });
+
+        // Add click listener to containers to open map when clicking
+        pickupContainer.setOnClickListener(v -> {
+            openMapBooking();
+        });
+
+        destinationContainer.setOnClickListener(v -> {
+            openMapBooking();
+        });
+
+        // Add focus listeners as backup
+        edtPickup.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                openMapBooking();
+            }
+        });
+
+        edtDestination.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                openMapBooking();
+            }
         });
     }
 }

@@ -50,3 +50,7 @@ google-services.json
 # Temporary files
 *.tmp
 *.temp
+
+# Node backend
+backend/node_modules/
+backend/.env

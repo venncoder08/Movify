@@ -9,6 +9,7 @@ import vnuhcm.hcmus.movify.R;
 import vnuhcm.hcmus.movify.fragments.BookingFragment;
 import vnuhcm.hcmus.movify.fragments.BottomNavFragment;
 import vnuhcm.hcmus.movify.fragments.HistoryFragment;
+import vnuhcm.hcmus.movify.fragments.MapBookingFragment;
 import vnuhcm.hcmus.movify.fragments.MessageFragment;
 import vnuhcm.hcmus.movify.fragments.NotificationFragment;
 import vnuhcm.hcmus.movify.fragments.ProfileFragment;
@@ -58,5 +59,16 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
     @Override
     public void openMessage() {
         loadScreen(new MessageFragment(), BottomNavFragment.TAB_MESSAGE);
+    }
+
+    public void openMapBooking() {
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.contentContainer, new MapBookingFragment())
+                .addToBackStack(null)
+                .commit();
+
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.bottomNavContainer, BottomNavFragment.newInstance(BottomNavFragment.TAB_BOOKING))
+                .commit();
     }
 }

@@ -128,7 +128,7 @@
                             android:src="@drawable/ic_location"
                             app:tint="@color/primary" />
 
-                        <EditText
+                        <android.widget.AutoCompleteTextView
                             android:id="@+id/edtPickup"
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
@@ -139,7 +139,8 @@
                             android:inputType="text"
                             android:textColor="@color/text_secondary"
                             android:textColorHint="@color/text_hint"
-                            android:textSize="16sp" />
+                            android:textSize="16sp"
+                            android:dropDownHeight="200dp" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -159,7 +160,7 @@
                             android:src="@drawable/ic_map"
                             app:tint="@color/primary" />
 
-                        <EditText
+                        <android.widget.AutoCompleteTextView
                             android:id="@+id/edtDestination"
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
@@ -170,7 +171,8 @@
                             android:inputType="text"
                             android:textColor="@color/text_secondary"
                             android:textColorHint="@color/text_hint"
-                            android:textSize="16sp" />
+                            android:textSize="16sp"
+                            android:dropDownHeight="200dp" />
                     </LinearLayout>
                 </LinearLayout>
             </LinearLayout>

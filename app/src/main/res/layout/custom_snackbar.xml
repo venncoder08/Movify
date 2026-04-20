@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="horizontal"
     android:padding="12dp"
     android:background="@drawable/bg_toast"
@@ -19,7 +20,7 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:layout_gravity="center"
-            android:tint="@android:color/white"/>
+            app:tint="@android:color/white"/>
     </FrameLayout>
 
     <LinearLayout
@@ -52,7 +53,7 @@
         android:background="@android:color/transparent"
         android:scaleType="center"
         android:src="@drawable/ic_close"
-        android:tint="#888888"
+        app:tint="#888888"
         android:contentDescription="Close" />
 
 </LinearLayout>

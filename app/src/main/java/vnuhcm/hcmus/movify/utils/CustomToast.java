@@ -1,5 +1,6 @@
 package vnuhcm.hcmus.movify.utils;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.view.Gravity;
@@ -42,6 +43,7 @@ public class CustomToast {
         show(parent, context, Type.INFO, message);
     }
 
+    @SuppressLint("RestrictedApi")
     public static void show(View parent, Context context, Type type, String message) {
         Snackbar snackbar = Snackbar.make(parent, "", Snackbar.LENGTH_LONG);
         View snackbarView = snackbar.getView();
