@@ -1,6 +1,7 @@
 package vnuhcm.hcmus.movify.models;
 
 public class Notification {
+    private int id;
     private int iconResId;
     private String title;
     private String message;
@@ -9,9 +10,10 @@ public class Notification {
     private boolean isUnread;
     private boolean isWarning;
 
-    public Notification(int iconResId, String title, String message,
+    public Notification(int id, int iconResId, String title, String message,
                             String time, String category,
                             boolean isUnread, boolean isWarning) {
+        this.id = id;
         this.iconResId = iconResId;
         this.title = title;
         this.message = message;
@@ -19,6 +21,10 @@ public class Notification {
         this.category = category;
         this.isUnread = isUnread;
         this.isWarning = isWarning;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public int getIconResId() {

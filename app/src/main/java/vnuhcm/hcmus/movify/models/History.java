@@ -2,7 +2,8 @@ package vnuhcm.hcmus.movify.models;
 
 public class History {
     private int tripId;
-    private String status;
+    private String statusCode;
+    private String statusLabel;
     private String dateTime;
     private String pickupAddress;
     private String destinationAddress;
@@ -11,15 +12,18 @@ public class History {
     private String duration;
     private String distance;
     private String price;
+    private String ratingText;
     private int vehicleIconResId;
 
-    public History(int tripId, String status, String dateTime,
+    public History(int tripId, String statusCode, String statusLabel, String dateTime,
                        String pickupAddress, String destinationAddress,
                        String driverName, String driverPlate,
                        String duration, String distance, String price,
+                       String ratingText,
                        int vehicleIconResId) {
         this.tripId = tripId;
-        this.status = status;
+        this.statusCode = statusCode;
+        this.statusLabel = statusLabel;
         this.dateTime = dateTime;
         this.pickupAddress = pickupAddress;
         this.destinationAddress = destinationAddress;
@@ -28,6 +32,7 @@ public class History {
         this.duration = duration;
         this.distance = distance;
         this.price = price;
+        this.ratingText = ratingText;
         this.vehicleIconResId = vehicleIconResId;
     }
 
@@ -35,8 +40,12 @@ public class History {
         return tripId;
     }
 
-    public String getStatus() {
-        return status;
+    public String getStatusCode() {
+        return statusCode;
+    }
+
+    public String getStatusLabel() {
+        return statusLabel;
     }
 
     public String getDateTime() {
@@ -69,6 +78,10 @@ public class History {
 
     public String getPrice() {
         return price;
+    }
+
+    public String getRatingText() {
+        return ratingText;
     }
 
     public int getVehicleIconResId() {

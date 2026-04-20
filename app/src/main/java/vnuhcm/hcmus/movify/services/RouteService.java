@@ -38,7 +38,7 @@ public final class RouteService {
         JSONArray routePointsJson = root.optJSONArray("routePoints");
 
         if (pickupJson == null || destinationJson == null || routePointsJson == null) {
-            throw new IOException("Backend khong tra ve du lieu route hop le");
+            throw new IOException("Backend không trả về dữ liệu route hợp lệ");
         }
 
         List<LatLng> routePoints = new ArrayList<>();
