@@ -31,7 +31,19 @@
             android:exported="false" />
 
         <activity
+            android:name=".activities.auth.ForgotPasswordActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".activities.auth.RegisterActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.profile.PersonalInfoActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".activities.profile.BecomeDriverActivity"
             android:exported="false" />
 
         <activity

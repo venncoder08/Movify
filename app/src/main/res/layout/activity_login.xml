@@ -92,13 +92,6 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
-                    <CheckBox
-                        android:id="@+id/cbRemember"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/remember_login"
-                        android:textSize="13sp"/>
-
                     <Space
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -126,6 +119,53 @@
                     app:backgroundTint="@null"
                     app:cornerRadius="20dp"
                     app:rippleColor="#33FFFFFF"/>
+
+                <!-- Divider -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="12dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1"
+                        android:background="#DDDDDD"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/or"
+                        android:layout_marginHorizontal="12dp"
+                        android:textColor="#999999"
+                        android:textSize="12sp"/>
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1"
+                        android:background="#DDDDDD"/>
+                </LinearLayout>
+
+                <!-- Google Sign-In Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnGoogleSignIn"
+                    android:layout_width="match_parent"
+                    android:layout_height="54dp"
+                    android:text="@string/sign_in_with_google"
+                    android:textColor="@android:color/white"
+                    android:textStyle="bold"
+                    android:background="@drawable/bg_button"
+                    app:backgroundTint="@null"
+                    app:cornerRadius="20dp"
+                    app:iconPadding="12dp"
+                    app:iconGravity="textStart"
+                    app:icon="@drawable/ic_google"
+                    app:iconTint="@null"
+                    app:rippleColor="#F0F0F0"/>
 
                 <LinearLayout
                     android:layout_width="wrap_content"
