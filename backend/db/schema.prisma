@@ -82,6 +82,8 @@ model Account {
   notifications       Notification[]
   driverRequests      ToDriverRequest[]      @relation("DriverRequestOwner")
   reviewedRequests    ToDriverRequest[]      @relation("DriverRequestReviewer")
+  messagesSent        Message[]              @relation("MessageSender")
+  messagesReceived    Message[]              @relation("MessageRecipient")
 
   @@index([role], map: "idx_account_role")
   @@index([isActive], map: "idx_account_active")
@@ -198,4 +200,23 @@ model ToDriverRequest {
   @@index([status], map: "idx_todriverrequest_status")
   @@index([deletedAt], map: "idx_todriverrequest_deleted")
   @@map("ToDriverRequest")
+}
+
+model Message {
+  id          Int       @id @default(autoincrement()) @map("ID")
+  senderId    Int       @map("SenderID")
+  recipientId Int       @map("RecipientID")
+  content     String    @db.Text @map("Content")
+  isRead      Boolean   @default(false) @map("IsRead")
+  createdAt   DateTime  @default(now()) @db.Timestamptz(6) @map("CreatedAt")
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(6) @map("UpdatedAt")
+  deletedAt   DateTime? @db.Timestamptz(6) @map("DeletedAt")
+  sender      Account   @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient   Account   @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([senderId], map: "idx_message_sender")
+  @@index([recipientId], map: "idx_message_recipient")
+  @@index([isRead], map: "idx_message_read")
+  @@index([deletedAt], map: "idx_message_deleted")
+  @@map("Message")
 }

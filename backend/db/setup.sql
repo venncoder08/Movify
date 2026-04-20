@@ -126,6 +126,22 @@ CREATE TABLE ToDriverRequest (
 );
 
 -- ============================================================
+-- Table: Message
+-- Tin nhắn giữa người dùng và tài xế
+-- ============================================================
+DROP TABLE IF EXISTS Message CASCADE;
+CREATE TABLE Message (
+    ID          SERIAL PRIMARY KEY,
+    SenderID    INT NOT NULL REFERENCES Account(ID) ON DELETE CASCADE,
+    RecipientID INT NOT NULL REFERENCES Account(ID) ON DELETE CASCADE,
+    Content     TEXT NOT NULL,
+    IsRead      BOOLEAN      NOT NULL DEFAULT FALSE,
+    CreatedAt   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    UpdatedAt   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    DeletedAt   TIMESTAMPTZ
+);
+
+-- ============================================================
 -- Indexes
 -- ============================================================
 CREATE INDEX idx_account_email           ON Account(Email);
@@ -154,6 +170,11 @@ CREATE INDEX idx_todriverrequest_driver  ON ToDriverRequest(DriverID);
 CREATE INDEX idx_todriverrequest_admin   ON ToDriverRequest(AdminID);
 CREATE INDEX idx_todriverrequest_status  ON ToDriverRequest(Status);
 CREATE INDEX idx_todriverrequest_deleted ON ToDriverRequest(DeletedAt) WHERE DeletedAt IS NULL;
+
+CREATE INDEX idx_message_sender         ON Message(SenderID);
+CREATE INDEX idx_message_recipient      ON Message(RecipientID);
+CREATE INDEX idx_message_read           ON Message(IsRead);
+CREATE INDEX idx_message_deleted        ON Message(DeletedAt) WHERE DeletedAt IS NULL;
 
 CREATE INDEX idx_promotion_admin         ON Promotion(AdminID);
 CREATE INDEX idx_promotion_deleted       ON Promotion(DeletedAt) WHERE DeletedAt IS NULL;
@@ -197,4 +218,9 @@ CREATE TRIGGER set_updated_at_promotion
 DROP TRIGGER IF EXISTS set_updated_at_todriverrequest ON ToDriverRequest CASCADE;
 CREATE TRIGGER set_updated_at_todriverrequest
     BEFORE UPDATE ON ToDriverRequest
+    FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
+
+DROP TRIGGER IF EXISTS set_updated_at_message ON Message CASCADE;
+CREATE TRIGGER set_updated_at_message
+    BEFORE UPDATE ON Message
     FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();

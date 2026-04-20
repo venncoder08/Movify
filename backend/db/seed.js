@@ -228,6 +228,33 @@ async function seedDriverRequests(accountMap) {
   );
 }
 
+async function seedMessages(accountMap) {
+  await Promise.all(
+    mockData.messages.map(async (message) => {
+      const sender = accountMap.get(message.senderKey);
+      const recipient = accountMap.get(message.recipientKey);
+
+      await prisma.message.upsert({
+        where: { id: message.id },
+        update: {
+          content: message.content,
+          isRead: message.isRead,
+          senderId: sender.id,
+          recipientId: recipient.id,
+          deletedAt: null
+        },
+        create: {
+          id: message.id,
+          content: message.content,
+          isRead: message.isRead,
+          senderId: sender.id,
+          recipientId: recipient.id
+        }
+      });
+    })
+  );
+}
+
 async function getCounts() {
   const [
     accounts,
@@ -235,14 +262,16 @@ async function getCounts() {
     trips,
     ratings,
     notifications,
-    driverRequests
+    driverRequests,
+    messages
   ] = await prisma.$transaction([
     prisma.account.count(),
     prisma.promotion.count(),
     prisma.trip.count(),
     prisma.rating.count(),
     prisma.notification.count(),
-    prisma.toDriverRequest.count()
+    prisma.toDriverRequest.count(),
+    prisma.message.count()
   ]);
 
   return {
@@ -251,7 +280,8 @@ async function getCounts() {
     trips,
     ratings,
     notifications,
-    driverRequests
+    driverRequests,
+    messages
   };
 }
 
@@ -263,6 +293,7 @@ async function main() {
   await seedRatings(accountMap, tripMap);
   await seedNotifications(accountMap);
   await seedDriverRequests(accountMap);
+  await seedMessages(accountMap);
 
   const counts = await getCounts();
   console.log("Mock seed completed:", counts);

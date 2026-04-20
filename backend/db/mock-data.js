@@ -397,5 +397,55 @@ module.exports = {
       vehicleRegistration: "59-S3 555.66",
       status: "Pending"
     }
+  ],
+  messages: [
+    {
+      id: 900701,
+      senderKey: "rider",
+      recipientKey: "driver",
+      content: "Tài xế ơi, bạn còn bao lâu nữa đến nơi tôi?",
+      isRead: true,
+      createdAt: "2026-04-18T07:35:00+07:00"
+    },
+    {
+      id: 900702,
+      senderKey: "driver",
+      recipientKey: "rider",
+      content: "Dạ còn khoảng 5 phút nữa anh sẽ tới. Cảm ơn bạn đã chờ!",
+      isRead: true,
+      createdAt: "2026-04-18T07:36:00+07:00"
+    },
+    {
+      id: 900703,
+      senderKey: "user2",
+      recipientKey: "driver",
+      content: "Xin chào, có thể gọi cho tôi khi bạn tới gần nơi đón không?",
+      isRead: false,
+      createdAt: "2026-04-20T08:20:00+07:00"
+    },
+    {
+      id: 900704,
+      senderKey: "driver",
+      recipientKey: "user2",
+      content: "Chắc chắn rồi! Tôi sẽ gọi cho bạn khi tới nơi.",
+      isRead: false,
+      createdAt: "2026-04-20T08:21:00+07:00"
+    },
+    {
+      id: 900705,
+      senderKey: "user3",
+      recipientKey: "driver2",
+      content: "Chuyến đi tuyệt vời! Cảm ơn tài xế.",
+      isRead: true,
+      createdAt: "2026-04-19T14:30:00+07:00"
+    },
+    {
+      id: 900706,
+      senderKey: "driver2",
+      recipientKey: "user3",
+      content: "Cảm ơn bạn đã tin tưởng dịch vụ của tôi! Chúc bạn có một ngày tốt lành.",
+      isRead: true,
+      createdAt: "2026-04-19T14:31:00+07:00"
+    }
   ]
 };
