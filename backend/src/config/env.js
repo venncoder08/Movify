@@ -16,6 +16,8 @@ module.exports = {
   emailService: process.env.EMAIL_SERVICE || "gmail",
   emailUser: process.env.EMAIL_USER || "",
   emailPassword: process.env.EMAIL_PASSWORD || "",
+  emailHost: process.env.EMAIL_HOST || "smtp.gmail.com",
+  emailPort: Number(process.env.EMAIL_PORT || 587),
   emailFrom: process.env.EMAIL_FROM || process.env.EMAIL_USER || "noreply@movify.app",
   otpExpiration: Number(process.env.OTP_EXPIRATION || 600), // 10 minutes in seconds
   otpLength: Number(process.env.OTP_LENGTH || 6)

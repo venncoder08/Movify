@@ -21,9 +21,9 @@ function initializeTransporter() {
   } else {
     // Generic SMTP configuration
     transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT || 587,
-      secure: process.env.SMTP_SECURE === "true", // true for 465, false for 587
+      host: env.emailHost,
+      port: env.emailPort,
+      secure: false, // true for 465, false for 587
       auth: {
         user: env.emailUser,
         pass: env.emailPassword
