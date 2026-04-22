@@ -12,6 +12,9 @@ val localProperties = Properties().apply {
     }
 }
 
+// Backend URL
+val BACKEND_URL = "http://192.168.1.226:3000"
+
 android {
     namespace = "vnuhcm.hcmus.movify"
     compileSdk {
@@ -28,6 +31,26 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["googleMapsApiKey"] =
             localProperties.getProperty("googleMapsApiKey", "")
+    }
+
+    flavorDimensions += "environment"
+    productFlavors {
+        create("emulator") {
+            dimension = "environment"
+            manifestPlaceholders["backendUrl"] = BACKEND_URL
+        }
+        create("localhost") {
+            dimension = "environment"
+            manifestPlaceholders["backendUrl"] = BACKEND_URL
+        }
+        create("devServer") {
+            dimension = "environment"
+            manifestPlaceholders["backendUrl"] = BACKEND_URL
+        }
+        create("production") {
+            dimension = "environment"
+            manifestPlaceholders["backendUrl"] = BACKEND_URL
+        }
     }
 
     buildTypes {

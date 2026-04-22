@@ -24,7 +24,7 @@
 
         <meta-data
             android:name="com.movify.BACKEND_BASE_URL"
-            android:value="http://10.207.25.119:3000" />
+            android:value="${backendUrl}" />
 
         <activity
             android:name=".activities.auth.LoginActivity"
