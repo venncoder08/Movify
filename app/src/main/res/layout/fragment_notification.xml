@@ -27,7 +27,7 @@
             android:paddingTop="6dp"
             android:paddingEnd="12dp"
             android:paddingBottom="6dp"
-            android:text="3 mới"
+            android:text="@string/loading_dots"
             android:textColor="@android:color/white"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -83,7 +83,7 @@
         android:layout_below="@id/layoutHeader"
         android:gravity="center"
         android:padding="24dp"
-        android:text="Chưa có thông báo nào"
+        android:text="@string/loading_dots"
         android:textColor="@color/text_hint"
         android:textSize="16sp"
         android:visibility="gone" />

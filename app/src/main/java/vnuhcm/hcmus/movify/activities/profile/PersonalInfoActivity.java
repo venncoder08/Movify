@@ -16,18 +16,28 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import vnuhcm.hcmus.movify.R;
+import vnuhcm.hcmus.movify.fragments.BottomNavFragment;
 import vnuhcm.hcmus.movify.models.AccountProfile;
 import vnuhcm.hcmus.movify.services.AuthApiService;
 import vnuhcm.hcmus.movify.utils.RemoteImageLoader;
 
 public class PersonalInfoActivity extends AppCompatActivity {
 
+    public static final String EXTRA_ROLE_MODE = "extra_role_mode";
+
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private AuthApiService authApiService;
     private ExecutorService executorService;
+    private String roleMode = BottomNavFragment.ROLE_USER;
 
-    private ImageView ivAvatar;
+    private String currentFullName;
+    private String currentPhoneNumber;
+    private String currentGender;
+    private String currentDateOfBirth;
+    private String currentAvatar;
+
+    private ImageView ivAvatar;    
     private TextView tvFullNameValue;
     private TextView tvEmailValue;
     private TextView tvPhoneValue;
@@ -45,8 +55,13 @@ public class PersonalInfoActivity extends AppCompatActivity {
 
         authApiService = new AuthApiService(this);
         executorService = Executors.newSingleThreadExecutor();
+        roleMode = getIntent().getStringExtra(EXTRA_ROLE_MODE);
+        if (TextUtils.isEmpty(roleMode)) {
+            roleMode = BottomNavFragment.ROLE_USER;
+        }
 
         initViews();
+        applyRoleVisibility();
         loadProfile();
     }
 
@@ -80,12 +95,22 @@ public class PersonalInfoActivity extends AppCompatActivity {
         btnBecomeDriver = findViewById(R.id.btnBecomeDriver);
 
         ivBack.setOnClickListener(v -> finish());
-        btnEditProfile.setOnClickListener(v ->
-                Toast.makeText(this, R.string.profile_edit_feature_coming, Toast.LENGTH_SHORT).show()
-        );
+        btnEditProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(this, EditProfileActivity.class);
+            intent.putExtra(EditProfileActivity.EXTRA_FULL_NAME, currentFullName);
+            intent.putExtra(EditProfileActivity.EXTRA_PHONE_NUMBER, currentPhoneNumber);
+            intent.putExtra(EditProfileActivity.EXTRA_GENDER, currentGender);
+            intent.putExtra(EditProfileActivity.EXTRA_DATE_OF_BIRTH, currentDateOfBirth);
+            intent.putExtra(EditProfileActivity.EXTRA_AVATAR, currentAvatar);
+            startActivity(intent);
+        });
         btnBecomeDriver.setOnClickListener(v ->
                 startActivity(new Intent(this, BecomeDriverActivity.class))
         );
+    }
+
+    private void applyRoleVisibility() {
+        btnBecomeDriver.setVisibility(isAdminOrDriverMode() ? android.view.View.GONE : android.view.View.VISIBLE);
     }
 
     private void loadProfile() {
@@ -104,6 +129,12 @@ public class PersonalInfoActivity extends AppCompatActivity {
     }
 
     private void bindProfile(AccountProfile profile) {
+        currentFullName = profile.getFullName();
+        currentPhoneNumber = profile.getPhoneNumber();
+        currentGender = profile.getGender();
+        currentDateOfBirth = profile.getDateOfBirth();
+        currentAvatar = profile.getAvatar();
+
         RemoteImageLoader.loadAvatar(ivAvatar, profile.getAvatar());
         tvFullNameValue.setText(fallback(profile.getFullName(), buildDisplayName(profile.getEmail())));
         tvEmailValue.setText(fallback(profile.getEmail(), authApiService.getUserEmail()));
@@ -117,6 +148,12 @@ public class PersonalInfoActivity extends AppCompatActivity {
 
     private void renderFallback(Exception exception) {
         String cachedEmail = authApiService.getUserEmail();
+        currentFullName = null;
+        currentPhoneNumber = null;
+        currentGender = null;
+        currentDateOfBirth = null;
+        currentAvatar = null;
+
         RemoteImageLoader.loadAvatar(ivAvatar, null);
         tvFullNameValue.setText(buildDisplayName(cachedEmail));
         tvEmailValue.setText(fallback(cachedEmail, getString(R.string.not_updated)));
@@ -125,8 +162,12 @@ public class PersonalInfoActivity extends AppCompatActivity {
         tvDriverStatusValue.setText(getString(R.string.not_updated));
         tvGenderValue.setText(getString(R.string.not_updated));
         tvDateOfBirthValue.setText(getString(R.string.not_updated));
-        btnBecomeDriver.setEnabled(true);
-        btnBecomeDriver.setText(R.string.become_driver);
+        if (isAdminOrDriverMode()) {
+            btnBecomeDriver.setVisibility(android.view.View.GONE);
+        } else {
+            btnBecomeDriver.setEnabled(true);
+            btnBecomeDriver.setText(R.string.become_driver);
+        }
 
         String errorMessage = exception.getMessage();
         if (TextUtils.isEmpty(errorMessage)) {
@@ -182,9 +223,14 @@ public class PersonalInfoActivity extends AppCompatActivity {
     }
 
     private void updateBecomeDriverButton(AccountProfile profile) {
+        if (isAdminOrDriverMode() || isAdminOrDriverProfile(profile)) {
+            btnBecomeDriver.setVisibility(android.view.View.GONE);
+            return;
+        }
+
+        btnBecomeDriver.setVisibility(android.view.View.VISIBLE);
         if ("Driver".equalsIgnoreCase(profile.getRole()) || "Approved".equalsIgnoreCase(profile.getDriverStatus())) {
-            btnBecomeDriver.setEnabled(false);
-            btnBecomeDriver.setText(R.string.you_are_driver);
+            btnBecomeDriver.setVisibility(android.view.View.GONE);
             return;
         }
 
@@ -202,5 +248,16 @@ public class PersonalInfoActivity extends AppCompatActivity {
 
         btnBecomeDriver.setEnabled(true);
         btnBecomeDriver.setText(R.string.become_driver);
+    }
+
+    private boolean isAdminOrDriverMode() {
+        return BottomNavFragment.ROLE_ADMIN.equals(roleMode) || BottomNavFragment.ROLE_DRIVER.equals(roleMode);
+    }
+
+    private boolean isAdminOrDriverProfile(AccountProfile profile) {
+        String role = profile.getRole();
+        return (role != null && role.toLowerCase().contains("admin"))
+                || "Driver".equalsIgnoreCase(role)
+                || "Approved".equalsIgnoreCase(profile.getDriverStatus());
     }
 }

@@ -1,9 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="profile_title">Thông tin cá nhân</string>
-    <string name="user_phone">+84 123 456 789</string>
-    <string name="user_email">nguyenvana@email.com</string>
+    <string name="user_phone">Đang tải...</string>
+    <string name="user_email">Đang tải...</string>
     <string name="edit_profile">Chỉnh sửa hồ sơ</string>
+    <string name="edit_profile_title">Chỉnh sửa hồ sơ</string>
+    <string name="edit_profile_desc">Cập nhật tên, số điện thoại, giới tính và ngày sinh</string>
+    <string name="full_name_label">Họ và tên</string>
+    <string name="full_name_hint">Nhập họ và tên</string>
+    <string name="phone_number_label">Số điện thoại</string>
+    <string name="phone_number_hint">Nhập số điện thoại</string>
+    <string name="gender_label">Giới tính</string>
+    <string name="date_of_birth_label">Ngày sinh</string>
+    <string name="profile_select_date_hint">Chọn ngày sinh</string>
+    <string name="pick_date">Chọn ngày</string>
+    <string name="avatar_label">Ảnh đại diện</string>
+    <string name="change_avatar">Đổi ảnh đại diện</string>
+    <string name="save_changes">Lưu thay đổi</string>
+    <string name="cancel">Hủy</string>
+
+    <string-array name="profile_gender_options">
+        <item>Male</item>
+        <item>Female</item>
+        <item>Other</item>
+    </string-array>
 
     <string name="account_info">Thông tin tài khoản</string>
     <string name="settings">Cài đặt</string>

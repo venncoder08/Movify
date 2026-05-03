@@ -56,6 +56,7 @@ public class NotificationFragment extends Fragment {
         lvNotifications.setAdapter(adapter);
         lvNotifications.setEmptyView(tvEmptyState);
 
+        renderNotificationLoading();
         bindActions();
         loadNotifications();
 
@@ -104,6 +105,7 @@ public class NotificationFragment extends Fragment {
             return;
         }
 
+        tvEmptyState.setText("Chưa có thông báo nào");
         notificationList.clear();
         notificationList.addAll(feed.getNotifications());
         adapter.notifyDataSetChanged();
@@ -121,6 +123,13 @@ public class NotificationFragment extends Fragment {
         tvNewBadge.setText(count + " mới");
         tvMarkAllRead.setEnabled(count > 0);
         tvMarkAllRead.setAlpha(count > 0 ? 1f : 0.5f);
+    }
+
+    private void renderNotificationLoading() {
+        tvNewBadge.setText(R.string.loading_dots);
+        tvMarkAllRead.setEnabled(false);
+        tvMarkAllRead.setAlpha(0.5f);
+        tvEmptyState.setText(R.string.loading_dots);
     }
 
     private void markNotificationAsRead(Notification item) {
@@ -170,6 +179,7 @@ public class NotificationFragment extends Fragment {
             return;
         }
 
+        tvEmptyState.setText("Chưa có thông báo nào");
         notificationList.clear();
         adapter.notifyDataSetChanged();
         updateUnreadCount();

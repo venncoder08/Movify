@@ -113,6 +113,48 @@ public class AuthApiService {
     }
 
     /**
+     * Update user profile
+     *
+     * @param fullName User's full name
+     * @param phoneNumber User's phone number
+     * @param avatar URL of user's avatar image
+     * @param gender User's gender
+     * @param dateOfBirth in format "YYYY-MM-DD"
+     * @return Success message
+     */
+    public String updateProfile(String fullName,
+                                String phoneNumber,
+                                String avatar,
+                                String gender,
+                                String dateOfBirth) throws IOException, JSONException {
+        String endpoint = "/api/auth/me";
+        JSONObject requestBody = new JSONObject();
+
+        putIfPresent(requestBody, "fullName", fullName);
+        putIfPresent(requestBody, "phoneNumber", phoneNumber);
+        putIfPresent(requestBody, "avatar", avatar);
+        putIfPresent(requestBody, "gender", gender);
+        putIfPresent(requestBody, "dateOfBirth", dateOfBirth);
+
+        String response = executePatch(endpoint, requestBody, getJwtToken());
+        JSONObject responseObj = new JSONObject(response);
+
+        String newToken = extractToken(responseObj);
+        if (!newToken.isEmpty()) {
+            saveJwtToken(newToken);
+            Log.d(TAG, "Profile updated, new JWT saved");
+        }
+
+        return responseObj.optString("message", "Profile updated successfully");
+    }
+
+    private void putIfPresent(JSONObject requestBody, String key, String value) throws JSONException {
+        if (value != null && !value.trim().isEmpty()) {
+            requestBody.put(key, value.trim());
+        }
+    }
+
+    /**
      * Verify OTP and reset password
      *
      * @param email User email
@@ -260,6 +302,58 @@ public class AuthApiService {
             connection.setReadTimeout(10000);
 
             // Send request body
+            byte[] jsonBytes = requestBody.toString().getBytes(StandardCharsets.UTF_8);
+            connection.setDoOutput(true);
+            try (OutputStream os = connection.getOutputStream()) {
+                os.write(jsonBytes);
+                os.flush();
+            }
+
+            int responseCode = connection.getResponseCode();
+            String responseBody = readResponse(connection, responseCode);
+
+            if (responseCode < 200 || responseCode >= 300) {
+                throw new IOException(BackendApiService.extractErrorMessage(
+                        responseBody,
+                        "HTTP error " + responseCode
+                ));
+            }
+
+            return responseBody;
+
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    /**
+     * Execute PATCH request with optional JWT authentication
+     *
+     * @param endpoint API endpoint path
+     * @param requestBody JSON request body
+     * @param jwtToken JWT token (optional)
+     * @return Response body
+     */
+    private String executePatch(String endpoint, JSONObject requestBody, String jwtToken)
+            throws IOException {
+        URL url = new URL(BackendApiService.resolveBackendBaseUrl(context) + endpoint);
+        HttpURLConnection connection = null;
+
+        try {
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("PATCH");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Accept", "application/json");
+
+            if (jwtToken != null && !jwtToken.isEmpty()) {
+                connection.setRequestProperty("Authorization", "Bearer " + jwtToken);
+            }
+
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(10000);
+
             byte[] jsonBytes = requestBody.toString().getBytes(StandardCharsets.UTF_8);
             connection.setDoOutput(true);
             try (OutputStream os = connection.getOutputStream()) {

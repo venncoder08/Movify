@@ -9,15 +9,15 @@
         android:id="@+id/layoutHeader"
         android:layout_width="match_parent"
         android:layout_height="120dp"
-        android:orientation="vertical"
+        android:background="@drawable/bg_primary"
         android:gravity="center"
-        android:background="@drawable/bg_primary">
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Lịch sử"
+            android:text="@string/history_title_user"
             android:textColor="@android:color/white"
             android:textSize="28sp"
             android:textStyle="bold" />
@@ -36,35 +36,11 @@
             android:layout_height="wrap_content"
             android:background="#EFEFEF"
             android:fillViewport="true"
-            android:scrollbars="none"
             android:paddingStart="12dp"
             android:paddingTop="12dp"
             android:paddingEnd="12dp"
-            android:paddingBottom="12dp">
-
-            <!--            <LinearLayout-->
-            <!--                android:layout_width="wrap_content"-->
-            <!--                android:layout_height="wrap_content"-->
-            <!--                android:orientation="horizontal">-->
-
-            <!--                <TextView-->
-            <!--                    android:id="@+id/tabAll"-->
-            <!--                    style="@style/HistoryTabSelected"-->
-            <!--                    android:text="☰  Tất cả" />-->
-
-            <!--                <TextView-->
-            <!--                    android:id="@+id/tabDone"-->
-            <!--                    style="@style/HistoryTabNormal"-->
-            <!--                    android:layout_marginStart="8dp"-->
-            <!--                    android:text="✓  Hoàn thành" />-->
-
-            <!--                <TextView-->
-            <!--                    android:id="@+id/tabCancel"-->
-            <!--                    style="@style/HistoryTabNormal"-->
-            <!--                    android:layout_marginStart="8dp"-->
-            <!--                    android:text="⊗  Đã hủy" />-->
-            <!--            </LinearLayout>-->
-        </HorizontalScrollView>
+            android:paddingBottom="12dp"
+            android:scrollbars="none" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -92,15 +68,15 @@
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_toEndOf="@id/imgSummaryIcon"
                     android:layout_marginStart="12dp"
+                    android:layout_toEndOf="@id/imgSummaryIcon"
                     android:orientation="vertical">
 
                     <TextView
                         android:id="@+id/tvSummaryTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Tổng chi tiêu"
+                        android:text="@string/history_summary_spending"
                         android:textColor="#222222"
                         android:textSize="20sp"
                         android:textStyle="bold" />
@@ -110,7 +86,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Tháng này"
+                        android:text="@string/this_month"
                         android:textColor="#7E7E7E"
                         android:textSize="15sp" />
                 </LinearLayout>
@@ -121,7 +97,7 @@
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
-                    android:text="281.000đ"
+                    android:text="@string/loading_dots"
                     android:textColor="#0D56C5"
                     android:textSize="22sp"
                     android:textStyle="bold" />
@@ -147,9 +123,10 @@
                     android:orientation="vertical">
 
                     <TextView
+                        android:id="@+id/tvTotalTripsLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Số chuyến"
+                        android:text="@string/history_total_trips_user"
                         android:textColor="#7A7A7A"
                         android:textSize="14sp" />
 
@@ -158,7 +135,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="5"
+                        android:text="@string/loading_dots"
                         android:textColor="#222222"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -178,9 +155,10 @@
                     android:orientation="vertical">
 
                     <TextView
+                        android:id="@+id/tvTotalDistanceLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Quãng đường"
+                        android:text="@string/history_total_distance"
                         android:textColor="#7A7A7A"
                         android:textSize="14sp" />
 
@@ -189,7 +167,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="42.5 km"
+                        android:text="@string/loading_dots"
                         android:textColor="#222222"
                         android:textSize="18sp"
                         android:textStyle="bold" />
@@ -202,13 +180,13 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
+            android:clipToPadding="false"
             android:divider="@android:color/transparent"
             android:dividerHeight="12dp"
             android:paddingStart="12dp"
             android:paddingTop="12dp"
             android:paddingEnd="12dp"
             android:paddingBottom="110dp"
-            android:clipToPadding="false"
             android:scrollbars="none" />
 
         <TextView
@@ -218,11 +196,10 @@
             android:layout_weight="1"
             android:gravity="center"
             android:padding="24dp"
-            android:text="Chưa có chuyến đi nào"
+            android:text="@string/loading_dots"
             android:textColor="@color/text_hint"
             android:textSize="16sp"
             android:visibility="gone" />
-
     </LinearLayout>
 
 </RelativeLayout>

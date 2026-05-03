@@ -242,6 +242,76 @@ async function getProfile(req, res) {
 }
 
 /**
+ * Update current user profile
+ * PATCH /auth/me (protected)
+ */
+async function updateProfile(req, res) {
+  try {
+    const user = await prisma.account.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        email: true,
+        role: true
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        error: "Not Found",
+        message: "User not found"
+      });
+    }
+
+    const { 
+      avatar,
+      fullName,
+      phoneNumber,
+      gender,
+      dateOfBirth,
+    } = req.body;
+
+    if (phoneNumber) {
+      const existingPhoneUser = await prisma.account.findFirst({
+        where: {
+          phoneNumber,
+          id: { not: req.user.id }
+        }
+      });
+
+      if (existingPhoneUser) {
+        return res.status(400).json({
+          error: "Bad Request",
+          message: "Phone number is already in use"
+        });
+      }
+    }
+
+    const updatedUser = await prisma.account.update({
+      where: { id: req.user.id },
+      data: {
+        avatar,
+        fullName,
+        phoneNumber,
+        gender,
+        dateOfBirth
+      }
+    });
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      data: updatedUser
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: error.message
+    });
+  }
+}
+
+/**
  * Refresh token
  * POST /auth/refresh (protected)
  */
@@ -584,6 +654,7 @@ module.exports = {
   login,
   logout,
   getProfile,
+  updateProfile,
   refreshToken,
   forgotPassword,
   resetPassword,

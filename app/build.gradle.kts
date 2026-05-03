@@ -13,7 +13,7 @@ val localProperties = Properties().apply {
 }
 
 // Backend URL
-val BACKEND_URL = "http://192.168.1.226:3000"
+val BACKEND_URL = "http://192.168.1.14:3000"
 
 android {
     namespace = "vnuhcm.hcmus.movify"

@@ -2,12 +2,6 @@ package vnuhcm.hcmus.movify.fragments;
 
 import android.graphics.Color;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,10 +9,20 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
 import vnuhcm.hcmus.movify.R;
 
 public class BottomNavFragment extends Fragment {
 
+    private static final String ARG_CURRENT_TAB = "current_tab";
+    private static final String ARG_ROLE_MODE = "role_mode";
+
+    public static final String ROLE_USER = "user";
+    public static final String ROLE_DRIVER = "driver";
+    public static final String ROLE_ADMIN = "admin";
     public static final String TAB_PROFILE = "profile";
     public static final String TAB_NOTIFICATION = "notification";
     public static final String TAB_BOOKING = "booking";
@@ -26,6 +30,7 @@ public class BottomNavFragment extends Fragment {
     public static final String TAB_MESSAGE = "message";
 
     private String currentTab = TAB_BOOKING;
+    private String roleMode = ROLE_USER;
 
     private LinearLayout tabProfile, tabNotification, tabBooking, tabHistory, tabMessage;
     private ImageView iconProfile, iconNotification, iconBooking, iconHistory, iconMessage;
@@ -34,10 +39,11 @@ public class BottomNavFragment extends Fragment {
     public BottomNavFragment() {
     }
 
-    public static BottomNavFragment newInstance(String currentTab) {
+    public static BottomNavFragment newInstance(String currentTab, String roleMode) {
         BottomNavFragment fragment = new BottomNavFragment();
         Bundle args = new Bundle();
-        args.putString("current_tab", currentTab);
+        args.putString(ARG_CURRENT_TAB, currentTab);
+        args.putString(ARG_ROLE_MODE, roleMode);
         fragment.setArguments(args);
         return fragment;
     }
@@ -53,7 +59,8 @@ public class BottomNavFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         if (getArguments() != null) {
-            currentTab = getArguments().getString("current_tab", TAB_BOOKING);
+            currentTab = getArguments().getString(ARG_CURRENT_TAB, TAB_BOOKING);
+            roleMode = getArguments().getString(ARG_ROLE_MODE, ROLE_USER);
         }
 
         tabProfile = view.findViewById(R.id.tabProfile);
@@ -74,6 +81,8 @@ public class BottomNavFragment extends Fragment {
         tvHistory = view.findViewById(R.id.tvHistory);
         tvMessage = view.findViewById(R.id.tvMessage);
 
+        configureTabsForRole(view);
+        applyLabels();
         updateSelectedTab();
 
         tabProfile.setOnClickListener(v -> navigateTo(TAB_PROFILE));
@@ -84,6 +93,10 @@ public class BottomNavFragment extends Fragment {
     }
 
     private void navigateTo(String tab) {
+        if (isAdminMode() && TAB_MESSAGE.equals(tab)) {
+            return;
+        }
+
         MainNavigator navigator = (MainNavigator) requireActivity();
 
         switch (tab) {
@@ -103,6 +116,29 @@ public class BottomNavFragment extends Fragment {
                 navigator.openMessage();
                 break;
         }
+    }
+
+    private void applyLabels() {
+        tvProfile.setText(R.string.nav_profile);
+        tvNotification.setText(R.string.nav_notification);
+        if (isAdminMode()) {
+            tvBooking.setText(R.string.nav_admin_request);
+            tvHistory.setText(R.string.nav_admin_promotion);
+        } else {
+            tvBooking.setText(isDriverMode() ? R.string.nav_driver_booking : R.string.nav_booking);
+            tvHistory.setText(R.string.nav_history);
+        }
+        tvMessage.setText(R.string.nav_message);
+    }
+
+    private void configureTabsForRole(View rootView) {
+        if (rootView instanceof LinearLayout) {
+            ((LinearLayout) rootView).setWeightSum(isAdminMode() ? 4f : 5f);
+        }
+
+        tabMessage.setVisibility(isAdminMode() ? View.GONE : View.VISIBLE);
+        iconBooking.setImageResource(isAdminMode() ? R.drawable.ic_policy : R.drawable.ic_logo);
+        iconHistory.setImageResource(isAdminMode() ? R.drawable.ic_voucher : R.drawable.ic_history);
     }
 
     private void updateSelectedTab() {
@@ -136,6 +172,14 @@ public class BottomNavFragment extends Fragment {
     private void setSelected(ImageView icon, TextView textView, int color) {
         icon.setColorFilter(color);
         textView.setTextColor(color);
+    }
+
+    private boolean isDriverMode() {
+        return ROLE_DRIVER.equals(roleMode);
+    }
+
+    private boolean isAdminMode() {
+        return ROLE_ADMIN.equals(roleMode);
     }
 
     public interface MainNavigator {

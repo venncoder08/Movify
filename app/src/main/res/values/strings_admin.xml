@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_admin_request">Yêu cầu</string>
+    <string name="nav_admin_promotion">Khuyến mãi</string>
+
+    <string name="admin_request_title">Yêu cầu</string>
+    <string name="admin_request_subtitle">Tính năng yêu cầu đang được hoàn thiện.</string>
+    <string name="admin_request_pending">Chờ duyệt</string>
+    <string name="admin_request_approved">Đã duyệt</string>
+    <string name="admin_request_rejected">Từ chối</string>
+    <string name="admin_request_queue">Request mới</string>
+    <string name="admin_request_queue_hint">Dữ liệu mẫu để hoàn thiện UI trước khi nối backend quản trị.</string>
+    <string name="admin_request_status_pending">Đang chờ</string>
+    <string name="admin_request_status_review">Cần bổ sung</string>
+    <string name="admin_request_driver_one">Nguyễn Minh Khang</string>
+    <string name="admin_request_driver_two">Trần Hoàng Anh</string>
+    <string name="admin_request_meta_one">Xe máy • 59A1-248.72 • Gửi 09:24 hôm nay</string>
+    <string name="admin_request_meta_two">Ô tô • 51F-902.11 • Gửi hôm qua</string>
+    <string name="admin_request_docs_one">CCCD: 079201009912 • GPLX: B2-239900</string>
+    <string name="admin_request_docs_two">CCCD: 079198887421 • GPLX: A1-998812</string>
+    <string name="admin_request_approve">Duyệt</string>
+    <string name="admin_request_reject">Từ chối</string>
+
+    <string name="admin_promotion_title">Khuyến mãi</string>
+    <string name="admin_promotion_subtitle">Tính năng khuyến mãi đang được hoàn thiện.</string>
+    <string name="admin_promotion_active">Đang chạy</string>
+    <string name="admin_promotion_scheduled">Sắp chạy</string>
+    <string name="admin_promotion_used">Lượt dùng</string>
+    <string name="admin_promotion_create">Tạo promotion mới</string>
+    <string name="admin_promotion_create_hint">Thiết lập mã, ngân sách, thời gian và nhóm khách hàng áp dụng.</string>
+    <string name="admin_promotion_list">Promotion hiện có</string>
+    <string name="admin_promotion_code_one">MOVIFYAPRIL</string>
+    <string name="admin_promotion_code_two">WEEKEND50</string>
+    <string name="admin_promotion_desc_one">Giảm 25% tối đa 45.000đ cho chuyến đầu trong tháng.</string>
+    <string name="admin_promotion_desc_two">Giảm 50.000đ cho khách đặt xe cuối tuần.</string>
+    <string name="admin_promotion_meta_one">Đang chạy • 1.248 lượt dùng • Còn 12 ngày</string>
+    <string name="admin_promotion_meta_two">Lên lịch • Bắt đầu thứ Sáu • Ngân sách 8.000.000đ</string>
+    <string name="admin_promotion_edit">Chỉnh sửa</string>
+    <string name="admin_promotion_pause">Tạm dừng</string>
+</resources>

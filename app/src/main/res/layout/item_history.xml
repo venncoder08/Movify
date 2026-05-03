@@ -18,13 +18,13 @@
             android:background="@drawable/bg_input"
             android:padding="10dp"
             android:src="@drawable/ic_motorbike"
-            app:tint="@color/blue_soft"/>
+            app:tint="@color/blue_soft" />
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_toEndOf="@id/imgVehicle"
             android:layout_marginStart="12dp"
+            android:layout_toEndOf="@id/imgVehicle"
             android:orientation="vertical">
 
             <LinearLayout
@@ -36,7 +36,7 @@
                     android:id="@+id/tvTripId"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="#12345"
+                    android:text="@string/loading_dots"
                     android:textColor="#222222"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -51,7 +51,7 @@
                     android:paddingTop="3dp"
                     android:paddingEnd="8dp"
                     android:paddingBottom="3dp"
-                    android:text="Hoàn thành"
+                    android:text="@string/loading_dots"
                     android:textColor="#2E7D32"
                     android:textSize="12sp"
                     android:textStyle="bold" />
@@ -62,7 +62,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="15/03/2024 • 14:30"
+                android:text="@string/loading_dots"
                 android:textColor="#8A8A8A"
                 android:textSize="13sp" />
         </LinearLayout>
@@ -71,14 +71,23 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:orientation="vertical"
-            android:gravity="end">
+            android:gravity="end"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvAmountLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/history_amount_label_user"
+                android:textColor="#8A8A8A"
+                android:textSize="12sp" />
 
             <TextView
                 android:id="@+id/tvPrice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="45.000đ"
+                android:layout_marginTop="4dp"
+                android:text="@string/loading_dots"
                 android:textColor="#0D56C5"
                 android:textSize="24sp"
                 android:textStyle="bold" />
@@ -88,7 +97,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="★ 4.8"
+                android:text="@string/loading_dots"
                 android:textColor="#F4B400"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -102,9 +111,10 @@
         android:orientation="vertical">
 
         <TextView
+            android:id="@+id/tvPickupLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Điểm đón"
+            android:text="@string/history_pickup_label_user"
             android:textColor="#8A8A8A"
             android:textSize="13sp" />
 
@@ -113,16 +123,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Số 123 Nguyễn Huệ, Q.1"
+            android:text="@string/loading_dots"
             android:textColor="#222222"
             android:textSize="15sp"
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/tvDestinationLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="Điểm đến"
+            android:text="@string/history_destination_label_user"
             android:textColor="#8A8A8A"
             android:textSize="13sp" />
 
@@ -131,7 +142,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Số 456 Lê Lợi, Q.3"
+            android:text="@string/loading_dots"
             android:textColor="#222222"
             android:textSize="15sp"
             android:textStyle="bold" />
@@ -155,7 +166,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Nguyễn Văn A • 29A-12345"
+            android:text="@string/loading_dots"
             android:textColor="#6E6E6E"
             android:textSize="14sp" />
 
@@ -163,7 +174,7 @@
             android:id="@+id/tvDuration"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="15 phút"
+            android:text="@string/loading_dots"
             android:textColor="#6E6E6E"
             android:textSize="14sp" />
 
@@ -172,7 +183,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
-            android:text="5.2 km"
+            android:text="@string/loading_dots"
             android:textColor="#6E6E6E"
             android:textSize="14sp" />
     </LinearLayout>

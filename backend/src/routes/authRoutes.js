@@ -4,6 +4,7 @@ const {
   login,
   logout,
   getProfile,
+  updateProfile,
   refreshToken,
   forgotPassword,
   resetPassword,
@@ -14,6 +15,7 @@ const { validateRequest } = require("../middlewares/validateRequest");
 const {
   registerSchema,
   loginSchema,
+  profileUpdateSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   googleSignInSchema
@@ -34,6 +36,7 @@ router.post("/reset-password", validateRequest(resetPasswordSchema), resetPasswo
  * Protected Routes (require authentication)
  */
 router.get("/me", authMiddleware, getProfile);
+router.patch("/me", authMiddleware, validateRequest(profileUpdateSchema), updateProfile);
 router.post("/refresh", authMiddleware, refreshToken);
 router.post("/logout", authMiddleware, logout);
 

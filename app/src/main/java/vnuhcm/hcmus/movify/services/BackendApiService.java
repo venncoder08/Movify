@@ -25,7 +25,7 @@ import vnuhcm.hcmus.movify.R;
 class BackendApiService {
 
     static final String BACKEND_BASE_URL_META_DATA = "com.movify.BACKEND_BASE_URL";
-    static final String DEFAULT_BACKEND_BASE_URL = "http://10.0.2.2:3000";
+    static final String DEFAULT_BACKEND_BASE_URL = "http://192.168.1.226:3000";
 
     private BackendApiService() {
     }
@@ -116,6 +116,7 @@ class BackendApiService {
                 path,
                 queryParams == null ? Collections.emptyMap() : queryParams
         );
+
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) new URL(requestUrl).openConnection();

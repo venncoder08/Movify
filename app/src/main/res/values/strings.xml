@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Movify</string>
     <string name="welcome_back">Chào mừng trở lại,</string>
-    <string name="user_name">Nguyễn Văn A</string>
+    <string name="user_name">Đang tải...</string>
 
     <string name="pickup_hint">Nhập điểm đón</string>
     <string name="destination_hint">Nhập điểm đến</string>
@@ -22,14 +22,23 @@
 
     <string name="find_driver">Tìm kiếm tài xế</string>
 
+    <string name="nav_profile">Thông tin</string>
+    <string name="nav_notification">Thông báo</string>
+    <string name="nav_booking">Đặt xe</string>
+    <string name="nav_history">Lịch sử</string>
+    <string name="nav_message">Tin nhắn</string>
+
     <string name="menu_home">Trang chủ</string>
     <string name="menu_activity">Hoạt động</string>
     <string name="menu_notification">Thông báo</string>
     <string name="menu_account">Tài khoản</string>
-<!-- TODO: Remove or change this placeholder text -->
+
+    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="message_title">Tin nhắn</string>
     <string name="message_placeholder">Tính năng nhắn tin đang được hoàn thiện.</string>
+    <string name="home_loading_title">Đang tải dữ liệu</string>
+    <string name="home_loading_subtitle">Movify đang chuẩn bị giao diện phù hợp với tài khoản của bạn.</string>
 
     <!-- Feature Coming Soon Messages -->
     <string name="payment_feature_coming">Tính năng thanh toán đang hoàn thiện</string>

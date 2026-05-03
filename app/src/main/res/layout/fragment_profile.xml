@@ -68,7 +68,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="@string/user_name"
+                    android:text="@string/loading_dots"
                     android:textColor="@color/text_secondary"
                     android:textSize="20sp"
                     android:textStyle="bold" />
@@ -78,7 +78,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="@string/user_phone"
+                    android:text="@string/loading_dots"
                     android:textColor="@color/text_hint"
                     android:textSize="16sp" />
 
@@ -87,7 +87,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="@string/user_email"
+                    android:text="@string/loading_dots"
                     android:textColor="@color/text_hint"
                     android:textSize="16sp" />
 
@@ -118,6 +118,7 @@
                     layout="@layout/item_arrow" />
 
                 <View
+                    android:id="@+id/dividerAccountInfo"
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:background="@color/gray" />
@@ -152,6 +153,7 @@
                     layout="@layout/item_switch" />
 
                 <View
+                    android:id="@+id/dividerLocation"
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:background="@color/gray" />

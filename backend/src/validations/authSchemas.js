@@ -23,6 +23,19 @@ const loginSchema = z.object({
   })
 });
 
+// Profile update schema
+const profileUpdateSchema = z.object({
+  body: z.object({
+    fullName: z.string().min(2, "Full name must be at least 2 characters").max(100, "Full name must be at most 100 characters").optional(),
+    phoneNumber: z.string().min(10, "Phone number must be at least 10 digits").max(15, "Phone number must be at most 15 digits").optional(),
+    avatar: z.string().url("Invalid avatar URL").optional(),
+    gender: z.enum(["Male", "Female", "Other"]).optional(),
+    dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date of birth").optional()
+  }).refine((data) => Object.values(data).some((value) => value !== undefined), {
+    message: "At least one field must be provided"
+  })
+});
+
 // Forgot password schema
 const forgotPasswordSchema = z.object({
   body: z.object({
@@ -53,6 +66,7 @@ const googleSignInSchema = z.object({
 module.exports = {
   registerSchema,
   loginSchema,
+  profileUpdateSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   googleSignInSchema

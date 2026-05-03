@@ -30,6 +30,8 @@ import vnuhcm.hcmus.movify.utils.RemoteImageLoader;
 
 public class ProfileFragment extends Fragment {
 
+    private static final String ARG_ROLE_MODE = "role_mode";
+
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private TextView tvUserName;
@@ -41,13 +43,24 @@ public class ProfileFragment extends Fragment {
     private View itemPaymentMethod;
     private View itemNotification;
     private View itemLocation;
+    private View dividerAccountInfo;
+    private View dividerLocation;
 
     private Button btnLogout;
 
     private AuthApiService authApiService;
     private ExecutorService profileExecutor;
+    private String roleMode = BottomNavFragment.ROLE_USER;
 
     public ProfileFragment() {
+    }
+
+    public static ProfileFragment newInstance(String roleMode) {
+        ProfileFragment fragment = new ProfileFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_ROLE_MODE, roleMode);
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
@@ -62,11 +75,22 @@ public class ProfileFragment extends Fragment {
 
         authApiService = new AuthApiService(requireContext());
         profileExecutor = Executors.newSingleThreadExecutor();
+        if (getArguments() != null) {
+            roleMode = getArguments().getString(ARG_ROLE_MODE, BottomNavFragment.ROLE_USER);
+        }
 
         initViews(view);
+        applyRoleVisibility();
         setupAccountInfo();
         setupSettings();
         setupActions();
+        renderProfileLoading();
+        loadProfile();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
         loadProfile();
     }
 
@@ -86,13 +110,25 @@ public class ProfileFragment extends Fragment {
         tvPhone = view.findViewById(R.id.tvPhone);
         tvEmail = view.findViewById(R.id.tvEmail);
         ivAvatar = view.findViewById(R.id.ivAvatar);
-
         itemPersonalInfo = view.findViewById(R.id.itemPersonalInfo);
         itemPaymentMethod = view.findViewById(R.id.itemPaymentMethod);
         itemNotification = view.findViewById(R.id.itemNotification);
         itemLocation = view.findViewById(R.id.itemLocation);
+        dividerAccountInfo = view.findViewById(R.id.dividerAccountInfo);
+        dividerLocation = view.findViewById(R.id.dividerLocation);
 
         btnLogout = view.findViewById(R.id.btnLogout);
+    }
+
+    private void applyRoleVisibility() {
+        if (!isAdminMode()) {
+            return;
+        }
+
+        itemPaymentMethod.setVisibility(View.GONE);
+        itemLocation.setVisibility(View.GONE);
+        dividerAccountInfo.setVisibility(View.GONE);
+        dividerLocation.setVisibility(View.GONE);
     }
 
     private void setupAccountInfo() {
@@ -103,21 +139,26 @@ public class ProfileFragment extends Fragment {
                 getString(R.string.loading_account_info)
         );
 
-        setupArrowItem(
-                itemPaymentMethod,
-                R.drawable.ic_wallet,
-                getString(R.string.payment_method_label),
-                getString(R.string.bank_transfer_desc)
-        );
+        if (!isAdminMode()) {
+            setupArrowItem(
+                    itemPaymentMethod,
+                    R.drawable.ic_wallet,
+                    getString(R.string.payment_method_label),
+                    getString(R.string.bank_transfer_desc)
+            );
+        }
 
         itemPersonalInfo.setOnClickListener(v -> {
             Intent intent = new Intent(requireContext(), PersonalInfoActivity.class);
+            intent.putExtra(PersonalInfoActivity.EXTRA_ROLE_MODE, roleMode);
             startActivity(intent);
         });
 
-        itemPaymentMethod.setOnClickListener(v ->
-                Toast.makeText(requireContext(), R.string.payment_feature_coming, Toast.LENGTH_SHORT).show()
-        );
+        if (!isAdminMode()) {
+            itemPaymentMethod.setOnClickListener(v ->
+                    Toast.makeText(requireContext(), R.string.payment_feature_coming, Toast.LENGTH_SHORT).show()
+            );
+        }
     }
 
     private void setupSettings() {
@@ -129,13 +170,15 @@ public class ProfileFragment extends Fragment {
                 true
         );
 
-        setupSwitchItem(
-                itemLocation,
-                R.drawable.ic_location,
-                getString(R.string.location_title),
-                getString(R.string.location_permission_label),
-                true
-        );
+        if (!isAdminMode()) {
+            setupSwitchItem(
+                    itemLocation,
+                    R.drawable.ic_location,
+                    getString(R.string.location_title),
+                    getString(R.string.location_permission_label),
+                    true
+            );
+        }
     }
 
     private void setupActions() {
@@ -155,6 +198,20 @@ public class ProfileFragment extends Fragment {
                 mainHandler.post(() -> handleProfileError(exception));
             }
         });
+    }
+
+    private void renderProfileLoading() {
+        tvUserName.setText(R.string.loading_dots);
+        tvPhone.setText(R.string.loading_dots);
+        tvEmail.setText(R.string.loading_dots);
+        RemoteImageLoader.loadAvatar(ivAvatar, null);
+
+        setupArrowItem(
+                itemPersonalInfo,
+                R.drawable.ic_user,
+                getString(R.string.personal_info_title),
+                getString(R.string.loading_account_info)
+        );
     }
 
     private void bindProfile(@NonNull AccountProfile profile) {
@@ -286,6 +343,10 @@ public class ProfileFragment extends Fragment {
 
     private String fallbackValue(String value, String fallback) {
         return TextUtils.isEmpty(value) ? fallback : value;
+    }
+
+    private boolean isAdminMode() {
+        return BottomNavFragment.ROLE_ADMIN.equals(roleMode);
     }
 
     private void setupArrowItem(View itemView, int iconRes, String title, String subtitle) {

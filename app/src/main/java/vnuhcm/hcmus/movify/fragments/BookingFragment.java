@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.view.Gravity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,6 +40,7 @@ import vnuhcm.hcmus.movify.utils.PlacesAutocompleteHelper;
 
 public class BookingFragment extends Fragment {
 
+    private static final String ARG_IS_DRIVER_MODE = "is_driver_mode";
     private static final String TAG = "BookingFragment";
     private static final String VEHICLE_MOTORBIKE = "motorbike";
     private static final String VEHICLE_CAR = "car";
@@ -50,14 +52,20 @@ public class BookingFragment extends Fragment {
 
     private AutoCompleteTextView edtPickup;
     private AutoCompleteTextView edtDestination;
+    private View headerLayout;
+    private LinearLayout bookingContentRoot;
+    private LinearLayout locationContainer;
     private LinearLayout pickupContainer;
     private LinearLayout destinationContainer;
 
+    private LinearLayout vehicleContainer;
     private LinearLayout btnMotorbike;
     private LinearLayout btnCar;
     private LinearLayout btnCash;
     private LinearLayout btnBankTransfer;
     private LinearLayout btnSearchDriver;
+    private LinearLayout promoContainer;
+    private LinearLayout driverModeContainer;
     private FrameLayout iconMotorbike;
     private FrameLayout iconCar;
     private FrameLayout iconCash;
@@ -66,24 +74,38 @@ public class BookingFragment extends Fragment {
     private ImageView ivCar;
     private ImageView ivCash;
     private ImageView ivBankTransfer;
+    private ImageView ivQr;
     private TextView tvBikeTitle;
     private TextView tvBikeDesc;
     private TextView tvCarTitle;
     private TextView tvCarDesc;
     private TextView tvCash;
     private TextView tvBankTransfer;
+    private TextView tvWelcome;
     private TextView tvHeaderUserName;
+    private TextView tvChooseVehicle;
+    private TextView tvPaymentTitle;
+    private TextView tvPromoTitle;
     private RecyclerView rvPromotions;
 
     private PromotionAdapter promotionAdapter;
     private ExecutorService promotionExecutor;
     private AuthApiService authApiService;
 
+    private boolean isDriverMode;
     private String selectedPromo = "";
     private String selectedVehicle = VEHICLE_MOTORBIKE;
     private String selectedPayment = PAYMENT_CASH;
 
     public BookingFragment() {
+    }
+
+    public static BookingFragment newInstance(boolean isDriverMode) {
+        BookingFragment fragment = new BookingFragment();
+        Bundle args = new Bundle();
+        args.putBoolean(ARG_IS_DRIVER_MODE, isDriverMode);
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
@@ -96,24 +118,34 @@ public class BookingFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        if (getArguments() != null) {
+            isDriverMode = getArguments().getBoolean(ARG_IS_DRIVER_MODE, false);
+        }
+
         promotionExecutor = Executors.newSingleThreadExecutor();
         authApiService = new AuthApiService(requireContext());
         initViews(view);
+        renderHeaderLoading();
 
         String pickupLocation = LocationData.getPickupLocation();
         String destinationLocation = LocationData.getDestinationLocation();
 
-        setupVehicleButtons();
-        setupPaymentButtons();
         loadHeaderProfile();
-        setupPromotions();
-        setupSearchDriverButton();
-        setupPlacesAutocomplete();
 
-        if (pickupLocation != null && !pickupLocation.isEmpty()) {
+        if (isDriverMode) {
+            applyDriverMode();
+        } else {
+            setupVehicleButtons();
+            setupPaymentButtons();
+            setupPromotions();
+            setupSearchDriverButton();
+            setupPlacesAutocomplete();
+        }
+
+        if (!isDriverMode && pickupLocation != null && !pickupLocation.isEmpty()) {
             edtPickup.setText(pickupLocation);
         }
-        if (destinationLocation != null && !destinationLocation.isEmpty()) {
+        if (!isDriverMode && destinationLocation != null && !destinationLocation.isEmpty()) {
             edtDestination.setText(destinationLocation);
         }
 
@@ -134,14 +166,20 @@ public class BookingFragment extends Fragment {
     private void initViews(View view) {
         edtPickup = view.findViewById(R.id.edtPickup);
         edtDestination = view.findViewById(R.id.edtDestination);
+        headerLayout = view.findViewById(R.id.headerLayout);
+        bookingContentRoot = view.findViewById(R.id.bookingContentRoot);
+        locationContainer = view.findViewById(R.id.locationContainer);
         pickupContainer = view.findViewById(R.id.pickupContainer);
         destinationContainer = view.findViewById(R.id.destinationContainer);
 
+        vehicleContainer = view.findViewById(R.id.vehicleContainer);
         btnMotorbike = view.findViewById(R.id.btnMotorbike);
         btnCar = view.findViewById(R.id.btnCar);
         btnCash = view.findViewById(R.id.btnCash);
         btnBankTransfer = view.findViewById(R.id.btnBankTransfer);
         btnSearchDriver = view.findViewById(R.id.btnSearchDriver);
+        promoContainer = view.findViewById(R.id.promoContainer);
+        driverModeContainer = view.findViewById(R.id.driverModeContainer);
 
         iconMotorbike = view.findViewById(R.id.iconMotorbike);
         iconCar = view.findViewById(R.id.iconCar);
@@ -152,6 +190,7 @@ public class BookingFragment extends Fragment {
         ivCar = view.findViewById(R.id.ivCar);
         ivCash = view.findViewById(R.id.ivCash);
         ivBankTransfer = view.findViewById(R.id.ivBankTransfer);
+        ivQr = view.findViewById(R.id.ivQr);
 
         tvBikeTitle = view.findViewById(R.id.tvBikeTitle);
         tvBikeDesc = view.findViewById(R.id.tvBikeDesc);
@@ -159,7 +198,11 @@ public class BookingFragment extends Fragment {
         tvCarDesc = view.findViewById(R.id.tvCarDesc);
         tvCash = view.findViewById(R.id.tvCash);
         tvBankTransfer = view.findViewById(R.id.tvBankTransfer);
+        tvWelcome = view.findViewById(R.id.tvWelcome);
         tvHeaderUserName = view.findViewById(R.id.tvUserName);
+        tvChooseVehicle = view.findViewById(R.id.tvChooseVehicle);
+        tvPaymentTitle = view.findViewById(R.id.tvPaymentTitle);
+        tvPromoTitle = view.findViewById(R.id.tvPromoTitle);
 
         rvPromotions = view.findViewById(R.id.rvPromotions);
     }
@@ -178,6 +221,10 @@ public class BookingFragment extends Fragment {
                 mainHandler.post(this::renderHeaderFallback);
             }
         });
+    }
+
+    private void renderHeaderLoading() {
+        tvHeaderUserName.setText(R.string.loading_dots);
     }
 
     private void renderHeaderProfile(@NonNull AccountProfile profile) {
@@ -199,6 +246,30 @@ public class BookingFragment extends Fragment {
         }
 
         tvHeaderUserName.setText(buildDisplayName(authApiService.getUserEmail()));
+    }
+
+    private void applyDriverMode() {
+        tvWelcome.setText(R.string.driver_welcome);
+        ivQr.setVisibility(View.GONE);
+        setVisible(headerLayout, false);
+        bookingContentRoot.setGravity(Gravity.CENTER);
+
+        setVisible(driverModeContainer, true);
+        setVisible(locationContainer, false);
+        setVisible(tvChooseVehicle, false);
+        setVisible(vehicleContainer, false);
+        setVisible(tvPaymentTitle, false);
+        setVisible(btnCash, false);
+        setVisible(btnBankTransfer, false);
+        setVisible(tvPromoTitle, false);
+        setVisible(promoContainer, false);
+        setVisible(btnSearchDriver, false);
+    }
+
+    private void setVisible(View view, boolean visible) {
+        if (view != null) {
+            view.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
     }
 
     private String buildDisplayName(String email) {

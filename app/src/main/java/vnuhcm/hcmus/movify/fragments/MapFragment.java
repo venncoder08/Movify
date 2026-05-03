@@ -49,7 +49,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Thiết lập vị trí mặc định (Thành phố Hồ Chí Minh)
+        // Thiết lập vị trí mặc định
         LatLng hcmc = new LatLng(10.8231, 106.6297);
         mMap.addMarker(new MarkerOptions().position(hcmc).title("Thành phố Hồ Chí Minh"));
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(hcmc, 12f));

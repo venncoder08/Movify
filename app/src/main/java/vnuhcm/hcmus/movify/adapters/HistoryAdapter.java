@@ -19,10 +19,12 @@ public class HistoryAdapter extends BaseAdapter {
 
     private final Context context;
     private final List<History> historyList;
+    private final boolean isDriverMode;
 
-    public HistoryAdapter(Context context, List<History> historyList) {
+    public HistoryAdapter(Context context, List<History> historyList, boolean isDriverMode) {
         this.context = context;
         this.historyList = historyList;
+        this.isDriverMode = isDriverMode;
     }
 
     @Override
@@ -45,9 +47,12 @@ public class HistoryAdapter extends BaseAdapter {
         TextView tvTripId;
         TextView tvStatus;
         TextView tvDateTime;
+        TextView tvAmountLabel;
         TextView tvPrice;
         TextView tvRating;
+        TextView tvPickupLabel;
         TextView tvPickupAddress;
+        TextView tvDestinationLabel;
         TextView tvDestinationAddress;
         TextView tvDriverInfo;
         TextView tvDuration;
@@ -65,9 +70,12 @@ public class HistoryAdapter extends BaseAdapter {
             holder.tvTripId = convertView.findViewById(R.id.tvTripId);
             holder.tvStatus = convertView.findViewById(R.id.tvStatus);
             holder.tvDateTime = convertView.findViewById(R.id.tvDateTime);
+            holder.tvAmountLabel = convertView.findViewById(R.id.tvAmountLabel);
             holder.tvPrice = convertView.findViewById(R.id.tvPrice);
             holder.tvRating = convertView.findViewById(R.id.tvRating);
+            holder.tvPickupLabel = convertView.findViewById(R.id.tvPickupLabel);
             holder.tvPickupAddress = convertView.findViewById(R.id.tvPickupAddress);
+            holder.tvDestinationLabel = convertView.findViewById(R.id.tvDestinationLabel);
             holder.tvDestinationAddress = convertView.findViewById(R.id.tvDestinationAddress);
             holder.tvDriverInfo = convertView.findViewById(R.id.tvDriverInfo);
             holder.tvDuration = convertView.findViewById(R.id.tvDuration);
@@ -84,10 +92,19 @@ public class HistoryAdapter extends BaseAdapter {
         holder.tvTripId.setText("#" + item.getTripId());
         holder.tvStatus.setText(item.getStatusLabel());
         holder.tvDateTime.setText(item.getDateTime());
+        holder.tvAmountLabel.setText(isDriverMode
+                ? R.string.history_amount_label_driver
+                : R.string.history_amount_label_user);
         holder.tvPrice.setText(item.getPrice());
+        holder.tvPickupLabel.setText(isDriverMode
+                ? R.string.history_pickup_label_driver
+                : R.string.history_pickup_label_user);
         holder.tvPickupAddress.setText(item.getPickupAddress());
+        holder.tvDestinationLabel.setText(isDriverMode
+                ? R.string.history_destination_label_driver
+                : R.string.history_destination_label_user);
         holder.tvDestinationAddress.setText(item.getDestinationAddress());
-        holder.tvDriverInfo.setText(item.getDriverName() + " | " + item.getDriverPlate());
+        holder.tvDriverInfo.setText(buildInfoLine(item));
         holder.tvDuration.setText(item.getDuration());
         holder.tvDistance.setText(item.getDistance());
 
@@ -110,5 +127,18 @@ public class HistoryAdapter extends BaseAdapter {
         }
 
         return convertView;
+    }
+
+    private String buildInfoLine(History item) {
+        if (!isDriverMode) {
+            return item.getDriverName() + " | " + item.getDriverPlate();
+        }
+
+        String plate = item.getDriverPlate();
+        if (plate == null || plate.trim().isEmpty()) {
+            plate = context.getString(R.string.not_updated);
+        }
+
+        return context.getString(R.string.history_vehicle_info, plate);
     }
 }
