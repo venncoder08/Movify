@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Primary -->
+    <color name="primary">#1A56DB</color>
+    <color name="primary_dark">#0D47A1</color>
+    <color name="primary_start">#0B56D4</color>
+    <color name="primary_end">#032B6A</color>
+
+    <!-- Background -->
+    <color name="bg_dark">#2B2B2B</color>
+    <color name="bg_light">#FFFFFF</color>
+
+    <!-- Text -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#1A1A1A</color>
+    <color name="text_hint">#666666</color>
+    <color name="text_link">#1A56DB</color>
+
+    <!-- Input -->
+    <color name="input_bg">#F3F3F3</color>
+    <color name="input_stroke">#DDDDDD</color>
+
+    <!-- Others -->
+    <color name="white">#FFFFFF</color>
+    <color name="light_gray_line">#D9D9D9</color>
+    <color name="blue_soft">#2D6FE5</color>
+    <color name="gray">#E4E4E4</color>
+    <color name="ripple_light">#40FFFFFF</color>
+    <color name="green">#4CAF50</color>
+
+</resources>

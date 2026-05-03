@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Login -->
+    <string name="login">Đăng nhập</string>
+    <string name="email">Email</string>
+    <string name="email_input">Nhập địa chỉ email</string>
+    <string name="password">Mật khẩu</string>
+    <string name="password_input">Nhập mật khẩu</string>
+    <string name="remember_login">Ghi nhớ đăng nhập</string>
+    <string name="forgot_password">Quên mật khẩu?</string>
+    <string name="no_account">Không có tài khoản?</string>
+    <string name="or">hoặc</string>
+    <string name="sign_in_with_google">Đăng nhập bằng Google</string>
+    <string name="google_sign_in_failed">Đăng nhập Google thất bại</string>
+    <string name="auth_failed">Xác thực thất bại</string>
+    <string name="fill_all_fields">Vui lòng điền tất cả các trường</string>
+
+    <!-- Register -->
+    <string name="register">Đăng ký</string>
+    <string name="confirm_password">Xác nhận mật khẩu</string>
+    <string name="confirm_password_input">Nhập lại mật khẩu</string>
+    <string name="verify_code">Mã xác thực</string>
+    <string name="verify_code_input">Nhập mã xác thực</string>
+    <string name="send">Gửi</string>
+    <string name="agree_terms">Tôi đồng ý với điều khoản sử dụng</string>
+    <string name="have_account">Đã có tài khoản?</string>
+
+    <!-- Loading and Error Messages -->
+    <string name="logging_in">Đang đăng nhập...</string>
+    <string name="login_failed">Đăng nhập thất bại</string>
+    <string name="authenticating">Đang xác thực...</string>
+    <string name="token_error">Không thể lấy token từ backend</string>
+    <string name="error_prefix">Lỗi: </string>
+
+    <!-- Register Hints -->
+    <string name="fullname_hint">Nhập họ và tên</string>
+    <string name="phone_hint">Nhập số điện thoại</string>
+    <string name="otp_hint">Nhập mã OTP</string>
+
+    <!-- Forgot Password -->
+    <string name="forgot_password_title">Quên mật khẩu</string>
+    <string name="new_password">Mật khẩu mới</string>
+    <string name="new_password_hint">Nhập mật khẩu mới</string>
+    <string name="update_password">Cập nhật mật khẩu</string>
+    <!-- Register and Password Messages -->
+    <string name="password_mismatch">Mật khẩu xác nhận không khớp</string>
+    <string name="register_success">Đăng ký thành công</string>
+    <string name="reset_password_button">Cập nhật mật khẩu</string>
+    <string name="send_code">Gửi mã</string>
+
+</resources>

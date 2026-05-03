@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_driver_booking">Tìm khách</string>
+
+    <string name="driver_welcome">Sẵn sàng tìm khách,</string>
+    <string name="driver_dashboard_title">Tìm khách</string>
+    <string name="driver_dashboard_subtitle">Tính năng tìm khách đang được hoàn thiện.</string>
+    <string name="driver_online_status">Đang tìm khách</string>
+    <string name="driver_hot_zone_label">Khu vực có khách</string>
+    <string name="driver_hot_zone_value">Quận 1, Quận 3, Bình Thạnh</string>
+    <string name="driver_vehicle_label">Phương tiện đang chạy</string>
+    <string name="driver_vehicle_value">Xe máy 2 bánh</string>
+    <string name="driver_today_revenue">Doanh thu hôm nay</string>
+    <string name="driver_today_revenue_value">1.280.000đ</string>
+    <string name="driver_completed_trips">Chuyến hoàn tất</string>
+    <string name="driver_completed_trips_value">12 chuyến</string>
+    <string name="driver_acceptance_rate">Tỷ lệ nhận khách</string>
+    <string name="driver_acceptance_rate_value">94%</string>
+    <string name="driver_request_section">Khách hàng gần bạn</string>
+    <string name="driver_request_hint">Phần này đang dùng dữ liệu mẫu để hoàn thiện UI tìm khách hàng trước khi nối backend.</string>
+    <string name="driver_request_chip_priority">Ưu tiên</string>
+    <string name="driver_request_chip_standard">Phù hợp</string>
+    <string name="driver_request_chip_bike">Xe máy</string>
+    <string name="driver_request_chip_car">Ô tô</string>
+    <string name="driver_request_pickup_one">Đón khách tại 32 Nguyễn Huệ, Quận 1</string>
+    <string name="driver_request_destination_one">Trả khách tại 17 Điện Biên Phủ, Bình Thạnh</string>
+    <string name="driver_request_meta_one">Cách bạn 850 m • Cước 72.000đ • Dự kiến 14 phút</string>
+    <string name="driver_request_pickup_two">Đón khách tại 210 Võ Văn Tần, Quận 3</string>
+    <string name="driver_request_destination_two">Trả khách tại 81 Hoàng Sa, Phú Nhuận</string>
+    <string name="driver_request_meta_two">Cách bạn 1,4 km • Cước 118.000đ • Dự kiến 21 phút</string>
+
+    <string name="history_title_user">Lịch sử</string>
+    <string name="history_title_driver">Chuyến đã thực hiện</string>
+    <string name="history_summary_spending">Tổng chi tiêu</string>
+    <string name="history_summary_revenue">Tổng doanh thu</string>
+    <string name="history_total_trips_user">Số chuyến</string>
+    <string name="history_total_trips_driver">Chuyến hoàn tất</string>
+    <string name="history_total_distance">Quãng đường</string>
+    <string name="history_empty_user">Chưa có chuyến đi nào</string>
+    <string name="history_empty_driver">Chưa có chuyến nào đã thực hiện</string>
+    <string name="history_amount_label_user">Chi phí chuyến</string>
+    <string name="history_amount_label_driver">Doanh thu chuyến</string>
+    <string name="history_pickup_label_user">Điểm đón</string>
+    <string name="history_pickup_label_driver">Điểm đón khách</string>
+    <string name="history_destination_label_user">Điểm đến</string>
+    <string name="history_destination_label_driver">Điểm trả khách</string>
+    <string name="history_vehicle_info">Biển số: %1$s</string>
+</resources>

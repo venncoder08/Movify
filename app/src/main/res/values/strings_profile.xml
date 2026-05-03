@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_title">Thông tin cá nhân</string>
+    <string name="user_phone">Đang tải...</string>
+    <string name="user_email">Đang tải...</string>
+    <string name="edit_profile">Chỉnh sửa hồ sơ</string>
+    <string name="edit_profile_title">Chỉnh sửa hồ sơ</string>
+    <string name="edit_profile_desc">Cập nhật tên, số điện thoại, giới tính và ngày sinh</string>
+    <string name="full_name_label">Họ và tên</string>
+    <string name="full_name_hint">Nhập họ và tên</string>
+    <string name="phone_number_label">Số điện thoại</string>
+    <string name="phone_number_hint">Nhập số điện thoại</string>
+    <string name="gender_label">Giới tính</string>
+    <string name="date_of_birth_label">Ngày sinh</string>
+    <string name="profile_select_date_hint">Chọn ngày sinh</string>
+    <string name="pick_date">Chọn ngày</string>
+    <string name="avatar_label">Ảnh đại diện</string>
+    <string name="change_avatar">Đổi ảnh đại diện</string>
+    <string name="save_changes">Lưu thay đổi</string>
+    <string name="cancel">Hủy</string>
+
+    <string-array name="profile_gender_options">
+        <item>Male</item>
+        <item>Female</item>
+        <item>Other</item>
+    </string-array>
+
+    <string name="account_info">Thông tin tài khoản</string>
+    <string name="settings">Cài đặt</string>
+    <string name="support">Hỗ trợ</string>
+
+    <string name="personal_info">Thông tin cá nhân</string>
+    <string name="personal_info_desc">Họ tên, ngày sinh, giới tính</string>
+
+    <string name="payment_method_desc">Thẻ, ví điện tử</string>
+
+    <string name="saved_address">Địa chỉ đã lưu</string>
+    <string name="saved_address_desc">Nhà, công ty, địa điểm yêu thích</string>
+
+    <string name="notifications">Thông báo</string>
+    <string name="notifications_desc">Quản lý thông báo ứng dụng</string>
+
+    <string name="location">Vị trí</string>
+    <string name="location_desc">Cho phép truy cập vị trí</string>
+
+    <string name="help_center">Trung tâm trợ giúp</string>
+    <string name="help_center_desc">Câu hỏi thường gặp, hướng dẫn</string>
+
+    <string name="terms_policy">Điều khoản &amp; Chính sách</string>
+    <string name="terms_policy_desc">Quy định sử dụng dịch vụ</string>
+
+    <!-- Profile Status and Labels -->
+    <string name="not_updated">Chưa cập nhật</string>
+    <string name="become_driver">Trở thành tài xế</string>
+    <string name="profile_load_error">Không tải được thông tin cá nhân</string>
+    <string name="movify_account">Tài khoản Movify</string>
+
+    <!-- Driver Status Messages -->
+    <string name="already_driver">Đã là tài xế</string>
+    <string name="pending_approval">Đang chờ duyệt</string>
+    <string name="rejected_status">Đã bị từ chối</string>
+    <string name="not_registered">Chưa đăng ký</string>
+
+    <!-- Driver Button Texts -->
+    <string name="you_are_driver">Bạn đã là tài xế</string>
+    <string name="view_driver_profile">Xem hồ sơ tài xế</string>
+    <string name="resubmit_driver_profile">Gửi lại hồ sơ tài xế</string>
+
+    <!-- Become Driver Labels -->
+    <string name="become_driver_title">Trở thành tài xế</string>
+    <string name="profile_status">Trạng thái hồ sơ</string>
+    <string name="loading_dots">Đang tải...</string>
+    <string name="enter_info_to_submit">Nhập thông tin để gửi yêu cầu.</string>
+    <string name="id_card_hint">Nhập số giấy tờ</string>
+    <string name="driver_license_hint">Nhập số GPLX</string>
+    <string name="vehicle_registration_label">Đăng ký xe</string>
+    <string name="vehicle_registration_hint">Nhập biển số / đăng ký xe</string>
+
+    <!-- Driver Request Status -->
+    <string name="submit_request_failed">Không gửi được yêu cầu</string>
+    <string name="profile_pending">Hồ sơ đang chờ duyệt</string>
+    <string name="resubmit_request">Gửi lại yêu cầu</string>
+    <string name="submit_request">Gửi yêu cầu</string>
+    <string name="profile_pending_admin">Hồ sơ đang chờ admin duyệt</string>
+    <string name="profile_rejected">Hồ sơ đã bị từ chối</string>
+    <string name="driver_request_desc">Nhập CCCD, GPLX và đăng ký xe để gửi yêu cầu lên admin.</string>
+    <string name="request_submitted_at">Yêu cầu gần nhất đã được gửi vào </string>
+    <string name="submit_request_success">Gửi yêu cầu thành công</string>
+
+    <!-- Profile Menu Items -->
+    <string name="personal_info_title">Thông tin cá nhân</string>
+    <string name="loading_account_info">Đang tải thông tin tài khoản</string>
+    <string name="bank_transfer_desc">Ngân hàng, ví điện tử</string>
+    <string name="location_title">Vị trí</string>
+
+</resources>

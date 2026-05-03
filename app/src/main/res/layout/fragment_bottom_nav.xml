@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:background="#FFFFFF"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:weightSum="5">
+
+    <LinearLayout
+        android:id="@+id/tabProfile"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:id="@+id/iconProfile"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_user" />
+
+        <TextView
+            android:id="@+id/tvProfile"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Thông tin"
+            android:textSize="13sp"
+            android:textColor="#222222" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tabNotification"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:id="@+id/iconNotification"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_noti" />
+
+        <TextView
+            android:id="@+id/tvNotification"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Thông báo"
+            android:textSize="13sp"
+            android:textColor="#222222" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tabBooking"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:id="@+id/iconBooking"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_logo" />
+
+        <TextView
+            android:id="@+id/tvBooking"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Đặt xe"
+            android:textSize="13sp"
+            android:textColor="#222222" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tabHistory"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:id="@+id/iconHistory"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_history" />
+
+        <TextView
+            android:id="@+id/tvHistory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Lịch sử"
+            android:textSize="13sp"
+            android:textColor="#222222" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tabMessage"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true">
+
+        <ImageView
+            android:id="@+id/iconMessage"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_message" />
+
+        <TextView
+            android:id="@+id/tvMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Tin nhắn"
+            android:textSize="13sp"
+            android:textColor="#222222" />
+    </LinearLayout>
+
+</LinearLayout>
