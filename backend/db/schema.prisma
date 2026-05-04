@@ -1,0 +1,227 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Account {
+  ID                                                Int                   @id @default(autoincrement())
+  Email                                             String                @unique @db.VarChar(255)
+  PhoneNumber                                       String                @unique @db.VarChar(20)
+  HashedPassword                                    String                @db.VarChar(255)
+  Role                                              AccountRole
+  FullName                                          String?               @db.VarChar(255)
+  DateOfBirth                                       DateTime?             @db.Date
+  Gender                                            Gender?
+  Avatar                                            String?               @db.VarChar(500)
+  IsActive                                          Boolean               @default(true)
+  IDCard                                            String?               @db.VarChar(50)
+  DriverLicense                                     String?               @db.VarChar(50)
+  VehicleRegistration                               String?               @db.VarChar(100)
+  DriverStatus                                      DriverApprovalStatus?
+  RatePoint                                         Decimal               @default(0) @db.Decimal(3, 2)
+  CreatedAt                                         DateTime              @default(now()) @db.Timestamptz(6)
+  UpdatedAt                                         DateTime              @db.Timestamptz(6)
+  DeletedAt                                         DateTime?             @db.Timestamptz(6)
+  Message_Message_RecipientIDToAccount              Message[]             @relation("Message_RecipientIDToAccount")
+  Message_Message_SenderIDToAccount                 Message[]             @relation("Message_SenderIDToAccount")
+  Notification                                      Notification[]
+  Promotion                                         Promotion[]
+  Rating_Rating_RateeIDToAccount                    Rating[]              @relation("Rating_RateeIDToAccount")
+  Rating_Rating_RaterIDToAccount                    Rating[]              @relation("Rating_RaterIDToAccount")
+  ToDriverRequest_ToDriverRequest_AdminIDToAccount  ToDriverRequest[]     @relation("ToDriverRequest_AdminIDToAccount")
+  ToDriverRequest_ToDriverRequest_DriverIDToAccount ToDriverRequest[]     @relation("ToDriverRequest_DriverIDToAccount")
+  Trip_Trip_DriverIDToAccount                       Trip[]                @relation("Trip_DriverIDToAccount")
+  Trip_Trip_UserIDToAccount                         Trip[]                @relation("Trip_UserIDToAccount")
+
+  @@index([IsActive], map: "idx_account_active")
+  @@index([DeletedAt], map: "idx_account_deleted")
+  @@index([Role], map: "idx_account_role")
+}
+
+model Promotion {
+  ID            Int       @id @default(autoincrement())
+  Name          String    @db.VarChar(255)
+  Type          String    @db.VarChar(100)
+  DiscountValue Decimal   @db.Decimal(10, 2)
+  AdminID       Int
+  CreatedAt     DateTime  @default(now()) @db.Timestamptz(6)
+  UpdatedAt     DateTime  @db.Timestamptz(6)
+  DeletedAt     DateTime? @db.Timestamptz(6)
+  Account       Account   @relation(fields: [AdminID], references: [ID])
+  Trip          Trip[]
+
+  @@index([AdminID], map: "idx_promotion_admin")
+  @@index([DeletedAt], map: "idx_promotion_deleted")
+}
+
+model Trip {
+  ID                             Int           @id @default(autoincrement())
+  Distance                       Decimal       @db.Decimal(10, 2)
+  TotalAmount                    Decimal       @db.Decimal(12, 2)
+  PickUpLocation                 String        @db.VarChar(500)
+  DestinationLocation            String        @db.VarChar(500)
+  PickUpLatitude                 Decimal?      @db.Decimal(10, 8)
+  PickUpLongitude                Decimal?      @db.Decimal(11, 8)
+  DestinationLatitude            Decimal?      @db.Decimal(10, 8)
+  DestinationLongitude           Decimal?      @db.Decimal(11, 8)
+  Duration                       Decimal?      @db.Decimal(10, 2)
+  TripType                       TripType      @default(Motor)
+  Status                         TripStatus    @default(Pending)
+  PickUpTime                     DateTime?     @db.Timestamptz(6)
+  CompletedTime                  DateTime?     @db.Timestamptz(6)
+  CancelReason                   String?
+  PaymentMethod                  PaymentMethod @default(Cash)
+  PaymentStatus                  PaymentStatus @default(Unpaid)
+  UserID                         Int
+  DriverID                       Int?
+  PromotionID                    Int?
+  CreatedAt                      DateTime      @default(now()) @db.Timestamptz(6)
+  UpdatedAt                      DateTime      @db.Timestamptz(6)
+  DeletedAt                      DateTime?     @db.Timestamptz(6)
+  Rating                         Rating[]
+  Account_Trip_DriverIDToAccount Account?      @relation("Trip_DriverIDToAccount", fields: [DriverID], references: [ID])
+  Promotion                      Promotion?    @relation(fields: [PromotionID], references: [ID])
+  Account_Trip_UserIDToAccount   Account       @relation("Trip_UserIDToAccount", fields: [UserID], references: [ID])
+
+  @@index([DeletedAt], map: "idx_trip_deleted")
+  @@index([DriverID], map: "idx_trip_driver")
+  @@index([PaymentStatus], map: "idx_trip_payment_status")
+  @@index([PromotionID], map: "idx_trip_promotion")
+  @@index([Status], map: "idx_trip_status")
+  @@index([TripType], map: "idx_trip_type")
+  @@index([UserID], map: "idx_trip_user")
+  @@index([PickUpLatitude, PickUpLongitude], map: "idx_trip_pickup_location")
+}
+
+model Rating {
+  ID                              Int       @id @default(autoincrement())
+  TripID                          Int
+  RaterID                         Int
+  RateeID                         Int
+  Score                           Decimal   @db.Decimal(2, 1)
+  Comment                         String?
+  CreatedAt                       DateTime  @default(now()) @db.Timestamptz(6)
+  UpdatedAt                       DateTime  @db.Timestamptz(6)
+  DeletedAt                       DateTime? @db.Timestamptz(6)
+  Account_Rating_RateeIDToAccount Account   @relation("Rating_RateeIDToAccount", fields: [RateeID], references: [ID], onDelete: Cascade)
+  Account_Rating_RaterIDToAccount Account   @relation("Rating_RaterIDToAccount", fields: [RaterID], references: [ID], onDelete: Cascade)
+  Trip                            Trip      @relation(fields: [TripID], references: [ID], onDelete: Cascade)
+
+  @@unique([TripID, RaterID])
+  @@index([DeletedAt], map: "idx_rating_deleted")
+  @@index([RateeID], map: "idx_rating_ratee")
+  @@index([TripID], map: "idx_rating_trip")
+}
+
+model Notification {
+  ID        Int       @id @default(autoincrement())
+  AccountID Int
+  Title     String    @db.VarChar(255)
+  Body      String
+  IsRead    Boolean   @default(false)
+  CreatedAt DateTime  @default(now()) @db.Timestamptz(6)
+  UpdatedAt DateTime  @db.Timestamptz(6)
+  DeletedAt DateTime? @db.Timestamptz(6)
+  Account   Account   @relation(fields: [AccountID], references: [ID], onDelete: Cascade)
+
+  @@index([AccountID], map: "idx_notification_account")
+  @@index([DeletedAt], map: "idx_notification_deleted")
+  @@index([IsRead], map: "idx_notification_read")
+}
+
+model ToDriverRequest {
+  ID                                        Int                   @id @default(autoincrement())
+  IDCard                                    String                @db.VarChar(50)
+  DriverLicense                             String                @db.VarChar(50)
+  VehicleRegistration                       String                @db.VarChar(100)
+  Status                                    ToDriverRequestStatus @default(Pending)
+  DriverID                                  Int
+  AdminID                                   Int?
+  CreatedAt                                 DateTime              @default(now()) @db.Timestamptz(6)
+  UpdatedAt                                 DateTime              @db.Timestamptz(6)
+  DeletedAt                                 DateTime?             @db.Timestamptz(6)
+  Account_ToDriverRequest_AdminIDToAccount  Account?              @relation("ToDriverRequest_AdminIDToAccount", fields: [AdminID], references: [ID])
+  Account_ToDriverRequest_DriverIDToAccount Account               @relation("ToDriverRequest_DriverIDToAccount", fields: [DriverID], references: [ID], onDelete: Cascade)
+
+  @@index([AdminID], map: "idx_todriverrequest_admin")
+  @@index([DeletedAt], map: "idx_todriverrequest_deleted")
+  @@index([DriverID], map: "idx_todriverrequest_driver")
+  @@index([Status], map: "idx_todriverrequest_status")
+}
+
+model Message {
+  ID                                   Int           @id @default(autoincrement())
+  SenderID                             Int
+  RecipientID                          Int
+  Content                              String
+  ContentType                          MessageType   @default(Text)
+  IsRead                               Boolean       @default(false)
+  CreatedAt                            DateTime      @default(now()) @db.Timestamptz(6)
+  UpdatedAt                            DateTime      @db.Timestamptz(6)
+  DeletedAt                            DateTime?     @db.Timestamptz(6)
+  Account_Message_RecipientIDToAccount Account       @relation("Message_RecipientIDToAccount", fields: [RecipientID], references: [ID], onDelete: Cascade)
+  Account_Message_SenderIDToAccount    Account       @relation("Message_SenderIDToAccount", fields: [SenderID], references: [ID], onDelete: Cascade)
+
+  @@index([DeletedAt], map: "idx_message_deleted")
+  @@index([IsRead], map: "idx_message_read")
+  @@index([RecipientID], map: "idx_message_recipient")
+  @@index([SenderID], map: "idx_message_sender")
+}
+
+enum AccountRole {
+  User
+  Driver
+  Admin
+}
+
+enum DriverApprovalStatus {
+  Pending
+  Approved
+  Rejected
+}
+
+enum Gender {
+  Male
+  Female
+  Other
+}
+
+enum PaymentMethod {
+  Cash
+  BankTransfer
+}
+
+enum PaymentStatus {
+  Unpaid
+  Paid
+}
+
+enum ToDriverRequestStatus {
+  Pending
+  Approved
+  Rejected
+}
+
+enum TripStatus {
+  Pending
+  Accepted
+  InProgress
+  Completed
+  Cancelled
+}
+
+enum TripType {
+  Motor
+  Taxi
+}
+
+enum MessageType {
+  Text
+  Image
+  File
+}

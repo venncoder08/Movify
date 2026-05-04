@@ -17,35 +17,38 @@ async function upsertAccount(account) {
   const hashedPassword = await hashPassword(account.password);
 
   return prisma.account.upsert({
-    where: { email: account.email },
+    where: { Email: account.email },
     update: {
-      phoneNumber: account.phoneNumber,
-      hashedPassword,
-      role: account.role,
-      fullName: account.fullName,
-      gender: account.gender ?? null,
-      avatar: account.avatar ?? null,
-      isActive: true,
-      idCard: account.idCard ?? null,
-      driverLicense: account.driverLicense ?? null,
-      vehicleRegistration: account.vehicleRegistration ?? null,
-      driverStatus: account.driverStatus ?? null,
-      ratePoint: decimal(account.ratePoint ?? "0")
+      PhoneNumber: account.phoneNumber,
+      HashedPassword: hashedPassword,
+      Role: account.role,
+      FullName: account.fullName,
+      Gender: account.gender ?? null,
+      Avatar: account.avatar ?? null,
+      IsActive: true,
+      IDCard: account.idCard ?? null,
+      DriverLicense: account.driverLicense ?? null,
+      VehicleRegistration: account.vehicleRegistration ?? null,
+      DriverStatus: account.driverStatus ?? null,
+      RatePoint: decimal(account.ratePoint ?? "0"),
+      UpdatedAt: new Date()
     },
     create: {
-      email: account.email,
-      phoneNumber: account.phoneNumber,
-      hashedPassword,
-      role: account.role,
-      fullName: account.fullName,
-      gender: account.gender ?? null,
-      avatar: account.avatar ?? null,
-      isActive: true,
-      idCard: account.idCard ?? null,
-      driverLicense: account.driverLicense ?? null,
-      vehicleRegistration: account.vehicleRegistration ?? null,
-      driverStatus: account.driverStatus ?? null,
-      ratePoint: decimal(account.ratePoint ?? "0")
+      Email: account.email,
+      PhoneNumber: account.phoneNumber,
+      HashedPassword: hashedPassword,
+      Role: account.role,
+      FullName: account.fullName,
+      Gender: account.gender ?? null,
+      Avatar: account.avatar ?? null,
+      IsActive: true,
+      IDCard: account.idCard ?? null,
+      DriverLicense: account.driverLicense ?? null,
+      VehicleRegistration: account.vehicleRegistration ?? null,
+      DriverStatus: account.driverStatus ?? null,
+      RatePoint: decimal(account.ratePoint ?? "0"),
+      CreatedAt: new Date(),
+      UpdatedAt: new Date()
     }
   });
 }
@@ -63,20 +66,23 @@ async function seedPromotions(accountMap) {
     mockData.promotions.map(async (promotion) => {
       const admin = accountMap.get(promotion.adminKey);
       const record = await prisma.promotion.upsert({
-        where: { id: promotion.id },
+        where: { ID: promotion.id },
         update: {
-          name: promotion.name,
-          type: promotion.type,
-          discountValue: decimal(promotion.discountValue),
-          adminId: admin.id,
-          deletedAt: null
+          Name: promotion.name,
+          Type: promotion.type,
+          DiscountValue: decimal(promotion.discountValue),
+          AdminID: admin.ID,
+          UpdatedAt: new Date(),
+          DeletedAt: null
         },
         create: {
-          id: promotion.id,
-          name: promotion.name,
-          type: promotion.type,
-          discountValue: decimal(promotion.discountValue),
-          adminId: admin.id
+          ID: promotion.id,
+          Name: promotion.name,
+          Type: promotion.type,
+          DiscountValue: decimal(promotion.discountValue),
+          AdminID: admin.ID,
+          CreatedAt: new Date(),
+          UpdatedAt: new Date()
         }
       });
 
@@ -95,42 +101,53 @@ async function seedTrips(accountMap, promotionMap) {
       const promotion = trip.promotionKey ? promotionMap.get(trip.promotionKey) : null;
 
       const record = await prisma.trip.upsert({
-        where: { id: trip.id },
+        where: { ID: trip.id },
         update: {
-          distance: decimal(trip.distance),
-          totalAmount: decimal(trip.totalAmount),
-          pickUpLocation: trip.pickUpLocation,
-          destinationLocation: trip.destinationLocation,
-          duration: trip.duration ? decimal(trip.duration) : null,
-          tripType: trip.tripType,
-          status: trip.status,
-          pickUpTime: trip.pickUpTime ? new Date(trip.pickUpTime) : null,
-          completedTime: trip.completedTime ? new Date(trip.completedTime) : null,
-          cancelReason: trip.cancelReason ?? null,
-          paymentMethod: trip.paymentMethod,
-          paymentStatus: trip.paymentStatus,
-          userId: user.id,
-          driverId: driver?.id ?? null,
-          promotionId: promotion?.id ?? null,
-          deletedAt: null
+          Distance: decimal(trip.distance),
+          TotalAmount: decimal(trip.totalAmount),
+          PickUpLocation: trip.pickUpLocation,
+          DestinationLocation: trip.destinationLocation,
+          PickUpLatitude: trip.pickUpLatitude ? decimal(trip.pickUpLatitude) : null,
+          PickUpLongitude: trip.pickUpLongitude ? decimal(trip.pickUpLongitude) : null,
+          DestinationLatitude: trip.destinationLatitude ? decimal(trip.destinationLatitude) : null,
+          DestinationLongitude: trip.destinationLongitude ? decimal(trip.destinationLongitude) : null,
+          Duration: trip.duration ? decimal(trip.duration) : null,
+          TripType: trip.tripType,
+          Status: trip.status,
+          PickUpTime: trip.pickUpTime ? new Date(trip.pickUpTime) : null,
+          CompletedTime: trip.completedTime ? new Date(trip.completedTime) : null,
+          CancelReason: trip.cancelReason ?? null,
+          PaymentMethod: trip.paymentMethod,
+          PaymentStatus: trip.paymentStatus,
+          UserID: user.ID,
+          DriverID: driver?.ID ?? null,
+          PromotionID: promotion?.id ?? null,
+          UpdatedAt: new Date(),
+          DeletedAt: null
         },
         create: {
-          id: trip.id,
-          distance: decimal(trip.distance),
-          totalAmount: decimal(trip.totalAmount),
-          pickUpLocation: trip.pickUpLocation,
-          destinationLocation: trip.destinationLocation,
-          duration: trip.duration ? decimal(trip.duration) : null,
-          tripType: trip.tripType,
-          status: trip.status,
-          pickUpTime: trip.pickUpTime ? new Date(trip.pickUpTime) : null,
-          completedTime: trip.completedTime ? new Date(trip.completedTime) : null,
-          cancelReason: trip.cancelReason ?? null,
-          paymentMethod: trip.paymentMethod,
-          paymentStatus: trip.paymentStatus,
-          userId: user.id,
-          driverId: driver?.id ?? null,
-          promotionId: promotion?.id ?? null
+          ID: trip.id,
+          Distance: decimal(trip.distance),
+          TotalAmount: decimal(trip.totalAmount),
+          PickUpLocation: trip.pickUpLocation,
+          DestinationLocation: trip.destinationLocation,
+          PickUpLatitude: trip.pickUpLatitude ? decimal(trip.pickUpLatitude) : null,
+          PickUpLongitude: trip.pickUpLongitude ? decimal(trip.pickUpLongitude) : null,
+          DestinationLatitude: trip.destinationLatitude ? decimal(trip.destinationLatitude) : null,
+          DestinationLongitude: trip.destinationLongitude ? decimal(trip.destinationLongitude) : null,
+          Duration: trip.duration ? decimal(trip.duration) : null,
+          TripType: trip.tripType,
+          Status: trip.status,
+          PickUpTime: trip.pickUpTime ? new Date(trip.pickUpTime) : null,
+          CompletedTime: trip.completedTime ? new Date(trip.completedTime) : null,
+          CancelReason: trip.cancelReason ?? null,
+          PaymentMethod: trip.paymentMethod,
+          PaymentStatus: trip.paymentStatus,
+          UserID: user.ID,
+          DriverID: driver?.ID ?? null,
+          PromotionID: promotion?.ID ?? null,
+          CreatedAt: new Date(),
+          UpdatedAt: new Date()
         }
       });
 
@@ -149,22 +166,25 @@ async function seedRatings(accountMap, tripMap) {
       const ratee = accountMap.get(rating.rateeKey);
 
       await prisma.rating.upsert({
-        where: { id: rating.id },
+        where: { ID: rating.id },
         update: {
-          tripId: trip.id,
-          raterId: rater.id,
-          rateeId: ratee.id,
-          score: decimal(rating.score),
-          comment: rating.comment ?? null,
-          deletedAt: null
+          TripID: trip.ID,
+          RaterID: rater.ID,
+          RateeID: ratee.ID,
+          Score: decimal(rating.score),
+          Comment: rating.comment ?? null,
+          UpdatedAt: new Date(),
+          DeletedAt: null
         },
         create: {
-          id: rating.id,
-          tripId: trip.id,
-          raterId: rater.id,
-          rateeId: ratee.id,
-          score: decimal(rating.score),
-          comment: rating.comment ?? null
+          ID: rating.id,
+          TripID: trip.ID,
+          RaterID: rater.ID,
+          RateeID: ratee.ID,
+          Score: decimal(rating.score),
+          Comment: rating.comment ?? null,
+          CreatedAt: new Date(),
+          UpdatedAt: new Date()
         }
       });
     })
@@ -177,20 +197,23 @@ async function seedNotifications(accountMap) {
       const account = accountMap.get(notification.accountKey);
 
       await prisma.notification.upsert({
-        where: { id: notification.id },
+        where: { ID: notification.id },
         update: {
-          accountId: account.id,
-          title: notification.title,
-          body: notification.body,
-          isRead: notification.isRead,
-          deletedAt: null
+          AccountID: account.ID,
+          Title: notification.title,
+          Body: notification.body,
+          IsRead: notification.isRead,
+          UpdatedAt: new Date(),
+          DeletedAt: null
         },
         create: {
-          id: notification.id,
-          accountId: account.id,
-          title: notification.title,
-          body: notification.body,
-          isRead: notification.isRead
+          ID: notification.id,
+          AccountID: account.ID,
+          Title: notification.title,
+          Body: notification.body,
+          IsRead: notification.isRead,
+          CreatedAt: new Date(),
+          UpdatedAt: new Date()
         }
       });
     })
@@ -204,24 +227,27 @@ async function seedDriverRequests(accountMap) {
       const admin = request.adminKey ? accountMap.get(request.adminKey) : null;
 
       await prisma.toDriverRequest.upsert({
-        where: { id: request.id },
+        where: { ID: request.id },
         update: {
-          idCard: request.idCard,
-          driverLicense: request.driverLicense,
-          vehicleRegistration: request.vehicleRegistration,
-          status: request.status,
-          driverId: driver.id,
-          adminId: admin?.id ?? null,
-          deletedAt: null
+          IDCard: request.idCard,
+          DriverLicense: request.driverLicense,
+          VehicleRegistration: request.vehicleRegistration,
+          Status: request.status,
+          DriverID: driver.ID,
+          AdminID: admin?.ID ?? null,
+          UpdatedAt: new Date(),
+          DeletedAt: null
         },
         create: {
-          id: request.id,
-          idCard: request.idCard,
-          driverLicense: request.driverLicense,
-          vehicleRegistration: request.vehicleRegistration,
-          status: request.status,
-          driverId: driver.id,
-          adminId: admin?.id ?? null
+          ID: request.id,
+          IDCard: request.idCard,
+          DriverLicense: request.driverLicense,
+          VehicleRegistration: request.vehicleRegistration,
+          Status: request.status,
+          DriverID: driver.ID,
+          AdminID: admin?.ID ?? null,
+          CreatedAt: new Date(),
+          UpdatedAt: new Date()
         }
       });
     })
@@ -235,20 +261,25 @@ async function seedMessages(accountMap) {
       const recipient = accountMap.get(message.recipientKey);
 
       await prisma.message.upsert({
-        where: { id: message.id },
+        where: { ID: message.id },
         update: {
-          content: message.content,
-          isRead: message.isRead,
-          senderId: sender.id,
-          recipientId: recipient.id,
-          deletedAt: null
+          Content: message.content,
+          ContentType: message.contentType ?? "Text",
+          IsRead: message.isRead,
+          SenderID: sender.ID,
+          RecipientID: recipient.ID,
+          UpdatedAt: new Date(),
+          DeletedAt: null
         },
         create: {
-          id: message.id,
-          content: message.content,
-          isRead: message.isRead,
-          senderId: sender.id,
-          recipientId: recipient.id
+          ID: message.id,
+          Content: message.content,
+          ContentType: message.contentType ?? "Text",
+          IsRead: message.isRead,
+          SenderID: sender.ID,
+          RecipientID: recipient.ID,
+          CreatedAt: new Date(),
+          UpdatedAt: new Date()
         }
       });
     })

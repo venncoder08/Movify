@@ -53,6 +53,10 @@ CREATE TABLE Trip (
     TotalAmount         NUMERIC(12, 2) NOT NULL,
     PickUpLocation      VARCHAR(500)   NOT NULL,
     DestinationLocation VARCHAR(500)   NOT NULL,
+    PickUpLatitude      NUMERIC(10, 8),                    -- latitude for pickup location
+    PickUpLongitude     NUMERIC(11, 8),                    -- longitude for pickup location
+    DestinationLatitude NUMERIC(10, 8),                    -- latitude for destination
+    DestinationLongitude NUMERIC(11, 8),                   -- longitude for destination
     Duration            NUMERIC(10, 2),                    -- in minutes
     TripType            VARCHAR(50)    NOT NULL DEFAULT 'Motor'
                             CHECK (TripType IN ('Motor', 'Taxi')),
@@ -156,6 +160,7 @@ CREATE INDEX idx_trip_promotion          ON Trip(PromotionID);
 CREATE INDEX idx_trip_type               ON Trip(TripType);
 CREATE INDEX idx_trip_status             ON Trip(Status);
 CREATE INDEX idx_trip_payment_status     ON Trip(PaymentStatus);
+CREATE INDEX idx_trip_pickup_location    ON Trip(PickUpLatitude, PickUpLongitude);  -- for geographic queries
 CREATE INDEX idx_trip_deleted            ON Trip(DeletedAt) WHERE DeletedAt IS NULL;
 
 CREATE INDEX idx_rating_trip             ON Rating(TripID);
