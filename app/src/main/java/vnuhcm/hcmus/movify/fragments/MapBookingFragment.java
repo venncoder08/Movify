@@ -12,6 +12,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -38,6 +40,7 @@ import java.util.concurrent.Executors;
 import vnuhcm.hcmus.movify.R;
 import vnuhcm.hcmus.movify.utils.LocationData;
 import vnuhcm.hcmus.movify.utils.PlacesAutocompleteHelper;
+import vnuhcm.hcmus.movify.utils.CurrentLocationResolver;
 import vnuhcm.hcmus.movify.models.PlaceDetails;
 import vnuhcm.hcmus.movify.models.RoutePreview;
 import vnuhcm.hcmus.movify.services.PlaceService;
@@ -46,6 +49,7 @@ import vnuhcm.hcmus.movify.services.RouteService;
 public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
+    private static final int CURRENT_LOCATION_PERMISSION_REQUEST_CODE = 101;
     private static final String TAG = "MapBookingFragment";
     private static final long MAP_UPDATE_DEBOUNCE_MS = 600L;
     private static final int ROUTE_WIDTH_PX = 10;
@@ -62,9 +66,13 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
     private AutoCompleteTextView edtMapPickup;
     private AutoCompleteTextView edtMapDestination;
     private Button btnConfirmLocation;
+    private LinearLayout routeSummaryContainer;
+    private TextView tvRouteDistance;
+    private TextView tvRouteDuration;
     private ExecutorService mapExecutor;
     private Runnable pendingMapUpdate;
     private int activeMapRequestId = 0;
+    private AutoCompleteTextView pendingCurrentLocationField;
 
     public MapBookingFragment() {
     }
@@ -82,10 +90,13 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
         edtMapPickup = view.findViewById(R.id.edtMapPickup);
         edtMapDestination = view.findViewById(R.id.edtMapDestination);
         btnConfirmLocation = view.findViewById(R.id.btnConfirmLocation);
+        routeSummaryContainer = view.findViewById(R.id.routeSummaryContainer);
+        tvRouteDistance = view.findViewById(R.id.tvRouteDistance);
+        tvRouteDuration = view.findViewById(R.id.tvRouteDuration);
         mapExecutor = Executors.newSingleThreadExecutor();
 
-        new PlacesAutocompleteHelper(requireContext(), edtMapPickup);
-        new PlacesAutocompleteHelper(requireContext(), edtMapDestination);
+        new PlacesAutocompleteHelper(requireContext(), edtMapPickup, this::handleCurrentLocationSelection);
+        new PlacesAutocompleteHelper(requireContext(), edtMapDestination, this::handleCurrentLocationSelection);
 
         requestLocationPermission();
         attachMapUpdateWatcher(edtMapPickup);
@@ -113,6 +124,31 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
         mMap = null;
         mapFragment = null;
         pendingMapUpdate = null;
+        pendingCurrentLocationField = null;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE
+                && grantResults.length > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                && mMap != null) {
+            enableMyLocation();
+        }
+
+        if (requestCode == CURRENT_LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (pendingCurrentLocationField != null) {
+                    resolveAndFillCurrentLocation(pendingCurrentLocationField);
+                }
+            } else {
+                Toast.makeText(requireContext(), "Cần quyền vị trí để dùng option này", Toast.LENGTH_SHORT).show();
+            }
+            pendingCurrentLocationField = null;
+        }
     }
 
     private void requestLocationPermission() {
@@ -122,18 +158,6 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
             ActivityCompat.requestPermissions(requireActivity(),
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     LOCATION_PERMISSION_REQUEST_CODE);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE
-                && grantResults.length > 0
-                && grantResults[0] == PackageManager.PERMISSION_GRANTED
-                && mMap != null) {
-            enableMyLocation();
         }
     }
 
@@ -155,6 +179,49 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
                 == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
         }
+    }
+
+    private void handleCurrentLocationSelection(@NonNull AutoCompleteTextView targetField) {
+        pendingCurrentLocationField = targetField;
+
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(requireActivity(),
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    CURRENT_LOCATION_PERMISSION_REQUEST_CODE);
+            return;
+        }
+
+        resolveAndFillCurrentLocation(targetField);
+    }
+
+    private void resolveAndFillCurrentLocation(@NonNull AutoCompleteTextView targetField) {
+        if (mapExecutor == null || mapExecutor.isShutdown()) {
+            return;
+        }
+
+        Context appContext = requireContext().getApplicationContext();
+        mapExecutor.execute(() -> {
+            try {
+                String currentLocationLabel = CurrentLocationResolver.resolveCurrentLocationLabel(appContext);
+                mainHandler.post(() -> {
+                    if (!isAdded()) {
+                        return;
+                    }
+
+                    targetField.setText(currentLocationLabel);
+                });
+            } catch (Exception exception) {
+                Log.w(TAG, "Unable to resolve current location", exception);
+                mainHandler.post(() -> {
+                    if (!isAdded()) {
+                        return;
+                    }
+
+                    Toast.makeText(requireContext(), "Không thể lấy vị trí hiện tại", Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
     }
 
     private void attachMapUpdateWatcher(AutoCompleteTextView input) {
@@ -201,12 +268,12 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
             PlaceDetails pickupDetails = null;
             PlaceDetails destinationDetails = null;
             List<LatLng> routePoints = new ArrayList<>();
+            RoutePreview routePreview = null;
             String errorMessage = null;
 
             try {
                 if (!pickupText.isEmpty() && !destinationText.isEmpty()) {
-                    RoutePreview routePreview =
-                            RouteService.fetchRoutePreview(appContext, pickupText, destinationText);
+                    routePreview = RouteService.fetchRoutePreview(appContext, pickupText, destinationText);
                     pickupDetails = routePreview.pickup;
                     destinationDetails = routePreview.destination;
                     routePoints = routePreview.routePoints;
@@ -226,6 +293,7 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
             PlaceDetails finalPickupDetails = pickupDetails;
             PlaceDetails finalDestinationDetails = destinationDetails;
             List<LatLng> finalRoutePoints = routePoints;
+            RoutePreview finalRoutePreview = routePreview;
             String finalErrorMessage = errorMessage;
 
             mainHandler.post(() -> renderMapState(
@@ -233,6 +301,7 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
                     finalPickupDetails,
                     finalDestinationDetails,
                     finalRoutePoints,
+                    finalRoutePreview,
                     finalErrorMessage
             ));
         });
@@ -242,6 +311,7 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
                                 @Nullable PlaceDetails pickupDetails,
                                 @Nullable PlaceDetails destinationDetails,
                                 @NonNull List<LatLng> routePoints,
+                                @Nullable RoutePreview routePreview,
                                 @Nullable String errorMessage) {
         if (!isAdded() || mMap == null || requestId != activeMapRequestId) {
             return;
@@ -249,6 +319,8 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
 
         selectedPickupLocation = pickupDetails != null ? pickupDetails.latLng : null;
         selectedDestinationLocation = destinationDetails != null ? destinationDetails.latLng : null;
+
+        renderRouteSummary(routePreview);
 
         mMap.clear();
 
@@ -305,6 +377,41 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
                     : destinationDetails != null ? destinationDetails.latLng : HCMC;
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(focusPoint, 14f));
         }
+    }
+
+    private void renderRouteSummary(@Nullable RoutePreview routePreview) {
+        if (!isAdded()) {
+            return;
+        }
+
+        if (routePreview == null) {
+            setVisible(routeSummaryContainer, false);
+            return;
+        }
+
+        double distanceKm = routePreview.distanceMeters / 1000d;
+        double durationMinutes = routePreview.durationSeconds / 60d;
+
+        tvRouteDistance.setText(getString(R.string.route_distance_label) + ": " + formatDistance(distanceKm));
+        tvRouteDuration.setText(getString(R.string.route_duration_label) + ": " + formatDuration(durationMinutes));
+        setVisible(routeSummaryContainer, true);
+    }
+
+    private void setVisible(View view, boolean visible) {
+        if (view != null) {
+            view.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    @NonNull
+    private static String formatDistance(double distanceKm) {
+        return String.format(java.util.Locale.US, "%.1f km", distanceKm);
+    }
+
+    @NonNull
+    private static String formatDuration(double durationMinutes) {
+        long roundedMinutes = Math.max(1L, Math.round(durationMinutes));
+        return roundedMinutes + " phút";
     }
 
     private void confirmAndReturn() {

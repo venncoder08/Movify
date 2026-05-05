@@ -11,12 +11,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import vnuhcm.hcmus.movify.R;
 import vnuhcm.hcmus.movify.services.PlaceService;
 
 public class PlacesAutocompleteHelper {
+    public interface SpecialSuggestionListener {
+        void onCurrentLocationSelected(AutoCompleteTextView targetView);
+    }
+
+    private final String currentLocationLabel;
     private ArrayAdapter<String> adapter;
     private List<String> predictions = new ArrayList<>();
     private Context context;
+    private SpecialSuggestionListener specialSuggestionListener;
     private boolean isSettingText = false; // Flag to prevent TextWatcher interference
     private Handler handler = new Handler(Looper.getMainLooper());
     private Runnable pendingFetch;
@@ -24,7 +31,15 @@ public class PlacesAutocompleteHelper {
     private Map<String, List<String>> cache = new HashMap<>(); // Cache results
 
     public PlacesAutocompleteHelper(Context context, AutoCompleteTextView autoCompleteTextView) {
+        this(context, autoCompleteTextView, null);
+    }
+
+    public PlacesAutocompleteHelper(Context context,
+                                    AutoCompleteTextView autoCompleteTextView,
+                                    SpecialSuggestionListener specialSuggestionListener) {
         this.context = context;
+        this.specialSuggestionListener = specialSuggestionListener;
+        this.currentLocationLabel = context.getString(R.string.current_location);
 
         // Setup ArrayAdapter for suggestions
         adapter = new ArrayAdapter<>(context, android.R.layout.simple_dropdown_item_1line, predictions);
@@ -36,6 +51,12 @@ public class PlacesAutocompleteHelper {
         autoCompleteTextView.setOnItemClickListener((parent, view, position, id) -> {
             if (position < predictions.size()) {
                 String prediction = predictions.get(position);
+                if (currentLocationLabel.equals(prediction) && specialSuggestionListener != null) {
+                    specialSuggestionListener.onCurrentLocationSelected(autoCompleteTextView);
+                    autoCompleteTextView.dismissDropDown();
+                    return;
+                }
+
                 isSettingText = true;
                 autoCompleteTextView.setText(prediction);
                 isSettingText = false;
@@ -98,8 +119,10 @@ public class PlacesAutocompleteHelper {
 
     private void updatePredictions(List<String> results) {
         predictions.clear();
+        predictions.add(currentLocationLabel);
         predictions.addAll(results);
         adapter.clear();
+        adapter.add(currentLocationLabel);
         adapter.addAll(results);
         adapter.notifyDataSetChanged();
     }
