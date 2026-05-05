@@ -13,7 +13,7 @@ val localProperties = Properties().apply {
 }
 
 // Backend URL
-val BACKEND_URL = "http://192.168.1.14:3000"
+val BACKEND_URL = "http://192.168.1.226:3000"
 
 android {
     namespace = "vnuhcm.hcmus.movify"
@@ -80,6 +80,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.analytics)
+    implementation("com.google.mlkit:barcode-scanning:17.2.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
