@@ -6,6 +6,30 @@ const { sendOTPEmail } = require("../services/emailService");
 
 const prisma = new PrismaClient();
 
+function serializeAccount(account) {
+  if (!account) {
+    return null;
+  }
+
+  return {
+    id: account.ID,
+    email: account.Email,
+    phoneNumber: account.PhoneNumber,
+    fullName: account.FullName,
+    role: account.Role,
+    gender: account.Gender,
+    avatar: account.Avatar,
+    dateOfBirth: account.DateOfBirth,
+    idCard: account.IDCard,
+    driverLicense: account.DriverLicense,
+    vehicleRegistration: account.VehicleRegistration,
+    driverStatus: account.DriverStatus,
+    isActive: account.IsActive,
+    createdAt: account.CreatedAt,
+    updatedAt: account.UpdatedAt
+  };
+}
+
 function decodeJwtPayload(token) {
   const parts = token.split(".");
   if (parts.length < 2) {
@@ -39,7 +63,7 @@ async function register(req, res) {
     // Check if user exists
     const existingUser = await prisma.account.findFirst({
       where: {
-        OR: [{ email }, { phoneNumber }]
+        OR: [{ Email: email }, { PhoneNumber: phoneNumber }]
       }
     });
 
@@ -56,29 +80,29 @@ async function register(req, res) {
     // Create user
     const user = await prisma.account.create({
       data: {
-        email,
-        phoneNumber,
-        hashedPassword,
-        fullName,
-        role: role || "User",
-        isActive: true
+        Email: email,
+        PhoneNumber: phoneNumber,
+        HashedPassword: hashedPassword,
+        FullName: fullName,
+        Role: role || "User",
+        IsActive: true
       },
       select: {
-        id: true,
-        email: true,
-        phoneNumber: true,
-        fullName: true,
-        role: true,
-        avatar: true,
-        createdAt: true
+        ID: true,
+        Email: true,
+        PhoneNumber: true,
+        FullName: true,
+        Role: true,
+        Avatar: true,
+        CreatedAt: true
       }
     });
 
     // Generate token
     const token = generateToken({
-      id: user.id,
-      email: user.email,
-      role: user.role
+      id: user.ID,
+      email: user.Email,
+      role: user.Role
     });
 
     res.status(201).json({
@@ -115,16 +139,16 @@ async function login(req, res) {
 
     // Find user
     const user = await prisma.account.findUnique({
-      where: { email },
+      where: { Email: email },
       select: {
-        id: true,
-        email: true,
-        phoneNumber: true,
-        fullName: true,
-        role: true,
-        avatar: true,
-        hashedPassword: true,
-        isActive: true
+        ID: true,
+        Email: true,
+        PhoneNumber: true,
+        FullName: true,
+        Role: true,
+        Avatar: true,
+        HashedPassword: true,
+        IsActive: true
       }
     });
 
@@ -135,14 +159,14 @@ async function login(req, res) {
       });
     }
 
-    if (!user.isActive) {
+    if (!user.IsActive) {
       return res.status(403).json({
         error: "Forbidden",
         message: "Account is deactivated"
       });
     }
 
-    if (!user.hashedPassword) {
+    if (!user.HashedPassword) {
       return res.status(400).json({
         error: "Bad Request",
         message: "This account uses Google Sign-In. Please continue with Google."
@@ -150,7 +174,7 @@ async function login(req, res) {
     }
 
     // Compare password
-    const isPasswordValid = await comparePassword(password, user.hashedPassword);
+    const isPasswordValid = await comparePassword(password, user.HashedPassword);
     if (!isPasswordValid) {
       return res.status(401).json({
         error: "Unauthorized",
@@ -158,24 +182,24 @@ async function login(req, res) {
       });
     }
 
-    if (needsPasswordRehash(user.hashedPassword)) {
+    if (needsPasswordRehash(user.HashedPassword)) {
       await prisma.account.update({
-        where: { id: user.id },
+        where: { ID: user.ID },
         data: {
-          hashedPassword: await hashPassword(password)
+          HashedPassword: await hashPassword(password)
         }
       });
     }
 
     // Generate token
     const token = generateToken({
-      id: user.id,
-      email: user.email,
-      role: user.role
+      id: user.ID,
+      email: user.Email,
+      role: user.Role
     });
 
-    // Remove hashedPassword from response
-    const { hashedPassword, ...userWithoutPassword } = user;
+    // Remove HashedPassword from response
+    const { HashedPassword, ...userWithoutPassword } = user;
 
     res.status(200).json({
       message: "Login successful",
@@ -202,23 +226,23 @@ async function login(req, res) {
 async function getProfile(req, res) {
   try {
     const user = await prisma.account.findUnique({
-      where: { id: req.user.id },
+      where: { ID: req.user.id },
       select: {
-        id: true,
-        email: true,
-        phoneNumber: true,
-        fullName: true,
-        role: true,
-        gender: true,
-        avatar: true,
-        dateOfBirth: true,
-        idCard: true,
-        driverLicense: true,
-        vehicleRegistration: true,
-        driverStatus: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true
+        ID: true,
+        Email: true,
+        PhoneNumber: true,
+        FullName: true,
+        Role: true,
+        Gender: true,
+        Avatar: true,
+        DateOfBirth: true,
+        IDCard: true,
+        DriverLicense: true,
+        VehicleRegistration: true,
+        DriverStatus: true,
+        IsActive: true,
+        CreatedAt: true,
+        UpdatedAt: true
       }
     });
 
@@ -230,7 +254,7 @@ async function getProfile(req, res) {
     }
 
     res.status(200).json({
-      data: user
+      data: serializeAccount(user)
     });
   } catch (error) {
     console.error("Get profile error:", error);
@@ -248,11 +272,11 @@ async function getProfile(req, res) {
 async function updateProfile(req, res) {
   try {
     const user = await prisma.account.findUnique({
-      where: { id: req.user.id },
+      where: { ID: req.user.id },
       select: {
-        id: true,
-        email: true,
-        role: true
+        ID: true,
+        Email: true,
+        Role: true
       }
     });
 
@@ -264,18 +288,18 @@ async function updateProfile(req, res) {
     }
 
     const { 
-      avatar,
-      fullName,
-      phoneNumber,
-      gender,
-      dateOfBirth,
+      Avatar,
+      FullName,
+      PhoneNumber,
+      Gender,
+      DateOfBirth,
     } = req.body;
 
-    if (phoneNumber) {
+    if (PhoneNumber) {
       const existingPhoneUser = await prisma.account.findFirst({
         where: {
-          phoneNumber,
-          id: { not: req.user.id }
+          PhoneNumber,
+          ID: { not: req.user.id }
         }
       });
 
@@ -288,19 +312,19 @@ async function updateProfile(req, res) {
     }
 
     const updatedUser = await prisma.account.update({
-      where: { id: req.user.id },
+      where: { ID: req.user.id },
       data: {
-        avatar,
-        fullName,
-        phoneNumber,
-        gender,
-        dateOfBirth
+        Avatar,
+        FullName,
+        PhoneNumber,
+        Gender,
+        DateOfBirth
       }
     });
 
     res.status(200).json({
       message: "Profile updated successfully",
-      data: updatedUser
+      data: serializeAccount(updatedUser)
     });
   } catch (error) {
     console.error("Update profile error:", error);
@@ -318,11 +342,11 @@ async function updateProfile(req, res) {
 async function refreshToken(req, res) {
   try {
     const user = await prisma.account.findUnique({
-      where: { id: req.user.id },
+      where: { ID: req.user.id },
       select: {
-        id: true,
-        email: true,
-        role: true
+        ID: true,
+        Email: true,
+        Role: true
       }
     });
 
@@ -334,9 +358,9 @@ async function refreshToken(req, res) {
     }
 
     const newToken = generateToken({
-      id: user.id,
-      email: user.email,
-      role: user.role
+      id: user.ID,
+      email: user.Email,
+      role: user.Role
     });
 
     res.status(200).json({
@@ -399,8 +423,8 @@ async function forgotPassword(req, res) {
 
     // Check if user exists
     const user = await prisma.account.findUnique({
-      where: { email },
-      select: { id: true, email: true, fullName: true }
+      where: { Email: email },
+      select: { ID: true, Email: true, FullName: true }
     });
 
     if (!user) {
@@ -485,7 +509,7 @@ async function resetPassword(req, res) {
 
     // Find user
     const user = await prisma.account.findUnique({
-      where: { email }
+      where: { Email: email }
     });
 
     if (!user) {
@@ -500,8 +524,8 @@ async function resetPassword(req, res) {
 
     // Update password
     await prisma.account.update({
-      where: { id: user.id },
-      data: { hashedPassword }
+      where: { ID: user.ID },
+      data: { HashedPassword: hashedPassword }
     });
 
     res.status(200).json({
@@ -570,15 +594,15 @@ async function googleSignIn(req, res) {
 
     // Check if user exists
     let user = await prisma.account.findFirst({
-      where: { email },
+      where: { Email: email },
       select: {
-        id: true,
-        email: true,
-        phoneNumber: true,
-        fullName: true,
-        role: true,
-        avatar: true,
-        createdAt: true
+        ID: true,
+        Email: true,
+        PhoneNumber: true,
+        FullName: true,
+        Role: true,
+        Avatar: true,
+        CreatedAt: true
       }
     });
 
@@ -586,40 +610,40 @@ async function googleSignIn(req, res) {
       // Create new user from Google Sign-In
       user = await prisma.account.create({
         data: {
-          email,
-          phoneNumber: `g${String(sub || Date.now()).slice(0, 19)}`,
-          hashedPassword: "", // No password for Google Sign-In users
-          fullName: name || email.split('@')[0],
-          role: "User",
-          avatar: picture || null,
-          isActive: true
+          Email: email,
+          PhoneNumber: `g${String(sub || Date.now()).slice(0, 19)}`,
+          HashedPassword: "", // No password for Google Sign-In users
+          FullName: name || email.split('@')[0],
+          Role: "User",
+          Avatar: picture || null,
+          IsActive: true
         },
         select: {
-          id: true,
-          email: true,
-          phoneNumber: true,
-          fullName: true,
-          role: true,
-          avatar: true,
-          createdAt: true
+          ID: true,
+          Email: true,
+          PhoneNumber: true,
+          FullName: true,
+          Role: true,
+          Avatar: true,
+          CreatedAt: true
         }
       });
 
       console.log("New user created via Google Sign-In:", email);
     } else {
       // Update existing user with Google profile info if needed
-      if (!user.avatar && picture) {
+      if (!user.Avatar && picture) {
         user = await prisma.account.update({
-          where: { id: user.id },
-          data: { avatar: picture },
+          where: { ID: user.ID },
+          data: { Avatar: picture },
           select: {
-            id: true,
-            email: true,
-            phoneNumber: true,
-            fullName: true,
-            role: true,
-            avatar: true,
-            createdAt: true
+            ID: true,
+            Email: true,
+            PhoneNumber: true,
+            FullName: true,
+            Role: true,
+            Avatar: true,
+            CreatedAt: true
           }
         });
       }
@@ -627,9 +651,9 @@ async function googleSignIn(req, res) {
 
     // Generate JWT token
     const token = generateToken({
-      id: user.id,
-      email: user.email,
-      role: user.role
+      id: user.ID,
+      email: user.Email,
+      role: user.Role
     });
 
     res.status(200).json({

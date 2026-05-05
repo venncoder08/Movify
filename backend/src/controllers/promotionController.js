@@ -23,29 +23,29 @@ async function listPromotions(req, res) {
   try {
     const promotions = await prisma.promotion.findMany({
       where: {
-        deletedAt: null
+        DeletedAt: null
       },
       orderBy: {
-        createdAt: "desc"
+        CreatedAt: "desc"
       },
       select: {
-        id: true,
-        name: true,
-        type: true,
-        discountValue: true
+        ID: true,
+        Name: true,
+        Type: true,
+        DiscountValue: true
       }
     });
 
     const promotionData = promotions.map((promotion) => {
-      const discountValue = Number(promotion.discountValue);
+      const discountValue = Number(promotion.DiscountValue);
 
       return {
-        id: promotion.id,
-        code: promotion.name,
-        title: promotion.name,
-        type: promotion.type,
+        id: promotion.ID,
+        code: promotion.Name,
+        title: promotion.Name,
+        type: promotion.Type,
         discountValue,
-        description: buildPromotionDescription(promotion.type, discountValue)
+        description: buildPromotionDescription(promotion.Type, discountValue)
       };
     });
 

@@ -3,31 +3,31 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 function getReferenceDate(trip) {
-  return trip.completedTime || trip.pickUpTime || trip.createdAt;
+  return trip.CompletedTime || trip.PickUpTime || trip.CreatedAt;
 }
 
 function serializeTrip(trip) {
   return {
-    id: trip.id,
-    status: trip.status,
-    tripType: trip.tripType,
-    pickUpLocation: trip.pickUpLocation,
-    destinationLocation: trip.destinationLocation,
-    duration: trip.duration ? Number(trip.duration) : null,
-    distance: Number(trip.distance),
-    totalAmount: Number(trip.totalAmount),
-    pickUpTime: trip.pickUpTime,
-    completedTime: trip.completedTime,
-    createdAt: trip.createdAt,
-    paymentMethod: trip.paymentMethod,
-    paymentStatus: trip.paymentStatus,
-    driver: trip.driver
+    id: trip.ID,
+    status: trip.Status,
+    tripType: trip.TripType,
+    pickUpLocation: trip.PickUpLocation,
+    destinationLocation: trip.DestinationLocation,
+    duration: trip.Duration ? Number(trip.Duration) : null,
+    distance: Number(trip.Distance),
+    totalAmount: Number(trip.TotalAmount),
+    pickUpTime: trip.PickUpTime,
+    completedTime: trip.CompletedTime,
+    createdAt: trip.CreatedAt,
+    paymentMethod: trip.PaymentMethod,
+    paymentStatus: trip.PaymentStatus,
+    driver: trip.Account_Trip_DriverIDToAccount
       ? {
-          id: trip.driver.id,
-          fullName: trip.driver.fullName,
-          vehicleRegistration: trip.driver.vehicleRegistration,
-          ratePoint: Number(trip.driver.ratePoint),
-          avatar: trip.driver.avatar
+          id: trip.Account_Trip_DriverIDToAccount.ID,
+          fullName: trip.Account_Trip_DriverIDToAccount.FullName,
+          vehicleRegistration: trip.Account_Trip_DriverIDToAccount.VehicleRegistration,
+          ratePoint: Number(trip.Account_Trip_DriverIDToAccount.RatePoint),
+          avatar: trip.Account_Trip_DriverIDToAccount.Avatar
         }
       : null
   };
@@ -37,20 +37,20 @@ async function getHistory(req, res) {
   try {
     const trips = await prisma.trip.findMany({
       where: {
-        userId: req.user.id,
-        deletedAt: null
+        UserID: req.user.id,
+        DeletedAt: null
       },
       orderBy: {
-        createdAt: "desc"
+        CreatedAt: "desc"
       },
       include: {
-        driver: {
+        Account_Trip_DriverIDToAccount: {
           select: {
-            id: true,
-            fullName: true,
-            vehicleRegistration: true,
-            ratePoint: true,
-            avatar: true
+            ID: true,
+            FullName: true,
+            VehicleRegistration: true,
+            RatePoint: true,
+            Avatar: true
           }
         }
       }
@@ -60,15 +60,15 @@ async function getHistory(req, res) {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const currentMonthTrips = trips.filter((trip) => {
       const referenceDate = getReferenceDate(trip);
-      return referenceDate >= monthStart && trip.status !== "Cancelled";
+      return referenceDate >= monthStart && trip.Status !== "Cancelled";
     });
 
     const summary = currentMonthTrips.reduce((result, trip) => {
       result.totalTrips += 1;
-      result.totalDistance += Number(trip.distance);
+      result.totalDistance += Number(trip.Distance);
 
-      if (trip.status === "Completed") {
-        result.totalAmount += Number(trip.totalAmount);
+      if (trip.Status === "Completed") {
+        result.totalAmount += Number(trip.TotalAmount);
       }
 
       return result;

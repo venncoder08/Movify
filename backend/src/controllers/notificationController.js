@@ -48,12 +48,12 @@ function serializeNotification(notification) {
   const meta = inferNotificationMeta(notification);
 
   return {
-    id: notification.id,
-    title: notification.title,
-    body: notification.body,
-    isRead: notification.isRead,
-    createdAt: notification.createdAt,
-    updatedAt: notification.updatedAt,
+    id: notification.ID,
+    title: notification.Title,
+    body: notification.Body,
+    isRead: notification.IsRead,
+    createdAt: notification.CreatedAt,
+    updatedAt: notification.UpdatedAt,
     ...meta
   };
 }
@@ -62,11 +62,11 @@ async function listNotifications(req, res) {
   try {
     const notifications = await prisma.notification.findMany({
       where: {
-        accountId: req.user.id,
-        deletedAt: null
+        AccountID: req.user.id,
+        DeletedAt: null
       },
       orderBy: {
-        createdAt: "desc"
+        CreatedAt: "desc"
       }
     });
 
@@ -100,9 +100,9 @@ async function markNotificationAsRead(req, res) {
 
     const notification = await prisma.notification.findFirst({
       where: {
-        id: notificationId,
-        accountId: req.user.id,
-        deletedAt: null
+        ID: notificationId,
+        AccountID: req.user.id,
+        DeletedAt: null
       }
     });
 
@@ -115,10 +115,10 @@ async function markNotificationAsRead(req, res) {
 
     const updatedNotification = await prisma.notification.update({
       where: {
-        id: notificationId
+        ID: notificationId
       },
       data: {
-        isRead: true
+        IsRead: true
       }
     });
 
@@ -139,12 +139,12 @@ async function markAllNotificationsAsRead(req, res) {
   try {
     const result = await prisma.notification.updateMany({
       where: {
-        accountId: req.user.id,
-        isRead: false,
-        deletedAt: null
+        AccountID: req.user.id,
+        IsRead: false,
+        DeletedAt: null
       },
       data: {
-        isRead: true
+        IsRead: true
       }
     });
 

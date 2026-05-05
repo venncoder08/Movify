@@ -8,47 +8,47 @@ function serializeDriverRequest(request) {
   }
 
   return {
-    id: request.id,
-    idCard: request.idCard,
-    driverLicense: request.driverLicense,
-    vehicleRegistration: request.vehicleRegistration,
-    status: request.status,
-    createdAt: request.createdAt,
-    updatedAt: request.updatedAt
+    id: request.ID,
+    idCard: request.IDCard,
+    driverLicense: request.DriverLicense,
+    vehicleRegistration: request.VehicleRegistration,
+    status: request.Status,
+    createdAt: request.CreatedAt,
+    updatedAt: request.UpdatedAt
   };
 }
 
 async function getMyDriverRequest(req, res) {
   try {
     const account = await prisma.account.findUnique({
-      where: { id: req.user.id },
+      where: { ID: req.user.id },
       select: {
-        role: true,
-        driverStatus: true,
-        idCard: true,
-        driverLicense: true,
-        vehicleRegistration: true
+        Role: true,
+        DriverStatus: true,
+        IDCard: true,
+        DriverLicense: true,
+        VehicleRegistration: true
       }
     });
 
     const request = await prisma.toDriverRequest.findFirst({
       where: {
-        driverId: req.user.id,
-        deletedAt: null
+        DriverID: req.user.id,
+        DeletedAt: null
       },
       orderBy: {
-        createdAt: "desc"
+        CreatedAt: "desc"
       }
     });
 
     res.status(200).json({
       data: {
-        accountRole: account?.role ?? "User",
-        driverStatus: account?.driverStatus ?? null,
+        accountRole: account?.Role ?? "User",
+        driverStatus: account?.DriverStatus ?? null,
         profileDocuments: {
-          idCard: account?.idCard ?? null,
-          driverLicense: account?.driverLicense ?? null,
-          vehicleRegistration: account?.vehicleRegistration ?? null
+          idCard: account?.IDCard ?? null,
+          driverLicense: account?.DriverLicense ?? null,
+          vehicleRegistration: account?.VehicleRegistration ?? null
         },
         latestRequest: serializeDriverRequest(request)
       }
@@ -67,12 +67,12 @@ async function createDriverRequest(req, res) {
     const { idCard, driverLicense, vehicleRegistration } = req.body;
 
     const account = await prisma.account.findUnique({
-      where: { id: req.user.id },
+      where: { ID: req.user.id },
       select: {
-        id: true,
-        role: true,
-        fullName: true,
-        driverStatus: true
+        ID: true,
+        Role: true,
+        FullName: true,
+        DriverStatus: true
       }
     });
 
@@ -83,7 +83,7 @@ async function createDriverRequest(req, res) {
       });
     }
 
-    if (account.role === "Driver" || account.driverStatus === "Approved") {
+    if (account.Role === "Driver" || account.DriverStatus === "Approved") {
       return res.status(409).json({
         error: "Conflict",
         message: "Tai khoan nay da la tai xe"
@@ -92,12 +92,12 @@ async function createDriverRequest(req, res) {
 
     const pendingRequest = await prisma.toDriverRequest.findFirst({
       where: {
-        driverId: req.user.id,
-        status: "Pending",
-        deletedAt: null
+        DriverID: req.user.id,
+        Status: "Pending",
+        DeletedAt: null
       },
       orderBy: {
-        createdAt: "desc"
+        CreatedAt: "desc"
       }
     });
 
@@ -111,30 +111,30 @@ async function createDriverRequest(req, res) {
     const createdRequest = await prisma.$transaction(async (transaction) => {
       const request = await transaction.toDriverRequest.create({
         data: {
-          driverId: req.user.id,
-          idCard,
-          driverLicense,
-          vehicleRegistration,
-          status: "Pending"
+          DriverID: req.user.id,
+          IDCard: idCard,
+          DriverLicense: driverLicense,
+          VehicleRegistration: vehicleRegistration,
+          Status: "Pending"
         }
       });
 
       await transaction.account.update({
-        where: { id: req.user.id },
+        where: { ID: req.user.id },
         data: {
-          idCard,
-          driverLicense,
-          vehicleRegistration,
-          driverStatus: "Pending"
+          IDCard: idCard,
+          DriverLicense: driverLicense,
+          VehicleRegistration: vehicleRegistration,
+          DriverStatus: "Pending"
         }
       });
 
       await transaction.notification.create({
         data: {
-          accountId: req.user.id,
-          title: "Gui yeu cau tro thanh tai xe thanh cong",
-          body: `Movify da nhan ho so cua ${account.fullName || "ban"} va se xem xet trong thoi gian som nhat.`,
-          isRead: false
+          AccountID: req.user.id,
+          Title: "Gui yeu cau tro thanh tai xe thanh cong",
+          Body: `Movify da nhan ho so cua ${account.FullName || "ban"} va se xem xet trong thoi gian som nhat.`,
+          IsRead: false
         }
       });
 

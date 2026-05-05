@@ -30,10 +30,10 @@ async function requestOTP(req, res) {
     // For verify-email, check if user doesn't exist yet
     if (purpose === "verify-email") {
       const existingUser = await prisma.account.findUnique({
-        where: { email }
+        where: { Email: email }
       });
 
-      if (existingUser && existingUser.isActive) {
+      if (existingUser && existingUser.IsActive) {
         return res.status(409).json({
           error: "Conflict",
           message: "Email already registered"
@@ -44,7 +44,7 @@ async function requestOTP(req, res) {
     // For reset-password, check if user exists
     if (purpose === "reset-password") {
       const user = await prisma.account.findUnique({
-        where: { email }
+        where: { Email: email }
       });
 
       if (!user) {
@@ -159,7 +159,7 @@ async function registerWithOTP(req, res) {
     // Check if user already exists
     const existingUser = await prisma.account.findFirst({
       where: {
-        OR: [{ email }, { phoneNumber }]
+        OR: [{ Email: email }, { PhoneNumber: phoneNumber }]
       }
     });
 
@@ -177,30 +177,30 @@ async function registerWithOTP(req, res) {
     // Create user
     const user = await prisma.account.create({
       data: {
-        email,
-        phoneNumber,
-        hashedPassword,
-        fullName,
-        role: role || "User",
-        isActive: true
+        Email: email,
+        PhoneNumber: phoneNumber,
+        HashedPassword: hashedPassword,
+        FullName: fullName,
+        Role: role || "User",
+        IsActive: true
       },
       select: {
-        id: true,
-        email: true,
-        phoneNumber: true,
-        fullName: true,
-        role: true,
-        avatar: true,
-        createdAt: true
+        ID: true,
+        Email: true,
+        PhoneNumber: true,
+        FullName: true,
+        Role: true,
+        Avatar: true,
+        CreatedAt: true
       }
     });
 
     // Generate JWT token
     const { generateToken } = require("../utils/jwt");
     const token = generateToken({
-      id: user.id,
-      email: user.email,
-      role: user.role
+      id: user.ID,
+      email: user.Email,
+      role: user.Role
     });
 
     res.status(201).json({
