@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
@@ -16,6 +17,7 @@ import vnuhcm.hcmus.movify.fragments.AdminPromotionFragment;
 import vnuhcm.hcmus.movify.fragments.AdminRequestFragment;
 import vnuhcm.hcmus.movify.fragments.BookingFragment;
 import vnuhcm.hcmus.movify.fragments.BottomNavFragment;
+import vnuhcm.hcmus.movify.fragments.DriverMapFragment;
 import vnuhcm.hcmus.movify.fragments.HistoryFragment;
 import vnuhcm.hcmus.movify.fragments.HomeLoadingFragment;
 import vnuhcm.hcmus.movify.fragments.MapBookingFragment;
@@ -24,6 +26,7 @@ import vnuhcm.hcmus.movify.fragments.NotificationFragment;
 import vnuhcm.hcmus.movify.fragments.ProfileFragment;
 import vnuhcm.hcmus.movify.models.AccountProfile;
 import vnuhcm.hcmus.movify.services.AuthApiService;
+import vnuhcm.hcmus.movify.utils.DriverSearchNotificationHelper;
 
 public class HomeActivity extends AppCompatActivity implements BottomNavFragment.MainNavigator {
 
@@ -70,6 +73,44 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
             roleExecutor.shutdownNow();
             roleExecutor = null;
         }
+    }
+
+    /**
+     * When the user presses Back while a driver search is active, show a
+     * confirmation dialog instead of silently quitting.
+     */
+    @Override
+    public void onBackPressed() {
+        if (DriverSearchNotificationHelper.isSearching()) {
+            showExitWhileSearchingDialog();
+            return;
+        }
+        super.onBackPressed();
+    }
+
+    /**
+     * Fired when the user presses Home or switches apps.
+     * Posts the "still searching" notification so it appears in the shade.
+     */
+    @Override
+    protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        if (DriverSearchNotificationHelper.isSearching()) {
+            DriverSearchNotificationHelper.notifyAppExited(getApplicationContext());
+        }
+    }
+
+    private void showExitWhileSearchingDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.exit_search_dialog_title))
+                .setMessage(getString(R.string.exit_search_dialog_message))
+                .setPositiveButton(getString(R.string.exit_search_dialog_confirm), (dialog, which) -> {
+                    DriverSearchNotificationHelper.notifyAppExited(getApplicationContext());
+                    // Small delay so notification is posted before activity finishes
+                    mainHandler.postDelayed(this::finishAffinity, 300);
+                })
+                .setNegativeButton(getString(R.string.exit_search_dialog_cancel), null)
+                .show();
     }
 
     @Override
@@ -141,8 +182,15 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
             return;
         }
 
+        Fragment mapFragment;
+        if (isDriverMode()) {
+            mapFragment = new DriverMapFragment();
+        } else {
+            mapFragment = new MapBookingFragment();
+        }
+
         getSupportFragmentManager().beginTransaction()
-                .replace(R.id.contentContainer, new MapBookingFragment())
+                .replace(R.id.contentContainer, mapFragment)
                 .addToBackStack(null)
                 .commit();
 

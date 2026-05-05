@@ -45,9 +45,10 @@ public class PromotionAdapter extends RecyclerView.Adapter<PromotionAdapter.Prom
         holder.tvPromoTitle.setText(promotion.getTitle());
         holder.tvPromoDesc.setText(promotion.getDescription());
 
-        if (position == selectedPosition) {
+        boolean isSelected = (position == selectedPosition);
+        if (isSelected) {
             holder.btnApplyPromo.setText("Đã chọn");
-            holder.btnApplyPromo.setEnabled(false);
+            holder.btnApplyPromo.setEnabled(true);
             holder.btnApplyPromo.setBackgroundTintList(ColorStateList.valueOf(0xFF0D5BD7));
             holder.btnApplyPromo.setTextColor(0xFFFFFFFF);
         } else {
@@ -58,16 +59,26 @@ public class PromotionAdapter extends RecyclerView.Adapter<PromotionAdapter.Prom
         }
 
         holder.btnApplyPromo.setOnClickListener(v -> {
+            int clickedPosition = holder.getBindingAdapterPosition();
+            if (clickedPosition == RecyclerView.NO_POSITION) return;
+
             int oldPosition = selectedPosition;
-            selectedPosition = holder.getBindingAdapterPosition();
-
-            if (oldPosition != RecyclerView.NO_POSITION) {
-                notifyItemChanged(oldPosition);
-            }
-            notifyItemChanged(selectedPosition);
-
-            if (listener != null) {
-                listener.onPromotionApplied(promotion);
+            if (oldPosition == clickedPosition) {
+                // Deselect
+                selectedPosition = RecyclerView.NO_POSITION;
+                notifyItemChanged(clickedPosition);
+                if (listener != null) {
+                    listener.onPromotionApplied(null);
+                }
+            } else {
+                selectedPosition = clickedPosition;
+                if (oldPosition != RecyclerView.NO_POSITION) {
+                    notifyItemChanged(oldPosition);
+                }
+                notifyItemChanged(selectedPosition);
+                if (listener != null) {
+                    listener.onPromotionApplied(promotion);
+                }
             }
         });
     }

@@ -5,6 +5,7 @@
 
     <string name="pickup_hint">Nhập điểm đón</string>
     <string name="destination_hint">Nhập điểm đến</string>
+    <string name="current_location">Vị trí hiện tại</string>
 
     <string name="choose_vehicle">Chọn loại xe</string>
     <string name="vehicle_bike">Xe Máy</string>
@@ -21,6 +22,10 @@
     <string name="apply">Áp dụng</string>
 
     <string name="find_driver">Tìm kiếm tài xế</string>
+    <string name="route_summary_title">Thông tin tuyến đi</string>
+    <string name="route_distance_label">Quãng đường</string>
+    <string name="route_duration_label">Thời gian ước tính</string>
+    <string name="route_amount_label">Tổng tiền ước tính</string>
 
     <string name="nav_profile">Thông tin</string>
     <string name="nav_notification">Thông báo</string>
@@ -67,5 +72,34 @@
     <string name="backend_error">Backend lỗi HTTP</string>
     <string name="payment_method_label">Phương thức thanh toán</string>
     <string name="location_permission_label">Cho phép truy cập vị trí</string>
+
+    <!-- Driver Map Messages -->
+    <string name="nearby_trips">Chuyến gần đây</string>
+    <string name="refresh">Làm mới</string>
+    <string name="accept_trip">Nhận chuyến</string>
+    <string name="no_nearby_trips">Không có chuyến gần đây</string>
+
+    <!-- Driver search countdown -->
+    <string name="search_driver_in_progress">Đang tìm: %1$s</string>
+    <string name="search_driver_cancelled">Đã hủy tìm kiếm tài xế</string>
+    <string name="search_driver_timeout">Không tìm thấy tài xế, vui lòng thử lại</string>
+    <string name="promo_deselected">Đã bỏ chọn mã khuyến mãi</string>
+
+    <!-- Trip creation -->
+    <string name="trip_creating">Đang tạo chuyến…</string>
+    <string name="trip_create_failed">Không thể tạo chuyến</string>
+
+    <!-- Notification channel -->
+    <string name="driver_search_channel_name">Tìm kiếm tài xế</string>
+    <string name="driver_search_channel_description">Thông báo trạng thái tìm kiếm tài xế</string>
+    <string name="driver_search_notification_title">🚗 Đang tìm tài xế...</string>
+    <string name="driver_search_notification_body">Đã tìm kiếm được %1$s</string>
+    <string name="driver_search_notification_exit_body">⚠️ Bạn đã rời ứng dụng khi đang tìm tài xế (%1$s). Nhấn để tiếp tục.</string>
+
+    <!-- Exit-while-searching dialog -->
+    <string name="exit_search_dialog_title">⚠️ Đang tìm tài xế</string>
+    <string name="exit_search_dialog_message">Bạn đang trong quá trình tìm tài xế. Thoát khỏi ứng dụng sẽ hủy tìm kiếm. Bạn có chắc muốn thoát không?</string>
+    <string name="exit_search_dialog_confirm">Thoát</string>
+    <string name="exit_search_dialog_cancel">Ở lại</string>
 
 </resources>
