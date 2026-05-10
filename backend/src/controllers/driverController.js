@@ -1,6 +1,8 @@
 const { PrismaClient } = require("@prisma/client");
+const { stripCurrentLocationLabel } = require("../utils/locationLabel");
 
 const prisma = new PrismaClient();
+const ACTIVE_DRIVER_TRIP_STATUSES = ["Accepted", "InProgress"];
 
 /**
  * Calculate distance between two coordinates using Haversine formula (in km)
@@ -25,18 +27,52 @@ function calculateDistance(lat1, lng1, lat2, lng2) {
 function serializeTrip(trip, distance) {
   return {
     id: trip.ID,
-    pickupAddress: trip.PickUpLocation,
+    pickupAddress: stripCurrentLocationLabel(trip.PickUpLocation),
     pickupLat: trip.PickUpLatitude ? parseFloat(trip.PickUpLatitude) : null,
     pickupLng: trip.PickUpLongitude ? parseFloat(trip.PickUpLongitude) : null,
-    destinationAddress: trip.DestinationLocation,
+    destinationAddress: stripCurrentLocationLabel(trip.DestinationLocation),
     destinationLat: trip.DestinationLatitude ? parseFloat(trip.DestinationLatitude) : null,
     destinationLng: trip.DestinationLongitude ? parseFloat(trip.DestinationLongitude) : null,
     fare: trip.TotalAmount ? parseFloat(trip.TotalAmount) : 0,
     distance: distance ? parseFloat(distance.toFixed(2)) : 0,
     tripType: trip.TripType,
     status: trip.Status,
-    createdAt: trip.CreatedAt
+    createdAt: trip.CreatedAt,
+    pickupConfirmation: {
+      driverConfirmed: Boolean(trip.DriverPickupConfirmedAt),
+      passengerConfirmed: Boolean(trip.PassengerPickupConfirmedAt),
+      driverConfirmedAt: trip.DriverPickupConfirmedAt,
+      passengerConfirmedAt: trip.PassengerPickupConfirmedAt,
+      requiredDriverDistanceMeters: 50
+    },
+    driverLocation: {
+      lat: trip.DriverCurrentLatitude ? parseFloat(trip.DriverCurrentLatitude) : null,
+      lng: trip.DriverCurrentLongitude ? parseFloat(trip.DriverCurrentLongitude) : null,
+      updatedAt: trip.DriverLocationUpdatedAt || null
+    }
   };
+}
+
+function buildDriverAcceptedNotification(driver) {
+  const driverName = driver.FullName || "Tài xế";
+  const phoneSuffix = driver.PhoneNumber ? ` SĐT: ${driver.PhoneNumber}.` : "";
+
+  return {
+    title: "Tài xế đã nhận chuyến",
+    body: `${driverName} đã nhận chuyến và đang di chuyển đến điểm đón của bạn.${phoneSuffix}`
+  };
+}
+
+function ensureDriverVehicleType(account, res) {
+  if (account.VehicleType !== "Motor" && account.VehicleType !== "Taxi") {
+    res.status(409).json({
+      error: "Conflict",
+      message: "Tài xế chưa được cấu hình loại xe"
+    });
+    return null;
+  }
+
+  return account.VehicleType;
 }
 
 /**
@@ -54,21 +90,26 @@ async function getNearbyTrips(req, res) {
     if (isNaN(driverLat) || isNaN(driverLng)) {
       return res.status(400).json({
         error: "Bad Request",
-        message: "Invalid latitude or longitude"
+        message: "Vĩ độ hoặc kinh độ không hợp lệ"
       });
     }
 
     // Verify user is a driver
     const account = await prisma.account.findUnique({
       where: { ID: req.user.id },
-      select: { Role: true, DriverStatus: true }
+      select: { Role: true, DriverStatus: true, VehicleType: true }
     });
 
-    if (!account || (account.Role !== "Driver" && account.DriverStatus !== "Approved")) {
+    if (!account || account.Role !== "Driver" || account.DriverStatus !== "Approved") {
       return res.status(403).json({
         error: "Forbidden",
-        message: "Only approved drivers can view available trips"
+        message: "Chỉ tài xế đã được duyệt mới có thể xem chuyến đang có"
       });
+    }
+
+    const driverVehicleType = ensureDriverVehicleType(account, res);
+    if (!driverVehicleType) {
+      return;
     }
 
     // Fetch all pending trips with no driver assigned
@@ -76,7 +117,8 @@ async function getNearbyTrips(req, res) {
       where: {
         Status: "Pending",
         DriverID: null,
-        DeletedAt: null
+        DeletedAt: null,
+        TripType: driverVehicleType
       },
       select: {
         ID: true,
@@ -89,6 +131,11 @@ async function getNearbyTrips(req, res) {
         TotalAmount: true,
         TripType: true,
         Status: true,
+        DriverPickupConfirmedAt: true,
+        PassengerPickupConfirmedAt: true,
+        DriverCurrentLatitude: true,
+        DriverCurrentLongitude: true,
+        DriverLocationUpdatedAt: true,
         CreatedAt: true
       },
       orderBy: {
@@ -136,7 +183,8 @@ async function getNearbyTrips(req, res) {
           lat: driverLat,
           lng: driverLng
         },
-        searchRadius: radius
+        searchRadius: radius,
+        vehicleType: driverVehicleType
       }
     });
   } catch (error) {
@@ -160,79 +208,148 @@ async function acceptTrip(req, res) {
     // Verify user is a driver
     const account = await prisma.account.findUnique({
       where: { ID: req.user.id },
-      select: { Role: true, DriverStatus: true }
+      select: {
+        Role: true,
+        DriverStatus: true,
+        VehicleType: true,
+        FullName: true,
+        PhoneNumber: true
+      }
     });
 
-    if (!account || (account.Role !== "Driver" && account.DriverStatus !== "Approved")) {
+    if (!account || account.Role !== "Driver" || account.DriverStatus !== "Approved") {
       return res.status(403).json({
         error: "Forbidden",
-        message: "Only approved drivers can accept trips"
+        message: "Chỉ tài xế đã được duyệt mới có thể nhận chuyến"
       });
     }
 
-    // Check if trip exists and is still available
-    const trip = await prisma.trip.findUnique({
-      where: { ID: tripId },
-      select: {
-        ID: true,
-        Status: true,
-        DriverID: true,
-        UserID: true
+    const driverVehicleType = ensureDriverVehicleType(account, res);
+    if (!driverVehicleType) {
+      return;
+    }
+
+    const updatedTrip = await prisma.$transaction(async (transaction) => {
+      const activeTrip = await transaction.trip.findFirst({
+        where: {
+          DriverID: req.user.id,
+          DeletedAt: null,
+          Status: { in: ACTIVE_DRIVER_TRIP_STATUSES }
+        },
+        select: { ID: true, Status: true }
+      });
+
+      if (activeTrip) {
+        const error = new Error("Tài xế đang có chuyến hoạt động");
+        error.statusCode = 409;
+        throw error;
       }
-    });
 
-    if (!trip) {
-      return res.status(404).json({
-        error: "Not Found",
-        message: "Trip not found"
+      const trip = await transaction.trip.findUnique({
+        where: { ID: tripId },
+        select: {
+          ID: true,
+          Status: true,
+          DriverID: true,
+          UserID: true,
+          TripType: true
+        }
       });
-    }
 
-    if (trip.Status !== "Pending") {
-      return res.status(409).json({
-        error: "Conflict",
-        message: "Trip is no longer available"
-      });
-    }
-
-    if (trip.DriverID !== null) {
-      return res.status(409).json({
-        error: "Conflict",
-        message: "Trip has already been accepted by another driver"
-      });
-    }
-
-    // Update trip with driver assignment
-    const updatedTrip = await prisma.trip.update({
-      where: { ID: tripId },
-      data: {
-        DriverID: req.user.id,
-        Status: "Accepted",
-        UpdatedAt: new Date()
-      },
-      select: {
-        ID: true,
-        PickUpLocation: true,
-        PickUpLatitude: true,
-        PickUpLongitude: true,
-        DestinationLocation: true,
-        DestinationLatitude: true,
-        DestinationLongitude: true,
-        TotalAmount: true,
-        TripType: true,
-        Status: true,
-        CreatedAt: true
+      if (!trip) {
+        const error = new Error("Không tìm thấy chuyến");
+        error.statusCode = 404;
+        throw error;
       }
+
+      if (trip.Status !== "Pending") {
+        const error = new Error("Chuyến không còn khả dụng");
+        error.statusCode = 409;
+        throw error;
+      }
+
+      if (trip.DriverID !== null) {
+        const error = new Error("Chuyến đã được tài xế khác nhận");
+        error.statusCode = 409;
+        throw error;
+      }
+
+      if (trip.TripType !== driverVehicleType) {
+        const error = new Error("Loại xe của tài xế không phù hợp với chuyến này");
+        error.statusCode = 409;
+        throw error;
+      }
+
+      const claimResult = await transaction.trip.updateMany({
+        where: {
+          ID: tripId,
+          Status: "Pending",
+          DriverID: null,
+          TripType: driverVehicleType
+        },
+        data: {
+          DriverID: req.user.id,
+          Status: "Accepted",
+          UpdatedAt: new Date()
+        }
+      });
+
+      if (claimResult.count !== 1) {
+        const error = new Error("Chuyến không còn khả dụng");
+        error.statusCode = 409;
+        throw error;
+      }
+
+      const acceptedTrip = await transaction.trip.findUnique({
+        where: { ID: tripId },
+        select: {
+          ID: true,
+          PickUpLocation: true,
+          PickUpLatitude: true,
+          PickUpLongitude: true,
+          DestinationLocation: true,
+          DestinationLatitude: true,
+          DestinationLongitude: true,
+          TotalAmount: true,
+          TripType: true,
+          Status: true,
+          DriverPickupConfirmedAt: true,
+          PassengerPickupConfirmedAt: true,
+          DriverCurrentLatitude: true,
+          DriverCurrentLongitude: true,
+          DriverLocationUpdatedAt: true,
+          CreatedAt: true
+        }
+      });
+
+      const notification = buildDriverAcceptedNotification(account);
+      await transaction.notification.create({
+        data: {
+          AccountID: trip.UserID,
+          Title: notification.title,
+          Body: notification.body,
+          UpdatedAt: new Date()
+        }
+      });
+
+      return acceptedTrip;
     });
 
     res.status(200).json({
       data: {
-        message: "Trip accepted successfully",
+        message: "Nhận chuyến thành công",
         trip: serializeTrip(updatedTrip, 0)
       }
     });
   } catch (error) {
     console.error("Accept trip error:", error);
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        error: error.statusCode === 404 ? "Not Found" : "Conflict",
+        message: error.message
+      });
+    }
+
     res.status(500).json({
       error: "Internal Server Error",
       message: error.message

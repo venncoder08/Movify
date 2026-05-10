@@ -6,6 +6,7 @@ public class DriverRequestStatus {
     private final String idCard;
     private final String driverLicense;
     private final String vehicleRegistration;
+    private final String vehicleType;
     private final String latestRequestStatus;
     private final String submittedAt;
 
@@ -14,6 +15,7 @@ public class DriverRequestStatus {
                                String idCard,
                                String driverLicense,
                                String vehicleRegistration,
+                               String vehicleType,
                                String latestRequestStatus,
                                String submittedAt) {
         this.accountRole = accountRole;
@@ -21,6 +23,7 @@ public class DriverRequestStatus {
         this.idCard = idCard;
         this.driverLicense = driverLicense;
         this.vehicleRegistration = vehicleRegistration;
+        this.vehicleType = vehicleType;
         this.latestRequestStatus = latestRequestStatus;
         this.submittedAt = submittedAt;
     }
@@ -43,6 +46,10 @@ public class DriverRequestStatus {
 
     public String getVehicleRegistration() {
         return vehicleRegistration;
+    }
+
+    public String getVehicleType() {
+        return vehicleType;
     }
 
     public String getLatestRequestStatus() {

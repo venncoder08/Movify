@@ -21,6 +21,7 @@
             android:layout_height="44dp"
             android:layout_centerVertical="true"
             android:background="@drawable/bg_input"
+            android:contentDescription="@string/cancel"
             android:padding="12dp"
             android:rotation="180"
             android:src="@drawable/ic_arrow"
@@ -30,7 +31,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="Trở thành tài xế"
+            android:text="@string/become_driver_title"
             android:textColor="@color/white"
             android:textSize="22sp"
             android:textStyle="bold" />
@@ -58,7 +59,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Trạng thái hồ sơ"
+                    android:text="@string/profile_status"
                     android:textColor="@color/text_hint"
                     android:textSize="14sp" />
 
@@ -67,7 +68,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Đang tải..."
+                    android:text="@string/loading_dots"
                     android:textColor="@color/text_secondary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -77,7 +78,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Nhập thông tin để gửi yêu cầu."
+                    android:text="@string/driver_request_desc"
                     android:textColor="@color/text_hint"
                     android:textSize="14sp" />
 
@@ -91,64 +92,146 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="CCCD / CMND"
+                    android:text="@string/driver_request_vehicle_type_label"
                     android:textColor="@color/text_hint"
                     android:textSize="14sp" />
 
-                <EditText
-                    android:id="@+id/etIdCard"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
                     android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_input"
-                    android:hint="Nhập số giấy tờ"
-                    android:inputType="text"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:textColor="@color/text_secondary"
-                    android:textColorHint="@color/text_hint" />
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/btnVehicleMotor"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_selected"
+                        android:gravity="center"
+                        android:text="@string/vehicle_bike"
+                        android:textColor="@color/white"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <Space
+                        android:layout_width="10dp"
+                        android:layout_height="match_parent" />
+
+                    <TextView
+                        android:id="@+id/btnVehicleCar"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_unselected"
+                        android:gravity="center"
+                        android:text="@string/vehicle_car"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
-                    android:text="Giay phep lai xe"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/driver_request_id_card_image"
                     android:textColor="@color/text_hint"
                     android:textSize="14sp" />
 
-                <EditText
-                    android:id="@+id/etDriverLicense"
+                <ImageView
+                    android:id="@+id/ivIdCardPreview"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="150dp"
                     android:layout_marginTop="8dp"
                     android:background="@drawable/bg_input"
-                    android:hint="Nhập số GPLX"
-                    android:inputType="text"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:textColor="@color/text_secondary"
-                    android:textColorHint="@color/text_hint" />
+                    android:contentDescription="@string/driver_request_id_card_image"
+                    android:padding="12dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_card" />
+
+                <TextView
+                    android:id="@+id/btnPickIdCardImage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_button_small"
+                    android:gravity="center"
+                    android:minWidth="150dp"
+                    android:paddingStart="18dp"
+                    android:paddingEnd="18dp"
+                    android:text="@string/driver_request_pick_id_card"
+                    android:textColor="@color/white"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
-                    android:text="Đăng ký xe"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/driver_request_driver_license_image"
                     android:textColor="@color/text_hint"
                     android:textSize="14sp" />
 
-                <EditText
-                    android:id="@+id/etVehicleRegistration"
+                <ImageView
+                    android:id="@+id/ivDriverLicensePreview"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="150dp"
                     android:layout_marginTop="8dp"
                     android:background="@drawable/bg_input"
-                    android:hint="Nhập biển số / đăng ký xe"
-                    android:inputType="text"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:textColor="@color/text_secondary"
-                    android:textColorHint="@color/text_hint" />
+                    android:contentDescription="@string/driver_request_driver_license_image"
+                    android:padding="12dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_card" />
+
+                <TextView
+                    android:id="@+id/btnPickDriverLicenseImage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_button_small"
+                    android:gravity="center"
+                    android:minWidth="150dp"
+                    android:paddingStart="18dp"
+                    android:paddingEnd="18dp"
+                    android:text="@string/driver_request_pick_driver_license"
+                    android:textColor="@color/white"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="@string/driver_request_vehicle_registration_image"
+                    android:textColor="@color/text_hint"
+                    android:textSize="14sp" />
+
+                <ImageView
+                    android:id="@+id/ivVehicleRegistrationPreview"
+                    android:layout_width="match_parent"
+                    android:layout_height="150dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_input"
+                    android:contentDescription="@string/driver_request_vehicle_registration_image"
+                    android:padding="12dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/ic_card" />
+
+                <TextView
+                    android:id="@+id/btnPickVehicleRegistrationImage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_button_small"
+                    android:gravity="center"
+                    android:minWidth="150dp"
+                    android:paddingStart="18dp"
+                    android:paddingEnd="18dp"
+                    android:text="@string/driver_request_pick_vehicle_registration"
+                    android:textColor="@color/white"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/btnSubmitRequest"
@@ -160,7 +243,7 @@
                     android:minWidth="170dp"
                     android:paddingStart="24dp"
                     android:paddingEnd="24dp"
-                    android:text="Gui yeu cau"
+                    android:text="@string/submit_request"
                     android:textColor="@color/white"
                     android:textSize="16sp"
                     android:textStyle="bold" />

@@ -7,20 +7,20 @@ const nearbyTripsSchema = z.object({
   query: z.object({
     lat: z
       .string()
-      .refine((val) => !isNaN(parseFloat(val)), "lat must be a valid number")
+      .refine((val) => !isNaN(parseFloat(val)), "Vĩ độ phải là số hợp lệ")
       .transform((val) => parseFloat(val))
-      .refine((val) => val >= -90 && val <= 90, "lat must be between -90 and 90"),
+      .refine((val) => val >= -90 && val <= 90, "Vĩ độ phải nằm trong khoảng -90 đến 90"),
     lng: z
       .string()
-      .refine((val) => !isNaN(parseFloat(val)), "lng must be a valid number")
+      .refine((val) => !isNaN(parseFloat(val)), "Kinh độ phải là số hợp lệ")
       .transform((val) => parseFloat(val))
-      .refine((val) => val >= -180 && val <= 180, "lng must be between -180 and 180"),
+      .refine((val) => val >= -180 && val <= 180, "Kinh độ phải nằm trong khoảng -180 đến 180"),
     radius: z
       .string()
       .optional()
-      .refine((val) => !val || !isNaN(parseFloat(val)), "radius must be a valid number")
+      .refine((val) => !val || !isNaN(parseFloat(val)), "Bán kính phải là số hợp lệ")
       .transform((val) => (val ? parseFloat(val) : 5))
-      .refine((val) => val > 0, "radius must be greater than 0")
+      .refine((val) => val > 0, "Bán kính phải lớn hơn 0")
   })
 });
 
@@ -31,8 +31,8 @@ const acceptTripSchema = z.object({
   body: z.object({
     tripId: z
       .number()
-      .int("tripId must be an integer")
-      .positive("tripId must be positive")
+      .int("Mã chuyến phải là số nguyên")
+      .positive("Mã chuyến phải lớn hơn 0")
   })
 });
 
