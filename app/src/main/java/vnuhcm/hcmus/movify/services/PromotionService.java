@@ -53,4 +53,56 @@ public final class PromotionService {
 
         return promotions;
     }
+
+    public static Promotion createPromotion(Context context, Promotion promotion) throws IOException, JSONException {
+        org.json.JSONObject requestBody = new org.json.JSONObject();
+        requestBody.put("name", promotion.getCode());
+        requestBody.put("code", promotion.getCode());
+        requestBody.put("type", promotion.getType());
+        requestBody.put("discountValue", promotion.getDiscountValue());
+
+        String jwtToken = new AuthApiService(context).getJwtToken();
+        String responseBody = BackendApiService.executeAuthenticatedPost(context, "api/promotions", jwtToken, requestBody);
+        org.json.JSONObject root = new org.json.JSONObject(responseBody);
+        org.json.JSONObject data = root.optJSONObject("data");
+        if (data == null) return null;
+
+        return new Promotion(
+                data.optInt("id", 0),
+                data.optString("title", data.optString("code", "")),
+                data.optString("description", ""),
+                data.optString("type", ""),
+                data.optDouble("discountValue", 0d)
+        );
+    }
+
+    public static Promotion updatePromotion(Context context, Promotion promotion) throws IOException, JSONException {
+        org.json.JSONObject requestBody = new org.json.JSONObject();
+        requestBody.put("name", promotion.getCode());
+        requestBody.put("code", promotion.getCode());
+        requestBody.put("type", promotion.getType());
+        requestBody.put("discountValue", promotion.getDiscountValue());
+
+        String jwtToken = new AuthApiService(context).getJwtToken();
+        String path = String.format("api/promotions/%d", promotion.getId());
+        String responseBody = BackendApiService.executeAuthenticatedPut(context, path, jwtToken, requestBody);
+        org.json.JSONObject root = new org.json.JSONObject(responseBody);
+        org.json.JSONObject data = root.optJSONObject("data");
+        if (data == null) return null;
+
+        return new Promotion(
+                data.optInt("id", 0),
+                data.optString("title", data.optString("code", "")),
+                data.optString("description", ""),
+                data.optString("type", ""),
+                data.optDouble("discountValue", 0d)
+        );
+    }
+
+    public static boolean deletePromotion(Context context, int promotionId) throws IOException {
+        String jwtToken = new AuthApiService(context).getJwtToken();
+        String path = String.format("api/promotions/%d", promotionId);
+        BackendApiService.executeAuthenticatedDelete(context, path, jwtToken);
+        return true;
+    }
 }

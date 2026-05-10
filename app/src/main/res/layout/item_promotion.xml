@@ -39,7 +39,7 @@
         android:includeFontPadding="false"
         android:paddingTop="0dp"
         android:paddingBottom="0dp"
-        android:text="Áp dụng"
+        android:text="@string/apply"
         android:textAllCaps="false"
         android:textColor="#0D5BD7"
         android:textSize="14sp"
