@@ -43,7 +43,7 @@
             android:paddingTop="8dp"
             android:paddingEnd="14dp"
             android:paddingBottom="8dp"
-            android:text="Đánh dấu đã đọc"
+        android:text="@string/mark_all_read"
             android:textColor="@color/text_hint"
             android:textSize="14sp"
             android:textStyle="bold" />
@@ -54,7 +54,7 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/tvNewBadge"
             android:layout_centerHorizontal="true"
-            android:text="Thông báo"
+        android:text="@string/nav_notification"
             android:textColor="@android:color/white"
             android:textSize="28sp"
             android:textStyle="bold" />

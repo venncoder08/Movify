@@ -3,45 +3,58 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 function inferNotificationMeta(notification) {
-  const normalizedText = `${notification.title} ${notification.body}`.toLowerCase();
+  const normalizedText = normalizeNotificationText(`${notification.Title} ${notification.Body}`);
 
-  if (normalizedText.includes("huy") || normalizedText.includes("tu choi")) {
+  if (containsNotificationKeyword(normalizedText, ["hủy", "từ chối"])) {
     return {
-      category: "Canh bao",
+      category: "Cảnh báo",
       iconKey: "warning",
       isWarning: true
     };
   }
 
-  if (normalizedText.includes("thanh toan")) {
+  if (containsNotificationKeyword(normalizedText, ["thanh toán"])) {
     return {
-      category: "Thanh toan",
+      category: "Thanh toán",
       iconKey: "payment",
       isWarning: false
     };
   }
 
-  if (normalizedText.includes("tai xe") || normalizedText.includes("chuyen di")) {
+  if (containsNotificationKeyword(normalizedText, ["tài xế", "chuyến đi"])) {
     return {
-      category: "Chuyen di",
+      category: "Chuyến đi",
       iconKey: "trip",
       isWarning: false
     };
   }
 
-  if (normalizedText.includes("khuyen mai")) {
+  if (containsNotificationKeyword(normalizedText, ["khuyến mãi"])) {
     return {
-      category: "Khuyen mai",
+      category: "Khuyến mãi",
       iconKey: "promotion",
       isWarning: false
     };
   }
 
   return {
-    category: "Thong bao",
+    category: "Thông báo",
     iconKey: "info",
     isWarning: false
   };
+}
+
+function containsNotificationKeyword(normalizedText, keywords) {
+  return keywords.some((keyword) => normalizedText.includes(normalizeNotificationText(keyword)));
+}
+
+function normalizeNotificationText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase();
 }
 
 function serializeNotification(notification) {
@@ -70,7 +83,7 @@ async function listNotifications(req, res) {
       }
     });
 
-    const unreadCount = notifications.filter((notification) => !notification.isRead).length;
+    const unreadCount = notifications.filter((notification) => !notification.IsRead).length;
 
     res.status(200).json({
       data: {
@@ -94,7 +107,7 @@ async function markNotificationAsRead(req, res) {
     if (!Number.isInteger(notificationId) || notificationId <= 0) {
       return res.status(400).json({
         error: "Validation Error",
-        message: "Notification id is invalid"
+        message: "Mã thông báo không hợp lệ"
       });
     }
 
@@ -109,7 +122,7 @@ async function markNotificationAsRead(req, res) {
     if (!notification) {
       return res.status(404).json({
         error: "Not Found",
-        message: "Notification not found"
+        message: "Không tìm thấy thông báo"
       });
     }
 
@@ -123,7 +136,7 @@ async function markNotificationAsRead(req, res) {
     });
 
     res.status(200).json({
-      message: "Notification marked as read",
+      message: "Đã đánh dấu thông báo là đã đọc",
       data: serializeNotification(updatedNotification)
     });
   } catch (error) {
@@ -149,7 +162,7 @@ async function markAllNotificationsAsRead(req, res) {
     });
 
     res.status(200).json({
-      message: "All notifications marked as read",
+      message: "Đã đánh dấu tất cả thông báo là đã đọc",
       data: {
         updatedCount: result.count
       }

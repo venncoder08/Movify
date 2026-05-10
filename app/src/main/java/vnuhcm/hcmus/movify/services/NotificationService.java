@@ -32,7 +32,7 @@ public final class NotificationService {
         String jwtToken = authApiService.getJwtToken();
 
         if (jwtToken == null || jwtToken.isBlank()) {
-            throw new IOException("No JWT token available");
+            throw new IOException("Không tìm thấy mã phiên đăng nhập");
         }
 
         String responseBody = BackendApiService.executeAuthenticatedGet(
@@ -99,14 +99,14 @@ public final class NotificationService {
     private static String requireJwtToken(Context context) throws IOException {
         String jwtToken = new AuthApiService(context).getJwtToken();
         if (jwtToken == null || jwtToken.isBlank()) {
-            throw new IOException("No JWT token available");
+            throw new IOException("Không tìm thấy mã phiên đăng nhập");
         }
         return jwtToken;
     }
 
     private static int resolveIcon(String iconKey, boolean isWarning) {
         if (isWarning) {
-            return R.drawable.ic_close;
+            return R.drawable.ic_flag;
         }
 
         switch (iconKey) {

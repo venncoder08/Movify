@@ -27,7 +27,7 @@
             android:id="@+id/tvTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Đang tìm tài xế gần bạn"
+        android:text="@string/sample_notification_title"
             android:textColor="#222222"
             android:textSize="17sp"
             android:textStyle="bold"
@@ -39,7 +39,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Vui lòng chờ trong giây lát..."
+        android:text="@string/sample_notification_body"
             android:textColor="#6E6E6E"
             android:textSize="15sp"
             android:maxLines="2"
@@ -50,7 +50,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="1 phút trước"
+        android:text="@string/sample_notification_time"
             android:textColor="#A0A0A0"
             android:textSize="14sp" />
     </LinearLayout>
