@@ -169,7 +169,7 @@
                 android:layout_height="50dp"
                 android:layout_margin="16dp"
                 android:background="@drawable/bg_button"
-                android:text="Đăng xuất"
+        android:text="@string/logout"
                 android:textColor="@android:color/white" />
 
         </LinearLayout>

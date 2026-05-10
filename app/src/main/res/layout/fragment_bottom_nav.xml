@@ -29,7 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Thông tin"
+            android:text="@string/nav_profile"
             android:textSize="13sp"
             android:textColor="#222222" />
     </LinearLayout>
@@ -55,7 +55,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Thông báo"
+            android:text="@string/nav_notification"
             android:textSize="13sp"
             android:textColor="#222222" />
     </LinearLayout>
@@ -81,7 +81,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Đặt xe"
+            android:text="@string/nav_booking"
             android:textSize="13sp"
             android:textColor="#222222" />
     </LinearLayout>
@@ -107,7 +107,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Lịch sử"
+            android:text="@string/nav_history"
             android:textSize="13sp"
             android:textColor="#222222" />
     </LinearLayout>
@@ -133,7 +133,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Tin nhắn"
+            android:text="@string/nav_message"
             android:textSize="13sp"
             android:textColor="#222222" />
     </LinearLayout>

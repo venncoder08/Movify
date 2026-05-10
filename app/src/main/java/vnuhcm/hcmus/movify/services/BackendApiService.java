@@ -55,6 +55,18 @@ class BackendApiService {
     }
 
     @NonNull
+    static String executeAuthenticatedPut(Context context, String path, String jwtToken, JSONObject requestBody)
+            throws IOException {
+        return executeRequest(context, "PUT", path, jwtToken, requestBody, Collections.emptyMap());
+    }
+
+    @NonNull
+    static String executeAuthenticatedDelete(Context context, String path, String jwtToken)
+            throws IOException {
+        return executeRequest(context, "DELETE", path, jwtToken, null, Collections.emptyMap());
+    }
+
+    @NonNull
     static String readResponse(HttpURLConnection connection, int responseCode) throws IOException {
         java.io.InputStream responseStream = responseCode >= HttpURLConnection.HTTP_BAD_REQUEST
                 ? connection.getErrorStream()

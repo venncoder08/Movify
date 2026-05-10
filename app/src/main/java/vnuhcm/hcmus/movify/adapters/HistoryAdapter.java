@@ -1,6 +1,7 @@
 package vnuhcm.hcmus.movify.adapters;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +17,9 @@ import vnuhcm.hcmus.movify.R;
 import vnuhcm.hcmus.movify.models.History;
 
 public class HistoryAdapter extends BaseAdapter {
+
+    private static final String TAG = "HistoryAdapter";
+    private static final String DEFAULT_COMMENT_TEXT = "Chưa có nhận xét";
 
     private final Context context;
     private final List<History> historyList;
@@ -50,6 +54,7 @@ public class HistoryAdapter extends BaseAdapter {
         TextView tvAmountLabel;
         TextView tvPrice;
         TextView tvRating;
+        TextView tvMyComment;
         TextView tvPickupLabel;
         TextView tvPickupAddress;
         TextView tvDestinationLabel;
@@ -73,6 +78,7 @@ public class HistoryAdapter extends BaseAdapter {
             holder.tvAmountLabel = convertView.findViewById(R.id.tvAmountLabel);
             holder.tvPrice = convertView.findViewById(R.id.tvPrice);
             holder.tvRating = convertView.findViewById(R.id.tvRating);
+            holder.tvMyComment = convertView.findViewById(R.id.tvMyComment);
             holder.tvPickupLabel = convertView.findViewById(R.id.tvPickupLabel);
             holder.tvPickupAddress = convertView.findViewById(R.id.tvPickupAddress);
             holder.tvDestinationLabel = convertView.findViewById(R.id.tvDestinationLabel);
@@ -104,7 +110,12 @@ public class HistoryAdapter extends BaseAdapter {
                 ? R.string.history_destination_label_driver
                 : R.string.history_destination_label_user);
         holder.tvDestinationAddress.setText(item.getDestinationAddress());
-        holder.tvDriverInfo.setText(buildInfoLine(item));
+        if (isDriverMode) {
+            holder.tvDriverInfo.setVisibility(View.GONE);
+        } else {
+            holder.tvDriverInfo.setVisibility(View.VISIBLE);
+            holder.tvDriverInfo.setText(item.getDriverName());
+        }
         holder.tvDuration.setText(item.getDuration());
         holder.tvDistance.setText(item.getDistance());
 
@@ -121,24 +132,26 @@ public class HistoryAdapter extends BaseAdapter {
 
         if (item.getRatingText() == null || item.getRatingText().trim().isEmpty()) {
             holder.tvRating.setVisibility(View.GONE);
+            holder.tvRating.setText("");
         } else {
             holder.tvRating.setVisibility(View.VISIBLE);
             holder.tvRating.setText(item.getRatingText());
         }
 
+        if (item.getMyComment() == null || item.getMyComment().trim().isEmpty()) {
+            holder.tvMyComment.setVisibility(View.VISIBLE);
+            holder.tvMyComment.setText(DEFAULT_COMMENT_TEXT);
+        } else {
+            holder.tvMyComment.setVisibility(View.VISIBLE);
+            holder.tvMyComment.setText(item.getMyComment());
+        }
+
+        Log.d(TAG, "Bind history item: tripId=" + item.getTripId()
+                + ", ratingText=" + item.getRatingText()
+                + ", myComment=" + item.getMyComment()
+                + ", ratingVisible=" + (holder.tvRating.getVisibility() == View.VISIBLE)
+                + ", commentVisible=" + (holder.tvMyComment.getVisibility() == View.VISIBLE));
+
         return convertView;
-    }
-
-    private String buildInfoLine(History item) {
-        if (!isDriverMode) {
-            return item.getDriverName() + " | " + item.getDriverPlate();
-        }
-
-        String plate = item.getDriverPlate();
-        if (plate == null || plate.trim().isEmpty()) {
-            plate = context.getString(R.string.not_updated);
-        }
-
-        return context.getString(R.string.history_vehicle_info, plate);
     }
 }

@@ -61,7 +61,7 @@
     <string name="fill_required_fields">Vui lòng nhập đầy đủ thông tin</string>
 
     <!-- Error Messages -->
-    <string name="backend_no_account_info">Backend không trả về thông tin tài khoản</string>
+    <string name="backend_no_account_info">Máy chủ không trả về thông tin tài khoản</string>
     <string name="pickup_location_required">Nhập điểm đón</string>
     <string name="destination_required">Nhập điểm đến</string>
     <string name="finding_driver">Đang tìm tài xế...</string>
@@ -69,7 +69,7 @@
     <string name="this_month">Tháng này</string>
 
     <!-- General Messages -->
-    <string name="backend_error">Backend lỗi HTTP</string>
+    <string name="backend_error">Lỗi máy chủ HTTP</string>
     <string name="payment_method_label">Phương thức thanh toán</string>
     <string name="location_permission_label">Cho phép truy cập vị trí</string>
 
@@ -95,11 +95,48 @@
     <string name="driver_search_notification_title">🚗 Đang tìm tài xế...</string>
     <string name="driver_search_notification_body">Đã tìm kiếm được %1$s</string>
     <string name="driver_search_notification_exit_body">⚠️ Bạn đã rời ứng dụng khi đang tìm tài xế (%1$s). Nhấn để tiếp tục.</string>
+    <string name="system_notification_channel_name">Thông báo Movify</string>
+    <string name="system_notification_channel_description">Thông báo chuyến đi, tài khoản và khuyến mãi từ Movify</string>
+    <string name="system_notification_default_body">Bạn có thông báo mới từ Movify</string>
 
     <!-- Exit-while-searching dialog -->
     <string name="exit_search_dialog_title">⚠️ Đang tìm tài xế</string>
     <string name="exit_search_dialog_message">Bạn đang trong quá trình tìm tài xế. Thoát khỏi ứng dụng sẽ hủy tìm kiếm. Bạn có chắc muốn thoát không?</string>
     <string name="exit_search_dialog_confirm">Thoát</string>
     <string name="exit_search_dialog_cancel">Ở lại</string>
-
+    <string name="scanned_value">Giá trị quét</string>
+    <string name="rating_title">Đánh giá tài xế</string>
+    <string name="rating_subtitle">Chuyến đi đã hoàn thành. Chia sẻ trải nghiệm của bạn để Movify cải thiện chất lượng dịch vụ.</string>
+    <string name="rating_driver_fallback">Tài xế Movify</string>
+    <string name="rating_comment_label">Nhận xét</string>
+    <string name="rating_comment_hint">Bạn muốn góp ý gì thêm?</string>
+    <string name="rating_submit">Gửi đánh giá</string>
+    <string name="rating_skip">Để sau</string>
+    <string name="rating_submitting">Đang gửi...</string>
+    <string name="rating_score_required">Vui lòng chọn số sao đánh giá</string>
+    <string name="rating_submit_failed">Không thể gửi đánh giá: %1$s</string>
+    <string name="rating_thanks">Cảm ơn bạn đã đánh giá tài xế</string>
+    <string name="trip_completed_rating_toast">Chuyến đi đã hoàn thành</string>
+    <string name="missing_login_session">Không tìm thấy mã phiên đăng nhập</string>
+    <string name="otp_label">Mã OTP</string>
+    <string name="otp_input_hint">Nhập mã OTP</string>
+    <string name="back_to_login">Quay lại đăng nhập</string>
+    <string name="account_synced_data">Dữ liệu được đồng bộ</string>
+    <string name="role_label">Vai trò</string>
+    <string name="driver_status_label">Trạng thái tài xế</string>
+    <string name="scan_qr_title">Quét mã QR hoặc mã vạch</string>
+    <string name="close">Đóng</string>
+    <string name="placeholder_empty">--</string>
+    <string name="cancel_trip">Hủy chuyến</string>
+    <string name="confirm">Xác nhận</string>
+    <string name="mark_all_read">Đánh dấu đã đọc</string>
+    <string name="logout">Đăng xuất</string>
+    <string name="pickup_label_short">Điểm đón</string>
+    <string name="destination_label_short">Điểm đến</string>
+    <string name="sample_fare">5.00đ</string>
+    <string name="sample_distance">0.5 km</string>
+    <string name="sample_notification_title">Đang tìm tài xế gần bạn</string>
+    <string name="sample_notification_body">Vui lòng chờ trong giây lát...</string>
+    <string name="sample_notification_time">1 phút trước</string>
 </resources>
+    

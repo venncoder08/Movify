@@ -30,7 +30,7 @@
     <string name="logging_in">Đang đăng nhập...</string>
     <string name="login_failed">Đăng nhập thất bại</string>
     <string name="authenticating">Đang xác thực...</string>
-    <string name="token_error">Không thể lấy token từ backend</string>
+    <string name="token_error">Không thể lấy mã phiên từ máy chủ</string>
     <string name="error_prefix">Lỗi: </string>
 
     <!-- Register Hints -->

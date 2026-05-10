@@ -50,7 +50,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Họ và tên"
+            android:text="@string/full_name_label"
                         android:textColor="#777777"
                         android:textSize="14sp" />
 
@@ -62,7 +62,7 @@
                         android:background="@drawable/bg_input"
                         android:drawableStart="@drawable/ic_user"
                         android:drawablePadding="10dp"
-                        android:hint="Nhập họ và tên"
+                android:hint="@string/full_name_hint"
                         android:inputType="textPersonName"
                         android:paddingStart="16dp"
                         android:paddingEnd="16dp" />
@@ -71,7 +71,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:text="Số điện thoại"
+            android:text="@string/phone_number_label"
                         android:textColor="#777777"
                         android:textSize="14sp" />
 
@@ -83,7 +83,7 @@
                         android:background="@drawable/bg_input"
                         android:drawableStart="@drawable/ic_message"
                         android:drawablePadding="10dp"
-                        android:hint="Nhập số điện thoại"
+                android:hint="@string/phone_number_hint"
                         android:inputType="phone"
                         android:paddingStart="16dp"
                         android:paddingEnd="16dp" />
@@ -157,7 +157,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:text="Mã OTP"
+            android:text="@string/otp_label"
                         android:textColor="#777777"
                         android:textSize="14sp" />
 
@@ -173,7 +173,7 @@
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:contentDescription="Mã OTP"
+                android:contentDescription="@string/otp_label"
                             android:src="@drawable/ic_key" />
 
                         <EditText
@@ -182,7 +182,7 @@
                             android:layout_height="match_parent"
                             android:layout_weight="1"
                             android:background="@null"
-                            android:hint="Nhập mã OTP"
+                android:hint="@string/otp_input_hint"
                             android:inputType="number"
                             android:paddingStart="12dp" />
 

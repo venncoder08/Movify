@@ -17,7 +17,7 @@
     <string name="driver_acceptance_rate">Tỷ lệ nhận khách</string>
     <string name="driver_acceptance_rate_value">94%</string>
     <string name="driver_request_section">Khách hàng gần bạn</string>
-    <string name="driver_request_hint">Phần này đang dùng dữ liệu mẫu để hoàn thiện UI tìm khách hàng trước khi nối backend.</string>
+    <string name="driver_request_hint">Phần này đang dùng dữ liệu mẫu để hoàn thiện giao diện tìm khách hàng trước khi nối máy chủ.</string>
     <string name="driver_request_chip_priority">Ưu tiên</string>
     <string name="driver_request_chip_standard">Phù hợp</string>
     <string name="driver_request_chip_bike">Xe máy</string>

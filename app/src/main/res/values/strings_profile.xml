@@ -20,10 +20,17 @@
     <string name="cancel">Hủy</string>
 
     <string-array name="profile_gender_options">
-        <item>Male</item>
-        <item>Female</item>
-        <item>Other</item>
+        <item>Nam</item>
+        <item>Nữ</item>
+        <item>Khác</item>
     </string-array>
+
+    <string name="gender_male">Nam</string>
+    <string name="gender_female">Nữ</string>
+    <string name="gender_other">Khác</string>
+    <string name="role_user">Người dùng</string>
+    <string name="role_driver">Tài xế</string>
+    <string name="role_admin">Quản trị viên</string>
 
     <string name="account_info">Thông tin tài khoản</string>
     <string name="settings">Cài đặt</string>
@@ -81,11 +88,24 @@
     <string name="profile_pending">Hồ sơ đang chờ duyệt</string>
     <string name="resubmit_request">Gửi lại yêu cầu</string>
     <string name="submit_request">Gửi yêu cầu</string>
-    <string name="profile_pending_admin">Hồ sơ đang chờ admin duyệt</string>
+    <string name="profile_pending_admin">Hồ sơ đang chờ quản trị viên duyệt</string>
     <string name="profile_rejected">Hồ sơ đã bị từ chối</string>
-    <string name="driver_request_desc">Nhập CCCD, GPLX và đăng ký xe để gửi yêu cầu lên admin.</string>
+    <string name="driver_request_desc">Chọn ảnh CCCD, GPLX và đăng ký xe để gửi yêu cầu lên quản trị viên.</string>
     <string name="request_submitted_at">Yêu cầu gần nhất đã được gửi vào </string>
     <string name="submit_request_success">Gửi yêu cầu thành công</string>
+    <string name="driver_request_load_error">Không tải được hồ sơ tài xế</string>
+    <string name="driver_request_missing_images">Vui lòng chọn đủ 3 ảnh tài liệu</string>
+    <string name="driver_request_approved_label">Tài khoản đã là tài xế</string>
+    <string name="driver_request_activated">Đã được kích hoạt tài xế</string>
+    <string name="driver_request_not_submitted">Chưa gửi hồ sơ</string>
+    <string name="driver_request_submitting">Đang gửi...</string>
+    <string name="driver_request_id_card_image">Ảnh CCCD / CMND</string>
+    <string name="driver_request_driver_license_image">Ảnh giấy phép lái xe</string>
+    <string name="driver_request_vehicle_registration_image">Ảnh đăng ký xe</string>
+    <string name="driver_request_pick_id_card">Chọn ảnh CCCD</string>
+    <string name="driver_request_pick_driver_license">Chọn ảnh GPLX</string>
+    <string name="driver_request_pick_vehicle_registration">Chọn ảnh đăng ký xe</string>
+    <string name="driver_request_vehicle_type_label">Loại xe đăng ký</string>
 
     <!-- Profile Menu Items -->
     <string name="personal_info_title">Thông tin cá nhân</string>

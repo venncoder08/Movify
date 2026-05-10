@@ -220,7 +220,24 @@ public class EditProfileActivity extends AppCompatActivity {
 
 	private String getSelectedGender() {
 		Object selectedItem = spinnerGender.getSelectedItem();
-		return selectedItem == null ? null : selectedItem.toString();
+		if (selectedItem == null) {
+			return null;
+		}
+
+		String selectedGender = selectedItem.toString();
+		if (getString(R.string.gender_male).equalsIgnoreCase(selectedGender)) {
+			return "Male";
+		}
+
+		if (getString(R.string.gender_female).equalsIgnoreCase(selectedGender)) {
+			return "Female";
+		}
+
+		if (getString(R.string.gender_other).equalsIgnoreCase(selectedGender)) {
+			return "Other";
+		}
+
+		return selectedGender;
 	}
 
 	private void selectGender(String gender) {
@@ -229,13 +246,30 @@ public class EditProfileActivity extends AppCompatActivity {
 			return;
 		}
 
+		String displayGender = mapGenderForDisplay(gender);
 		for (int i = 0; i < adapter.getCount(); i++) {
 			Object item = adapter.getItem(i);
-			if (item != null && item.toString().equalsIgnoreCase(gender)) {
+			if (item != null && item.toString().equalsIgnoreCase(displayGender)) {
 				spinnerGender.setSelection(i);
 				return;
 			}
 		}
+	}
+
+	private String mapGenderForDisplay(String gender) {
+		if ("Male".equalsIgnoreCase(gender)) {
+			return getString(R.string.gender_male);
+		}
+
+		if ("Female".equalsIgnoreCase(gender)) {
+			return getString(R.string.gender_female);
+		}
+
+		if ("Other".equalsIgnoreCase(gender)) {
+			return getString(R.string.gender_other);
+		}
+
+		return gender;
 	}
 
 	private void updateAvatarPreview() {

@@ -30,7 +30,7 @@ public final class RemoteImageLoader {
         imageView.setTag(imageUrl);
 
         if (TextUtils.isEmpty(imageUrl)) {
-            applyFallback(imageView);
+            applyFallback(imageView, R.drawable.ic_user, true);
             return;
         }
 
@@ -43,7 +43,35 @@ public final class RemoteImageLoader {
                 }
 
                 if (bitmap == null) {
-                    applyFallback(imageView);
+                    applyFallback(imageView, R.drawable.ic_user, true);
+                    return;
+                }
+
+                imageView.setImageBitmap(bitmap);
+                imageView.setImageTintList(null);
+                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            });
+        });
+    }
+
+    public static void loadImage(ImageView imageView, @Nullable String imageUrl, @DrawableRes int fallbackRes) {
+        imageView.setTag(imageUrl);
+
+        if (TextUtils.isEmpty(imageUrl)) {
+            applyFallback(imageView, fallbackRes, false);
+            return;
+        }
+
+        EXECUTOR.execute(() -> {
+            Bitmap bitmap = downloadBitmap(imageUrl);
+            MAIN_HANDLER.post(() -> {
+                Object currentTag = imageView.getTag();
+                if (currentTag == null || !currentTag.equals(imageUrl)) {
+                    return;
+                }
+
+                if (bitmap == null) {
+                    applyFallback(imageView, fallbackRes, false);
                     return;
                 }
 
@@ -76,13 +104,11 @@ public final class RemoteImageLoader {
         }
     }
 
-    private static void applyFallback(ImageView imageView) {
-        applyFallback(imageView, R.drawable.ic_user);
-    }
-
-    private static void applyFallback(ImageView imageView, @DrawableRes int fallbackRes) {
+    private static void applyFallback(ImageView imageView, @DrawableRes int fallbackRes, boolean tintWhite) {
         imageView.setImageResource(fallbackRes);
-        imageView.setImageTintList(imageView.getContext().getColorStateList(android.R.color.white));
+        imageView.setImageTintList(tintWhite
+                ? imageView.getContext().getColorStateList(android.R.color.white)
+                : null);
         imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
     }
 }

@@ -139,9 +139,9 @@ public class PersonalInfoActivity extends AppCompatActivity {
         tvFullNameValue.setText(fallback(profile.getFullName(), buildDisplayName(profile.getEmail())));
         tvEmailValue.setText(fallback(profile.getEmail(), authApiService.getUserEmail()));
         tvPhoneValue.setText(fallback(profile.getPhoneNumber(), getString(R.string.not_updated)));
-        tvRoleValue.setText(fallback(profile.getRole(), getString(R.string.not_updated)));
+        tvRoleValue.setText(fallback(mapRoleForDisplay(profile.getRole()), getString(R.string.not_updated)));
         tvDriverStatusValue.setText(resolveDriverStatus(profile));
-        tvGenderValue.setText(fallback(profile.getGender(), getString(R.string.not_updated)));
+        tvGenderValue.setText(fallback(mapGenderForDisplay(profile.getGender()), getString(R.string.not_updated)));
         tvDateOfBirthValue.setText(fallback(formatDate(profile.getDateOfBirth()), getString(R.string.not_updated)));
         updateBecomeDriverButton(profile);
     }
@@ -204,6 +204,38 @@ public class PersonalInfoActivity extends AppCompatActivity {
 
     private String fallback(String value, String fallback) {
         return TextUtils.isEmpty(value) ? fallback : value;
+    }
+
+    private String mapRoleForDisplay(String role) {
+        if ("User".equalsIgnoreCase(role)) {
+            return getString(R.string.role_user);
+        }
+
+        if ("Driver".equalsIgnoreCase(role)) {
+            return getString(R.string.role_driver);
+        }
+
+        if ("Admin".equalsIgnoreCase(role)) {
+            return getString(R.string.role_admin);
+        }
+
+        return role;
+    }
+
+    private String mapGenderForDisplay(String gender) {
+        if ("Male".equalsIgnoreCase(gender)) {
+            return getString(R.string.gender_male);
+        }
+
+        if ("Female".equalsIgnoreCase(gender)) {
+            return getString(R.string.gender_female);
+        }
+
+        if ("Other".equalsIgnoreCase(gender)) {
+            return getString(R.string.gender_other);
+        }
+
+        return gender;
     }
 
     private String resolveDriverStatus(AccountProfile profile) {

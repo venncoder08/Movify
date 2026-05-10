@@ -30,7 +30,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="Thông tin cá nhân"
+            android:text="@string/profile_title"
             android:textColor="@color/white"
             android:textSize="22sp"
             android:textStyle="bold" />
@@ -86,7 +86,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Thông tin tài khoản"
+                            android:text="@string/account_info"
                             android:textColor="@color/text_secondary"
                             android:textSize="18sp"
                             android:textStyle="bold" />
@@ -95,7 +95,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="6dp"
-                            android:text="Dữ liệu được đồng bộ"
+                            android:text="@string/account_synced_data"
                             android:textColor="@color/text_hint"
                             android:textSize="14sp" />
                     </LinearLayout>
@@ -111,7 +111,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Họ và tên"
+                    android:text="@string/full_name_label"
                     android:textColor="@color/text_hint"
                     android:textSize="14sp" />
 
@@ -120,7 +120,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Đang tải..."
+                    android:text="@string/loading_dots"
                     android:textColor="@color/text_secondary"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -129,7 +129,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="18dp"
-                    android:text="Email"
+                    android:text="@string/email"
                     android:textColor="@color/text_hint"
                     android:textSize="14sp" />
 
@@ -138,7 +138,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Đang tải..."
+                    android:text="@string/loading_dots"
                     android:textColor="@color/text_secondary"
                     android:textSize="16sp" />
 
@@ -146,7 +146,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="18dp"
-                    android:text="Số điện thoại"
+                    android:text="@string/phone_number_label"
                     android:textColor="@color/text_hint"
                     android:textSize="14sp" />
 
@@ -155,7 +155,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Đang tải..."
+                    android:text="@string/loading_dots"
                     android:textColor="@color/text_secondary"
                     android:textSize="16sp" />
 
@@ -163,7 +163,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="18dp"
-                    android:text="Vai trò"
+                    android:text="@string/role_label"
                     android:textColor="@color/text_hint"
                     android:textSize="14sp" />
 
@@ -172,7 +172,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Đang tải..."
+                    android:text="@string/loading_dots"
                     android:textColor="@color/text_secondary"
                     android:textSize="16sp" />
 
@@ -180,7 +180,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="18dp"
-                    android:text="Trạng thái tài xế"
+                    android:text="@string/driver_status_label"
                     android:textColor="@color/text_hint"
                     android:textSize="14sp" />
 
@@ -189,7 +189,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Đang tải..."
+                    android:text="@string/loading_dots"
                     android:textColor="@color/text_secondary"
                     android:textSize="16sp" />
 
@@ -197,7 +197,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="18dp"
-                    android:text="Giới tính"
+                    android:text="@string/gender_label"
                     android:textColor="@color/text_hint"
                     android:textSize="14sp" />
 
@@ -206,7 +206,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Đang tải..."
+                    android:text="@string/loading_dots"
                     android:textColor="@color/text_secondary"
                     android:textSize="16sp" />
 
@@ -214,7 +214,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="18dp"
-                    android:text="Ngày sinh"
+                    android:text="@string/date_of_birth_label"
                     android:textColor="@color/text_hint"
                     android:textSize="14sp" />
 
@@ -223,7 +223,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Đang tải..."
+                    android:text="@string/loading_dots"
                     android:textColor="@color/text_secondary"
                     android:textSize="16sp" />
 
@@ -237,7 +237,7 @@
                     android:minWidth="170dp"
                     android:paddingStart="24dp"
                     android:paddingEnd="24dp"
-                    android:text="Chỉnh sửa hồ sơ"
+                    android:text="@string/edit_profile"
                     android:textColor="@color/white"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -252,7 +252,7 @@
                     android:minWidth="190dp"
                     android:paddingStart="24dp"
                     android:paddingEnd="24dp"
-                    android:text="Trở thành tài xế"
+                    android:text="@string/become_driver"
                     android:textColor="@color/primary"
                     android:textSize="16sp"
                     android:textStyle="bold" />

@@ -1,5 +1,10 @@
 package vnuhcm.hcmus.movify.activities;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -7,6 +12,8 @@ import android.view.View;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import java.util.concurrent.ExecutorService;
@@ -25,19 +32,29 @@ import vnuhcm.hcmus.movify.fragments.MessageFragment;
 import vnuhcm.hcmus.movify.fragments.NotificationFragment;
 import vnuhcm.hcmus.movify.fragments.ProfileFragment;
 import vnuhcm.hcmus.movify.models.AccountProfile;
+import vnuhcm.hcmus.movify.models.NotificationFeed;
 import vnuhcm.hcmus.movify.services.AuthApiService;
+import vnuhcm.hcmus.movify.services.NotificationService;
 import vnuhcm.hcmus.movify.utils.DriverSearchNotificationHelper;
+import vnuhcm.hcmus.movify.utils.NotificationWorkScheduler;
+import vnuhcm.hcmus.movify.utils.SystemNotificationHelper;
 
 public class HomeActivity extends AppCompatActivity implements BottomNavFragment.MainNavigator {
+
+    public static final String EXTRA_OPEN_TAB = "vnuhcm.hcmus.movify.extra.OPEN_TAB";
 
     private static final String STATE_CURRENT_TAB = "state_current_tab";
     private static final String STATE_ROLE_MODE = "state_role_mode";
     private static final String STATE_ROLE_RESOLVED = "state_role_resolved";
+    private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 501;
+    private static final long SYSTEM_NOTIFICATION_POLL_INTERVAL_MS = 10_000L;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private AuthApiService authApiService;
     private ExecutorService roleExecutor;
+    private ExecutorService notificationExecutor;
+    private Runnable notificationPollRunnable;
     private String currentTab = BottomNavFragment.TAB_BOOKING;
     private String roleMode = BottomNavFragment.ROLE_USER;
     private boolean roleResolved = false;
@@ -49,12 +66,18 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
 
         authApiService = new AuthApiService(this);
         roleExecutor = Executors.newSingleThreadExecutor();
+        notificationExecutor = Executors.newSingleThreadExecutor();
 
         if (savedInstanceState != null) {
             currentTab = savedInstanceState.getString(STATE_CURRENT_TAB, BottomNavFragment.TAB_BOOKING);
             roleMode = savedInstanceState.getString(STATE_ROLE_MODE, BottomNavFragment.ROLE_USER);
             roleResolved = savedInstanceState.getBoolean(STATE_ROLE_RESOLVED, false);
         }
+
+        handleOpenTabIntent(getIntent());
+        ensureNotificationPermission();
+        NotificationWorkScheduler.schedule(this);
+        startSystemNotificationPolling();
 
         if (roleResolved) {
             refreshCurrentTab();
@@ -72,6 +95,20 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
         if (roleExecutor != null) {
             roleExecutor.shutdownNow();
             roleExecutor = null;
+        }
+        if (notificationExecutor != null) {
+            notificationExecutor.shutdownNow();
+            notificationExecutor = null;
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleOpenTabIntent(intent);
+        if (roleResolved) {
+            refreshCurrentTab();
         }
     }
 
@@ -111,6 +148,70 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
                 })
                 .setNegativeButton(getString(R.string.exit_search_dialog_cancel), null)
                 .show();
+    }
+
+    private void ensureNotificationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return;
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        ActivityCompat.requestPermissions(
+                this,
+                new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                NOTIFICATION_PERMISSION_REQUEST_CODE
+        );
+    }
+
+    private void startSystemNotificationPolling() {
+        pollSystemNotifications();
+    }
+
+    private void pollSystemNotifications() {
+        if (notificationExecutor == null || notificationExecutor.isShutdown()) {
+            return;
+        }
+
+        Context appContext = getApplicationContext();
+        notificationExecutor.execute(() -> {
+            try {
+                NotificationFeed feed = NotificationService.fetchNotifications(appContext);
+                SystemNotificationHelper.notifyNewUnread(appContext, feed.getNotifications());
+            } catch (Exception ignored) {
+                // Notification polling should not interrupt the active screen.
+            } finally {
+                mainHandler.post(this::scheduleNextNotificationPoll);
+            }
+        });
+    }
+
+    private void scheduleNextNotificationPoll() {
+        if (isFinishing() || isDestroyed()
+                || notificationExecutor == null
+                || notificationExecutor.isShutdown()) {
+            return;
+        }
+
+        if (notificationPollRunnable != null) {
+            mainHandler.removeCallbacks(notificationPollRunnable);
+        }
+        notificationPollRunnable = this::pollSystemNotifications;
+        mainHandler.postDelayed(notificationPollRunnable, SYSTEM_NOTIFICATION_POLL_INTERVAL_MS);
+    }
+
+    private void handleOpenTabIntent(Intent intent) {
+        if (intent == null) {
+            return;
+        }
+
+        String requestedTab = intent.getStringExtra(EXTRA_OPEN_TAB);
+        if (BottomNavFragment.TAB_NOTIFICATION.equals(requestedTab)) {
+            currentTab = BottomNavFragment.TAB_NOTIFICATION;
+        }
     }
 
     @Override

@@ -90,16 +90,17 @@
             android:textStyle="bold"
             android:enabled="false" />
 
-        <Button
+        <TextView
             android:id="@+id/btnCancelTrip"
             android:layout_width="match_parent"
             android:layout_height="44dp"
             android:layout_marginTop="8dp"
-            android:background="@drawable/bg_cancel"
-        android:text="@string/cancel_trip"
+            android:background="@drawable/bg_admin_action_danger"
+            android:text="@string/cancel_trip"
             android:textColor="#D64545"
             android:textSize="14sp"
             android:textStyle="bold"
+            android:gravity="center"
             android:visibility="gone" />
     </LinearLayout>
 

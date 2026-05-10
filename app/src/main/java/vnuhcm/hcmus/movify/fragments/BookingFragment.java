@@ -129,7 +129,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
     private TextView tvActiveTripStatus;
     private TextView tvActiveTripDriver;
     private TextView tvActiveTripDistance;
-    private Button btnCancelActiveTrip;
+    private TextView btnCancelActiveTrip;
     private RecyclerView rvPromotions;
     private SupportMapFragment activeTripMapFragment;
     private GoogleMap activeTripMap;

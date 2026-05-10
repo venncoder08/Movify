@@ -12,6 +12,7 @@ public class AccountProfile {
     private final String idCard;
     private final String driverLicense;
     private final String vehicleRegistration;
+    private final String vehicleType;
     private final String driverStatus;
 
     public AccountProfile(int id,
@@ -25,6 +26,7 @@ public class AccountProfile {
                           String idCard,
                           String driverLicense,
                           String vehicleRegistration,
+                          String vehicleType,
                           String driverStatus) {
         this.id = id;
         this.fullName = fullName;
@@ -37,6 +39,7 @@ public class AccountProfile {
         this.idCard = idCard;
         this.driverLicense = driverLicense;
         this.vehicleRegistration = vehicleRegistration;
+        this.vehicleType = vehicleType;
         this.driverStatus = driverStatus;
     }
 
@@ -82,6 +85,10 @@ public class AccountProfile {
 
     public String getVehicleRegistration() {
         return vehicleRegistration;
+    }
+
+    public String getVehicleType() {
+        return vehicleType;
     }
 
     public String getDriverStatus() {

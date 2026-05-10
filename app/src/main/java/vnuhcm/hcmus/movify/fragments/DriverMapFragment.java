@@ -81,7 +81,7 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
     private RecyclerView tripsRecyclerView;
     private Button btnRefreshTrips;
     private Button btnAcceptTrip;
-    private Button btnCancelTrip;
+    private TextView btnCancelTrip;
     private ProgressBar loadingProgressBar;
     private TextView emptyTripsText;
 

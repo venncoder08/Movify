@@ -1,9 +1,14 @@
 package vnuhcm.hcmus.movify.fragments;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +21,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import java.util.concurrent.ExecutorService;
@@ -26,11 +33,14 @@ import vnuhcm.hcmus.movify.activities.LoadingActivity;
 import vnuhcm.hcmus.movify.activities.profile.PersonalInfoActivity;
 import vnuhcm.hcmus.movify.models.AccountProfile;
 import vnuhcm.hcmus.movify.services.AuthApiService;
+import vnuhcm.hcmus.movify.utils.NotificationWorkScheduler;
 import vnuhcm.hcmus.movify.utils.RemoteImageLoader;
 
 public class ProfileFragment extends Fragment {
 
     private static final String ARG_ROLE_MODE = "role_mode";
+    private static final int REQUEST_NOTIFICATION_PERMISSION = 601;
+    private static final int REQUEST_LOCATION_PERMISSION = 602;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -45,12 +55,15 @@ public class ProfileFragment extends Fragment {
     private View itemLocation;
     private View dividerAccountInfo;
     private View dividerLocation;
+    private SwitchCompat notificationSwitch;
+    private SwitchCompat locationSwitch;
 
     private Button btnLogout;
 
     private AuthApiService authApiService;
     private ExecutorService profileExecutor;
     private String roleMode = BottomNavFragment.ROLE_USER;
+    private boolean bindingSwitchState = false;
 
     public ProfileFragment() {
     }
@@ -92,6 +105,7 @@ public class ProfileFragment extends Fragment {
     public void onResume() {
         super.onResume();
         loadProfile();
+        syncPermissionSwitches();
     }
 
     @Override
@@ -162,21 +176,53 @@ public class ProfileFragment extends Fragment {
     }
 
     private void setupSettings() {
-        setupSwitchItem(
+        notificationSwitch = setupSwitchItem(
                 itemNotification,
                 R.drawable.ic_noti,
-                "Thông báo",
-                "Quản lý thông báo ứng dụng",
-                true
+                getString(R.string.notifications),
+                getString(R.string.notifications_desc),
+                areNotificationsEnabled()
         );
+        notificationSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> handleNotificationToggle(isChecked));
+        itemNotification.setOnClickListener(v -> notificationSwitch.performClick());
 
         if (!isAdminMode()) {
-            setupSwitchItem(
+            locationSwitch = setupSwitchItem(
                     itemLocation,
                     R.drawable.ic_location,
                     getString(R.string.location_title),
                     getString(R.string.location_permission_label),
-                    true
+                    hasLocationPermission()
+            );
+            locationSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> handleLocationToggle(isChecked));
+            itemLocation.setOnClickListener(v -> locationSwitch.performClick());
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_NOTIFICATION_PERMISSION) {
+            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            if (granted) {
+                NotificationWorkScheduler.schedule(requireContext());
+            }
+            syncPermissionSwitches();
+            showPermissionResultToast(
+                    granted,
+                    "Đã bật thông báo",
+                    "Chưa cấp quyền thông báo"
+            );
+            return;
+        }
+
+        if (requestCode == REQUEST_LOCATION_PERMISSION) {
+            syncPermissionSwitches();
+            showPermissionResultToast(
+                    grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED,
+                    "Đã bật quyền vị trí",
+                    "Chưa cấp quyền vị trí"
             );
         }
     }
@@ -293,8 +339,8 @@ public class ProfileFragment extends Fragment {
 
     private String buildPersonalInfoSubtitle(AccountProfile profile) {
         StringBuilder builder = new StringBuilder();
-        appendSegment(builder, profile.getRole());
-        appendSegment(builder, profile.getGender());
+        appendSegment(builder, mapRoleForDisplay(profile.getRole()));
+        appendSegment(builder, mapGenderForDisplay(profile.getGender()));
         appendSegment(builder, formatDate(profile.getDateOfBirth()));
 
         if (builder.length() == 0) {
@@ -345,6 +391,38 @@ public class ProfileFragment extends Fragment {
         return TextUtils.isEmpty(value) ? fallback : value;
     }
 
+    private String mapRoleForDisplay(String role) {
+        if (BottomNavFragment.ROLE_ADMIN.equals(role)) {
+            return getString(R.string.role_admin);
+        }
+
+        if (BottomNavFragment.ROLE_DRIVER.equals(role)) {
+            return getString(R.string.role_driver);
+        }
+
+        if ("User".equalsIgnoreCase(role)) {
+            return getString(R.string.role_user);
+        }
+
+        return role;
+    }
+
+    private String mapGenderForDisplay(String gender) {
+        if ("Male".equalsIgnoreCase(gender)) {
+            return getString(R.string.gender_male);
+        }
+
+        if ("Female".equalsIgnoreCase(gender)) {
+            return getString(R.string.gender_female);
+        }
+
+        if ("Other".equalsIgnoreCase(gender)) {
+            return getString(R.string.gender_other);
+        }
+
+        return gender;
+    }
+
     private boolean isAdminMode() {
         return BottomNavFragment.ROLE_ADMIN.equals(roleMode);
     }
@@ -359,7 +437,7 @@ public class ProfileFragment extends Fragment {
         tvSubtitle.setText(subtitle);
     }
 
-    private void setupSwitchItem(View itemView, int iconRes, String title, String subtitle, boolean checked) {
+    private SwitchCompat setupSwitchItem(View itemView, int iconRes, String title, String subtitle, boolean checked) {
         ImageView ivIcon = itemView.findViewById(R.id.ivIcon);
         TextView tvTitle = itemView.findViewById(R.id.tvTitle);
         TextView tvSubtitle = itemView.findViewById(R.id.tvSubtitle);
@@ -369,10 +447,130 @@ public class ProfileFragment extends Fragment {
         tvTitle.setText(title);
         tvSubtitle.setText(subtitle);
         switchItem.setChecked(checked);
+        return switchItem;
+    }
 
-        switchItem.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            String message = title + ": " + (isChecked ? "Bật" : "Tắt");
-            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
-        });
+    private void handleNotificationToggle(boolean isChecked) {
+        if (bindingSwitchState || !isAdded()) {
+            return;
+        }
+
+        if (isChecked) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                    && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        REQUEST_NOTIFICATION_PERMISSION
+                );
+                return;
+            }
+
+            if (!NotificationManagerCompat.from(requireContext()).areNotificationsEnabled()) {
+                openNotificationSettings();
+                Toast.makeText(requireContext(), "Bật thông báo trong cài đặt hệ thống", Toast.LENGTH_SHORT).show();
+                syncPermissionSwitches();
+                return;
+            }
+
+            NotificationWorkScheduler.schedule(requireContext());
+            Toast.makeText(requireContext(), "Đã bật thông báo", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        NotificationWorkScheduler.cancel(requireContext());
+        openNotificationSettings();
+        Toast.makeText(requireContext(), "Tắt thông báo trong cài đặt hệ thống", Toast.LENGTH_SHORT).show();
+        syncPermissionSwitches();
+    }
+
+    private void handleLocationToggle(boolean isChecked) {
+        if (bindingSwitchState || !isAdded()) {
+            return;
+        }
+
+        if (isChecked) {
+            if (!hasLocationPermission()) {
+                requestPermissions(
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                        REQUEST_LOCATION_PERMISSION
+                );
+                return;
+            }
+
+            Toast.makeText(requireContext(), "Đã bật quyền vị trí", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        openAppSettings();
+        Toast.makeText(requireContext(), "Tắt quyền vị trí trong cài đặt ứng dụng", Toast.LENGTH_SHORT).show();
+        syncPermissionSwitches();
+    }
+
+    private void syncPermissionSwitches() {
+        if (!isAdded()) {
+            return;
+        }
+
+        bindingSwitchState = true;
+        if (notificationSwitch != null) {
+            notificationSwitch.setChecked(areNotificationsEnabled());
+        }
+        if (locationSwitch != null) {
+            locationSwitch.setChecked(hasLocationPermission());
+        }
+        bindingSwitchState = false;
+    }
+
+    private boolean areNotificationsEnabled() {
+        if (!isAdded()) {
+            return false;
+        }
+
+        boolean notificationManagerEnabled = NotificationManagerCompat.from(requireContext()).areNotificationsEnabled();
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return notificationManagerEnabled;
+        }
+
+        return notificationManagerEnabled
+                && ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private boolean hasLocationPermission() {
+        if (!isAdded()) {
+            return false;
+        }
+
+        return ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void openNotificationSettings() {
+        Intent intent = new Intent();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            intent.setAction(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+            intent.putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().getPackageName());
+        } else {
+            intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            intent.setData(Uri.fromParts("package", requireContext().getPackageName(), null));
+        }
+        startActivity(intent);
+    }
+
+    private void openAppSettings() {
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.fromParts("package", requireContext().getPackageName(), null));
+        startActivity(intent);
+    }
+
+    private void showPermissionResultToast(boolean granted, String grantedMessage, String deniedMessage) {
+        if (!isAdded()) {
+            return;
+        }
+
+        Toast.makeText(requireContext(), granted ? grantedMessage : deniedMessage, Toast.LENGTH_SHORT).show();
     }
 }
