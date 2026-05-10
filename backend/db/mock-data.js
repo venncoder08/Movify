@@ -17,7 +17,7 @@ module.exports = {
       phoneNumber: "0900000002",
       password: "Rider@123",
       role: "User",
-      fullName: "Nguyen Minh Thu",
+      fullName: "Nguyễn Minh Thu",
       gender: "Female",
       avatar: "https://i.pravatar.cc/300?img=32"
     },
@@ -26,7 +26,7 @@ module.exports = {
       phoneNumber: "0900000011",
       password: "User2@123",
       role: "User",
-      fullName: "Pham Duc Minh",
+      fullName: "Phạm Đức Minh",
       gender: "Male",
       avatar: "https://i.pravatar.cc/300?img=5"
     },
@@ -35,7 +35,7 @@ module.exports = {
       phoneNumber: "0900000012",
       password: "User3@123",
       role: "User",
-      fullName: "Hoang Thi Lan",
+      fullName: "Hoàng Thị Lan",
       gender: "Female",
       avatar: "https://i.pravatar.cc/300?img=42"
     },
@@ -44,7 +44,7 @@ module.exports = {
       phoneNumber: "0900000013",
       password: "User4@123",
       role: "User",
-      fullName: "Vu Anh Tu",
+      fullName: "Vũ Anh Tú",
       gender: "Male",
       avatar: "https://i.pravatar.cc/300?img=18"
     },
@@ -55,12 +55,13 @@ module.exports = {
       phoneNumber: "0900000003",
       password: "Driver@123",
       role: "Driver",
-      fullName: "Tran Quoc Bao",
+      fullName: "Trần Quốc Bảo",
       gender: "Male",
       avatar: "https://i.pravatar.cc/300?img=48",
       idCard: "079201234567",
       driverLicense: "79A1-123456",
       vehicleRegistration: "59-S1 123.45",
+      vehicleType: "Motor",
       driverStatus: "Approved",
       ratePoint: "4.90"
     },
@@ -69,12 +70,13 @@ module.exports = {
       phoneNumber: "0900000009",
       password: "Driver2@123",
       role: "Driver",
-      fullName: "Vo Thanh Linh",
+      fullName: "Võ Thanh Linh",
       gender: "Female",
       avatar: "https://i.pravatar.cc/300?img=65",
       idCard: "079202345678",
       driverLicense: "79A1-234567",
       vehicleRegistration: "59-S2 234.56",
+      vehicleType: "Taxi",
       driverStatus: "Approved",
       ratePoint: "4.75"
     },
@@ -83,12 +85,13 @@ module.exports = {
       phoneNumber: "0900000010",
       password: "Driver3@123",
       role: "Driver",
-      fullName: "Dang Van Hieu",
+      fullName: "Đặng Văn Hiếu",
       gender: "Male",
       avatar: "https://i.pravatar.cc/300?img=55",
       idCard: "079203456789",
       driverLicense: "79A1-345678",
       vehicleRegistration: "59-S3 345.67",
+      vehicleType: "Motor",
       driverStatus: "Approved",
       ratePoint: "4.85"
     },
@@ -99,7 +102,7 @@ module.exports = {
       phoneNumber: "0900000004",
       password: "Applicant@123",
       role: "User",
-      fullName: "Le Hoang Nam",
+      fullName: "Lê Hoàng Nam",
       gender: "Male",
       avatar: "https://i.pravatar.cc/300?img=14"
     },
@@ -108,7 +111,7 @@ module.exports = {
       phoneNumber: "0900000014",
       password: "Applicant2@123",
       role: "User",
-      fullName: "Tran Minh Khoa",
+      fullName: "Trần Minh Khoa",
       gender: "Male",
       avatar: "https://i.pravatar.cc/300?img=25"
     }
@@ -124,14 +127,14 @@ module.exports = {
     }
   ],
   trips: [
-    // Trips with driver 1 (Tran Quoc Bao)
+    // Chuyến của tài xế 1 (Trần Quốc Bảo)
     {
       key: "completedTrip1",
       id: 900301,
       distance: "6.80",
       totalAmount: "52000.00",
-      pickUpLocation: "227 Nguyen Van Cu, Quan 5, TP.HCM",
-      destinationLocation: "Cho Ben Thanh, Quan 1, TP.HCM",
+      pickUpLocation: "227 Nguyễn Văn Cừ, Quận 5, TP.HCM",
+      destinationLocation: "Chợ Bến Thành, Quận 1, TP.HCM",
       pickUpLatitude: "10.7533",
       pickUpLongitude: "106.6550",
       destinationLatitude: "10.7913",
@@ -152,7 +155,7 @@ module.exports = {
       id: 900303,
       distance: "8.50",
       totalAmount: "65000.00",
-      pickUpLocation: "Tao Đàn Park, Quận 1, TP.HCM",
+      pickUpLocation: "Công viên Tao Đàn, Quận 1, TP.HCM",
       destinationLocation: "Bến Xe Miền Đông, Quận 9, TP.HCM",
       pickUpLatitude: "10.7878",
       pickUpLongitude: "106.6990",
@@ -174,8 +177,8 @@ module.exports = {
       id: 900302,
       distance: "4.20",
       totalAmount: "36000.00",
-      pickUpLocation: "54/30 Le Van Luong, Quan 7, TP.HCM",
-      destinationLocation: "RMIT Viet Nam, Quan 7, TP.HCM",
+      pickUpLocation: "54/30 Lê Văn Lương, Quận 7, TP.HCM",
+      destinationLocation: "RMIT Việt Nam, Quận 7, TP.HCM",
       pickUpLatitude: "10.7286",
       pickUpLongitude: "106.7055",
       destinationLatitude: "10.7310",
@@ -192,7 +195,7 @@ module.exports = {
       promotionKey: null
     },
 
-    // Trips with driver 2 (Vo Thanh Linh)
+    // Chuyến của tài xế 2 (Võ Thanh Linh)
     {
       key: "completedTrip3",
       id: 900304,
@@ -220,7 +223,7 @@ module.exports = {
       id: 900305,
       distance: "5.50",
       totalAmount: "44000.00",
-      pickUpLocation: "Saigon Square, Quận 1, TP.HCM",
+      pickUpLocation: "Sài Gòn Square, Quận 1, TP.HCM",
       destinationLocation: "Đường Nguyễn Huệ, Quận 1, TP.HCM",
       pickUpLatitude: "10.7918",
       pickUpLongitude: "106.7032",
@@ -238,7 +241,7 @@ module.exports = {
       promotionKey: "welcome15"
     },
 
-    // Trips with driver 3 (Dang Van Hieu)
+    // Chuyến của tài xế 3 (Đặng Văn Hiếu)
     {
       key: "completedTrip5",
       id: 900306,
@@ -284,6 +287,52 @@ module.exports = {
       promotionKey: null
     },
 
+    // Chuyến tháng 5
+    {
+      key: "completedTrip7",
+      id: 900312,
+      distance: "7.50",
+      totalAmount: "60000.00",
+      pickUpLocation: "Crescent Mall, Quận 7, TP.HCM",
+      destinationLocation: "Saigon Center, Quận 1, TP.HCM",
+      pickUpLatitude: "10.7286",
+      pickUpLongitude: "106.7055",
+      destinationLatitude: "10.7770",
+      destinationLongitude: "106.7076",
+      duration: "25.00",
+      tripType: "Taxi",
+      status: "Completed",
+      pickUpTime: "2026-05-08T09:00:00+07:00",
+      completedTime: "2026-05-08T09:25:00+07:00",
+      paymentMethod: "BankTransfer",
+      paymentStatus: "Paid",
+      userKey: "rider",
+      driverKey: "driver",
+      promotionKey: null
+    },
+    {
+      key: "completedTrip8",
+      id: 900313,
+      distance: "5.20",
+      totalAmount: "42000.00",
+      pickUpLocation: "Quận 7 Branch Office, Quận 7, TP.HCM",
+      destinationLocation: "Landmark 81, Quận 7, TP.HCM",
+      pickUpLatitude: "10.7310",
+      pickUpLongitude: "106.7180",
+      destinationLatitude: "10.7957",
+      destinationLongitude: "106.7114",
+      duration: "18.00",
+      tripType: "Motor",
+      status: "Completed",
+      pickUpTime: "2026-05-09T14:30:00+07:00",
+      completedTime: "2026-05-09T14:48:00+07:00",
+      paymentMethod: "Cash",
+      paymentStatus: "Paid",
+      userKey: "user2",
+      driverKey: "driver2",
+      promotionKey: null
+    },
+
     // Pending trips for driver to accept
     {
       key: "pendingTrip1",
@@ -312,7 +361,7 @@ module.exports = {
       id: 900309,
       distance: "5.80",
       totalAmount: "45000.00",
-      pickUpLocation: "Tao Đàn Park, Quận 1, TP.HCM",
+      pickUpLocation: "Công viên Tao Đàn, Quận 1, TP.HCM",
       destinationLocation: "Aeon Mall Bình Thạnh, Quận 2, TP.HCM",
       pickUpLatitude: "10.7878",
       pickUpLongitude: "106.6990",
@@ -443,7 +492,7 @@ module.exports = {
       id: 900503,
       accountKey: "applicant",
       title: "Hồ sơ đang chờ duyệt",
-      body: "Yêu cầu nâng cấp tài khoản lên driver đang được xem xét.",
+      body: "Yêu cầu nâng cấp tài khoản lên tài xế đang được xem xét.",
       isRead: true
     },
     {
@@ -501,18 +550,20 @@ module.exports = {
       id: 900601,
       driverKey: "applicant",
       adminKey: "admin",
-      idCard: "079298765432",
-      driverLicense: "79A1-654321",
-      vehicleRegistration: "59-S2 678.90",
+      idCard: "https://placehold.co/900x560/png?text=CCCD+L%C3%AA+Ho%C3%A0ng+Nam",
+      driverLicense: "https://placehold.co/900x560/png?text=GPLX+L%C3%AA+Ho%C3%A0ng+Nam",
+      vehicleRegistration: "https://placehold.co/900x560/png?text=%C4%90%C4%83ng+k%C3%BD+xe+59-S2+678.90",
+      vehicleType: "Motor",
       status: "Pending"
     },
     {
       id: 900602,
       driverKey: "applicant2",
       adminKey: "admin",
-      idCard: "079205555666",
-      driverLicense: "79A1-555666",
-      vehicleRegistration: "59-S3 555.66",
+      idCard: "https://placehold.co/900x560/png?text=CCCD+Tr%E1%BA%A7n+Minh+Khoa",
+      driverLicense: "https://placehold.co/900x560/png?text=GPLX+Tr%E1%BA%A7n+Minh+Khoa",
+      vehicleRegistration: "https://placehold.co/900x560/png?text=%C4%90%C4%83ng+k%C3%BD+xe+59-S3+555.66",
+      vehicleType: "Taxi",
       status: "Pending"
     }
   ],

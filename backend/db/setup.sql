@@ -18,14 +18,31 @@ CREATE TABLE Account (
     Avatar         VARCHAR(500),   -- URL or file path to avatar image
     IsActive       BOOLEAN      NOT NULL DEFAULT TRUE,
     -- Driver-only fields (NULL if Role != 'Driver')
-    IDCard              VARCHAR(50),
-    DriverLicense       VARCHAR(50),
-    VehicleRegistration VARCHAR(100),
+    IDCard              VARCHAR(500),
+    DriverLicense       VARCHAR(500),
+    VehicleRegistration VARCHAR(500),
+    VehicleType         VARCHAR(50) CHECK (VehicleType IN ('Motor', 'Taxi')),
     DriverStatus        VARCHAR(50) CHECK (DriverStatus IN ('Pending', 'Approved', 'Rejected')),
     RatePoint           NUMERIC(3, 2) DEFAULT 0,   -- average rating score
     CreatedAt      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     UpdatedAt      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     DeletedAt      TIMESTAMPTZ
+);
+
+-- ============================================================
+-- Table: OtpCode
+-- ============================================================
+DROP TABLE IF EXISTS OtpCode CASCADE;
+CREATE TABLE OtpCode (
+    ID        SERIAL PRIMARY KEY,
+    Email     VARCHAR(255) NOT NULL,
+    Purpose   VARCHAR(50)  NOT NULL DEFAULT 'generic',
+    CodeHash  VARCHAR(255) NOT NULL,
+    Attempts  INT          NOT NULL DEFAULT 0,
+    ExpiresAt TIMESTAMPTZ  NOT NULL,
+    CreatedAt TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    UpdatedAt TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    UNIQUE (Email, Purpose)
 );
 
 -- ============================================================
@@ -63,6 +80,11 @@ CREATE TABLE Trip (
     Status              VARCHAR(50)    NOT NULL DEFAULT 'Pending'
                             CHECK (Status IN ('Pending', 'Accepted', 'InProgress', 'Completed', 'Cancelled')),
     PickUpTime          TIMESTAMPTZ,
+    DriverPickupConfirmedAt TIMESTAMPTZ,
+    PassengerPickupConfirmedAt TIMESTAMPTZ,
+    DriverCurrentLatitude NUMERIC(10, 8),
+    DriverCurrentLongitude NUMERIC(11, 8),
+    DriverLocationUpdatedAt TIMESTAMPTZ,
     CompletedTime       TIMESTAMPTZ,
     CancelReason        TEXT,
     PaymentMethod       VARCHAR(50)    NOT NULL DEFAULT 'Cash'
@@ -117,9 +139,10 @@ CREATE TABLE Notification (
 DROP TABLE IF EXISTS ToDriverRequest CASCADE;
 CREATE TABLE ToDriverRequest (
     ID                  SERIAL PRIMARY KEY,
-    IDCard              VARCHAR(50)  NOT NULL,
-    DriverLicense       VARCHAR(50)  NOT NULL,
-    VehicleRegistration VARCHAR(100) NOT NULL,
+    IDCard              VARCHAR(500) NOT NULL,
+    DriverLicense       VARCHAR(500) NOT NULL,
+    VehicleRegistration VARCHAR(500) NOT NULL,
+    VehicleType         VARCHAR(50)  NOT NULL DEFAULT 'Motor' CHECK (VehicleType IN ('Motor', 'Taxi')),
     Status              VARCHAR(50)  NOT NULL DEFAULT 'Pending'
                             CHECK (Status IN ('Pending', 'Approved', 'Rejected')),
     DriverID            INT NOT NULL REFERENCES Account(ID) ON DELETE CASCADE,
@@ -139,6 +162,8 @@ CREATE TABLE Message (
     SenderID    INT NOT NULL REFERENCES Account(ID) ON DELETE CASCADE,
     RecipientID INT NOT NULL REFERENCES Account(ID) ON DELETE CASCADE,
     Content     TEXT NOT NULL,
+    ContentType VARCHAR(50)  NOT NULL DEFAULT 'Text'
+                    CHECK (ContentType IN ('Text', 'Image')),
     IsRead      BOOLEAN      NOT NULL DEFAULT FALSE,
     CreatedAt   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     UpdatedAt   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
@@ -151,8 +176,10 @@ CREATE TABLE Message (
 CREATE INDEX idx_account_email           ON Account(Email);
 CREATE INDEX idx_account_phone           ON Account(PhoneNumber);
 CREATE INDEX idx_account_role            ON Account(Role);
+CREATE INDEX idx_account_vehicle_type    ON Account(VehicleType);
 CREATE INDEX idx_account_active          ON Account(IsActive);
 CREATE INDEX idx_account_deleted         ON Account(DeletedAt) WHERE DeletedAt IS NULL;
+CREATE INDEX idx_otp_expires_at          ON OtpCode(ExpiresAt);
 
 CREATE INDEX idx_trip_user               ON Trip(UserID);
 CREATE INDEX idx_trip_driver             ON Trip(DriverID);
@@ -174,6 +201,7 @@ CREATE INDEX idx_notification_deleted    ON Notification(DeletedAt) WHERE Delete
 CREATE INDEX idx_todriverrequest_driver  ON ToDriverRequest(DriverID);
 CREATE INDEX idx_todriverrequest_admin   ON ToDriverRequest(AdminID);
 CREATE INDEX idx_todriverrequest_status  ON ToDriverRequest(Status);
+CREATE INDEX idx_todriverrequest_vehicle_type ON ToDriverRequest(VehicleType);
 CREATE INDEX idx_todriverrequest_deleted ON ToDriverRequest(DeletedAt) WHERE DeletedAt IS NULL;
 
 CREATE INDEX idx_message_sender         ON Message(SenderID);
@@ -198,6 +226,11 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS set_updated_at_account ON Account CASCADE;
 CREATE TRIGGER set_updated_at_account
     BEFORE UPDATE ON Account
+    FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
+
+DROP TRIGGER IF EXISTS set_updated_at_otpcode ON OtpCode CASCADE;
+CREATE TRIGGER set_updated_at_otpcode
+    BEFORE UPDATE ON OtpCode
     FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
 
 DROP TRIGGER IF EXISTS set_updated_at_trip ON Trip CASCADE;

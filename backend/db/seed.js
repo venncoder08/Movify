@@ -29,6 +29,7 @@ async function upsertAccount(account) {
       IDCard: account.idCard ?? null,
       DriverLicense: account.driverLicense ?? null,
       VehicleRegistration: account.vehicleRegistration ?? null,
+      VehicleType: account.vehicleType ?? null,
       DriverStatus: account.driverStatus ?? null,
       RatePoint: decimal(account.ratePoint ?? "0"),
       UpdatedAt: new Date()
@@ -45,6 +46,7 @@ async function upsertAccount(account) {
       IDCard: account.idCard ?? null,
       DriverLicense: account.driverLicense ?? null,
       VehicleRegistration: account.vehicleRegistration ?? null,
+      VehicleType: account.vehicleType ?? null,
       DriverStatus: account.driverStatus ?? null,
       RatePoint: decimal(account.ratePoint ?? "0"),
       CreatedAt: new Date(),
@@ -232,6 +234,7 @@ async function seedDriverRequests(accountMap) {
           IDCard: request.idCard,
           DriverLicense: request.driverLicense,
           VehicleRegistration: request.vehicleRegistration,
+          VehicleType: request.vehicleType,
           Status: request.status,
           DriverID: driver.ID,
           AdminID: admin?.ID ?? null,
@@ -243,11 +246,23 @@ async function seedDriverRequests(accountMap) {
           IDCard: request.idCard,
           DriverLicense: request.driverLicense,
           VehicleRegistration: request.vehicleRegistration,
+          VehicleType: request.vehicleType,
           Status: request.status,
           DriverID: driver.ID,
           AdminID: admin?.ID ?? null,
           CreatedAt: new Date(),
           UpdatedAt: new Date()
+        }
+      });
+
+      await prisma.account.update({
+        where: { ID: driver.ID },
+        data: {
+          IDCard: request.idCard,
+          DriverLicense: request.driverLicense,
+          VehicleRegistration: request.vehicleRegistration,
+          VehicleType: request.vehicleType,
+          DriverStatus: request.status
         }
       });
     })

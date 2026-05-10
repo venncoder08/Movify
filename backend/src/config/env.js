@@ -10,6 +10,7 @@ module.exports = {
   countryCode: process.env.GEOAPIFY_COUNTRYCODE || "vn",
   bias: process.env.GEOAPIFY_BIAS || "proximity:106.6297,10.8231",
   autocompleteLimit: Number(process.env.GEOAPIFY_AUTOCOMPLETE_LIMIT || 5),
+  googleClientId: process.env.GOOGLE_CLIENT_ID || process.env.FIREBASE_WEB_CLIENT_ID || "",
   jwtSecret: process.env.JWT_SECRET || "movify-dev-secret-key-change-in-production",
   jwtExpiration: process.env.JWT_EXPIRATION || "7d",
   // Email configuration for OTP

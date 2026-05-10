@@ -19,13 +19,14 @@ model Account {
   Gender                                            Gender?
   Avatar                                            String?               @db.VarChar(500)
   IsActive                                          Boolean               @default(true)
-  IDCard                                            String?               @db.VarChar(50)
-  DriverLicense                                     String?               @db.VarChar(50)
-  VehicleRegistration                               String?               @db.VarChar(100)
+  IDCard                                            String?               @db.VarChar(500)
+  DriverLicense                                     String?               @db.VarChar(500)
+  VehicleRegistration                               String?               @db.VarChar(500)
+  VehicleType                                       TripType?
   DriverStatus                                      DriverApprovalStatus?
   RatePoint                                         Decimal               @default(0) @db.Decimal(3, 2)
   CreatedAt                                         DateTime              @default(now()) @db.Timestamptz(6)
-  UpdatedAt                                         DateTime              @db.Timestamptz(6)
+  UpdatedAt                                         DateTime              @updatedAt @db.Timestamptz(6)
   DeletedAt                                         DateTime?             @db.Timestamptz(6)
   Message_Message_RecipientIDToAccount              Message[]             @relation("Message_RecipientIDToAccount")
   Message_Message_SenderIDToAccount                 Message[]             @relation("Message_SenderIDToAccount")
@@ -41,6 +42,21 @@ model Account {
   @@index([IsActive], map: "idx_account_active")
   @@index([DeletedAt], map: "idx_account_deleted")
   @@index([Role], map: "idx_account_role")
+  @@index([VehicleType], map: "idx_account_vehicle_type")
+}
+
+model OtpCode {
+  ID        Int      @id @default(autoincrement())
+  Email     String   @db.VarChar(255)
+  Purpose   String   @default("generic") @db.VarChar(50)
+  CodeHash  String   @db.VarChar(255)
+  Attempts  Int      @default(0)
+  ExpiresAt DateTime @db.Timestamptz(6)
+  CreatedAt DateTime @default(now()) @db.Timestamptz(6)
+  UpdatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([Email, Purpose], map: "uq_otp_email_purpose")
+  @@index([ExpiresAt], map: "idx_otp_expires_at")
 }
 
 model Promotion {
@@ -50,7 +66,7 @@ model Promotion {
   DiscountValue Decimal   @db.Decimal(10, 2)
   AdminID       Int
   CreatedAt     DateTime  @default(now()) @db.Timestamptz(6)
-  UpdatedAt     DateTime  @db.Timestamptz(6)
+  UpdatedAt     DateTime  @updatedAt @db.Timestamptz(6)
   DeletedAt     DateTime? @db.Timestamptz(6)
   Account       Account   @relation(fields: [AdminID], references: [ID])
   Trip          Trip[]
@@ -73,6 +89,11 @@ model Trip {
   TripType                       TripType      @default(Motor)
   Status                         TripStatus    @default(Pending)
   PickUpTime                     DateTime?     @db.Timestamptz(6)
+  DriverPickupConfirmedAt        DateTime?     @db.Timestamptz(6)
+  PassengerPickupConfirmedAt     DateTime?     @db.Timestamptz(6)
+  DriverCurrentLatitude          Decimal?      @db.Decimal(10, 8)
+  DriverCurrentLongitude         Decimal?      @db.Decimal(11, 8)
+  DriverLocationUpdatedAt        DateTime?     @db.Timestamptz(6)
   CompletedTime                  DateTime?     @db.Timestamptz(6)
   CancelReason                   String?
   PaymentMethod                  PaymentMethod @default(Cash)
@@ -81,7 +102,7 @@ model Trip {
   DriverID                       Int?
   PromotionID                    Int?
   CreatedAt                      DateTime      @default(now()) @db.Timestamptz(6)
-  UpdatedAt                      DateTime      @db.Timestamptz(6)
+  UpdatedAt                      DateTime      @updatedAt @db.Timestamptz(6)
   DeletedAt                      DateTime?     @db.Timestamptz(6)
   Rating                         Rating[]
   Account_Trip_DriverIDToAccount Account?      @relation("Trip_DriverIDToAccount", fields: [DriverID], references: [ID])
@@ -106,7 +127,7 @@ model Rating {
   Score                           Decimal   @db.Decimal(2, 1)
   Comment                         String?
   CreatedAt                       DateTime  @default(now()) @db.Timestamptz(6)
-  UpdatedAt                       DateTime  @db.Timestamptz(6)
+  UpdatedAt                       DateTime  @updatedAt @db.Timestamptz(6)
   DeletedAt                       DateTime? @db.Timestamptz(6)
   Account_Rating_RateeIDToAccount Account   @relation("Rating_RateeIDToAccount", fields: [RateeID], references: [ID], onDelete: Cascade)
   Account_Rating_RaterIDToAccount Account   @relation("Rating_RaterIDToAccount", fields: [RaterID], references: [ID], onDelete: Cascade)
@@ -125,7 +146,7 @@ model Notification {
   Body      String
   IsRead    Boolean   @default(false)
   CreatedAt DateTime  @default(now()) @db.Timestamptz(6)
-  UpdatedAt DateTime  @db.Timestamptz(6)
+  UpdatedAt DateTime  @updatedAt @db.Timestamptz(6)
   DeletedAt DateTime? @db.Timestamptz(6)
   Account   Account   @relation(fields: [AccountID], references: [ID], onDelete: Cascade)
 
@@ -136,14 +157,15 @@ model Notification {
 
 model ToDriverRequest {
   ID                                        Int                   @id @default(autoincrement())
-  IDCard                                    String                @db.VarChar(50)
-  DriverLicense                             String                @db.VarChar(50)
-  VehicleRegistration                       String                @db.VarChar(100)
+  IDCard                                    String                @db.VarChar(500)
+  DriverLicense                             String                @db.VarChar(500)
+  VehicleRegistration                       String                @db.VarChar(500)
+  VehicleType                               TripType              @default(Motor)
   Status                                    ToDriverRequestStatus @default(Pending)
   DriverID                                  Int
   AdminID                                   Int?
   CreatedAt                                 DateTime              @default(now()) @db.Timestamptz(6)
-  UpdatedAt                                 DateTime              @db.Timestamptz(6)
+  UpdatedAt                                 DateTime              @updatedAt @db.Timestamptz(6)
   DeletedAt                                 DateTime?             @db.Timestamptz(6)
   Account_ToDriverRequest_AdminIDToAccount  Account?              @relation("ToDriverRequest_AdminIDToAccount", fields: [AdminID], references: [ID])
   Account_ToDriverRequest_DriverIDToAccount Account               @relation("ToDriverRequest_DriverIDToAccount", fields: [DriverID], references: [ID], onDelete: Cascade)
@@ -152,6 +174,7 @@ model ToDriverRequest {
   @@index([DeletedAt], map: "idx_todriverrequest_deleted")
   @@index([DriverID], map: "idx_todriverrequest_driver")
   @@index([Status], map: "idx_todriverrequest_status")
+  @@index([VehicleType], map: "idx_todriverrequest_vehicle_type")
 }
 
 model Message {
@@ -162,7 +185,7 @@ model Message {
   ContentType                          MessageType   @default(Text)
   IsRead                               Boolean       @default(false)
   CreatedAt                            DateTime      @default(now()) @db.Timestamptz(6)
-  UpdatedAt                            DateTime      @db.Timestamptz(6)
+  UpdatedAt                            DateTime      @updatedAt @db.Timestamptz(6)
   DeletedAt                            DateTime?     @db.Timestamptz(6)
   Account_Message_RecipientIDToAccount Account       @relation("Message_RecipientIDToAccount", fields: [RecipientID], references: [ID], onDelete: Cascade)
   Account_Message_SenderIDToAccount    Account       @relation("Message_SenderIDToAccount", fields: [SenderID], references: [ID], onDelete: Cascade)
