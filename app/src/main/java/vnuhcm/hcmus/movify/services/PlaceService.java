@@ -58,7 +58,7 @@ public final class PlaceService {
         JSONObject root = new JSONObject(responseBody);
         JSONObject locationJson = root.optJSONObject("location");
         if (locationJson == null) {
-            throw new IOException("Backend không trả về location");
+            throw new IOException("Máy chủ không trả về vị trí");
         }
 
         return parsePlaceDetails(locationJson);

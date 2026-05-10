@@ -3,6 +3,7 @@ package vnuhcm.hcmus.movify.utils;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 
@@ -20,6 +21,8 @@ public class PlacesAutocompleteHelper {
     }
 
     private final String currentLocationLabel;
+    private final AutoCompleteTextView autoCompleteTextView;
+    private final String historyKey;
     private ArrayAdapter<String> adapter;
     private List<String> predictions = new ArrayList<>();
     private Context context;
@@ -31,21 +34,36 @@ public class PlacesAutocompleteHelper {
     private Map<String, List<String>> cache = new HashMap<>(); // Cache results
 
     public PlacesAutocompleteHelper(Context context, AutoCompleteTextView autoCompleteTextView) {
-        this(context, autoCompleteTextView, null);
+        this(context, autoCompleteTextView, null, null);
     }
 
     public PlacesAutocompleteHelper(Context context,
                                     AutoCompleteTextView autoCompleteTextView,
                                     SpecialSuggestionListener specialSuggestionListener) {
+        this(context, autoCompleteTextView, specialSuggestionListener, null);
+    }
+
+    public PlacesAutocompleteHelper(Context context,
+                                    AutoCompleteTextView autoCompleteTextView,
+                                    SpecialSuggestionListener specialSuggestionListener,
+                                    String historyKey) {
         this.context = context;
+        this.autoCompleteTextView = autoCompleteTextView;
         this.specialSuggestionListener = specialSuggestionListener;
+        this.historyKey = historyKey;
         this.currentLocationLabel = context.getString(R.string.current_location);
 
         // Setup ArrayAdapter for suggestions
         adapter = new ArrayAdapter<>(context, android.R.layout.simple_dropdown_item_1line, predictions);
         autoCompleteTextView.setAdapter(adapter);
         autoCompleteTextView.setDropDownHeight(400);
-        autoCompleteTextView.setThreshold(1); // Show suggestions after 1 character
+        autoCompleteTextView.setThreshold(0);
+        autoCompleteTextView.setOnClickListener(v -> showLocalPredictions(autoCompleteTextView.getText().toString()));
+        autoCompleteTextView.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                showLocalPredictions(autoCompleteTextView.getText().toString());
+            }
+        });
 
         // Setup autocomplete listener
         autoCompleteTextView.setOnItemClickListener((parent, view, position, id) -> {
@@ -81,9 +99,7 @@ public class PlacesAutocompleteHelper {
                     pendingFetch = () -> fetchPredictions(s.toString());
                     handler.postDelayed(pendingFetch, DEBOUNCE_DELAY);
                 } else if (s.length() == 0) {
-                    adapter.clear();
-                    predictions.clear();
-                    adapter.notifyDataSetChanged();
+                    showLocalPredictions("");
                 }
             }
 
@@ -95,7 +111,7 @@ public class PlacesAutocompleteHelper {
     private void fetchPredictions(String query) {
         // Check cache first
         if (cache.containsKey(query)) {
-            updatePredictions(cache.get(query));
+            updatePredictions(query, cache.get(query));
             return;
         }
 
@@ -113,18 +129,73 @@ public class PlacesAutocompleteHelper {
 
             // Cache and update UI on main thread
             cache.put(query, finalResults);
-            handler.post(() -> updatePredictions(finalResults));
+            handler.post(() -> updatePredictions(query, finalResults));
         }).start();
     }
 
-    private void updatePredictions(List<String> results) {
+    private void showLocalPredictions(String query) {
+        updatePredictions(query, new ArrayList<>());
+    }
+
+    private void updatePredictions(String query, List<String> results) {
+        String normalizedQuery = query == null ? "" : query.trim();
+        if (!TextUtils.isEmpty(normalizedQuery)
+                && !normalizedQuery.equals(autoCompleteTextView.getText().toString().trim())) {
+            return;
+        }
+
+        List<String> mergedPredictions = new ArrayList<>();
+        addDistinct(mergedPredictions, currentLocationLabel);
+
+        for (String historyItem : getFilteredHistory(query)) {
+            addDistinct(mergedPredictions, historyItem);
+        }
+
+        for (String result : results) {
+            addDistinct(mergedPredictions, result);
+        }
+
         predictions.clear();
-        predictions.add(currentLocationLabel);
-        predictions.addAll(results);
+        predictions.addAll(mergedPredictions);
+
         adapter.clear();
-        adapter.add(currentLocationLabel);
-        adapter.addAll(results);
+        adapter.addAll(mergedPredictions);
         adapter.notifyDataSetChanged();
+
+        if (autoCompleteTextView.hasFocus() && !mergedPredictions.isEmpty()) {
+            autoCompleteTextView.showDropDown();
+        }
+    }
+
+    private List<String> getFilteredHistory(String query) {
+        List<String> filteredHistory = new ArrayList<>();
+        if (TextUtils.isEmpty(historyKey)) {
+            return filteredHistory;
+        }
+
+        String normalizedQuery = query == null ? "" : query.trim().toLowerCase();
+        for (String historyItem : LocationHistoryStore.getHistory(context, historyKey)) {
+            if (TextUtils.isEmpty(normalizedQuery)
+                    || historyItem.toLowerCase().contains(normalizedQuery)) {
+                filteredHistory.add(historyItem);
+            }
+        }
+
+        return filteredHistory;
+    }
+
+    private void addDistinct(List<String> target, String value) {
+        if (TextUtils.isEmpty(value)) {
+            return;
+        }
+
+        for (String existing : target) {
+            if (existing.equalsIgnoreCase(value)) {
+                return;
+            }
+        }
+
+        target.add(value);
     }
 
     public String getSelectedPlaceId(int position) {

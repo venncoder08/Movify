@@ -145,7 +145,7 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
                     resolveAndFillCurrentLocation(pendingCurrentLocationField);
                 }
             } else {
-                Toast.makeText(requireContext(), "Cần quyền vị trí để dùng option này", Toast.LENGTH_SHORT).show();
+            Toast.makeText(requireContext(), "Cần quyền vị trí để dùng tùy chọn này", Toast.LENGTH_SHORT).show();
             }
             pendingCurrentLocationField = null;
         }
@@ -331,7 +331,7 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
             mMap.addMarker(new MarkerOptions()
                     .position(pickupDetails.latLng)
                     .title("Pickup: " + pickupDetails.label)
-                    .snippet("Pickup location")
+                    .snippet("Điểm đón")
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
             boundsBuilder.include(pickupDetails.latLng);
             hasBounds = true;
@@ -341,7 +341,7 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
             mMap.addMarker(new MarkerOptions()
                     .position(destinationDetails.latLng)
                     .title("Destination: " + destinationDetails.label)
-                    .snippet("Destination location")
+                    .snippet("Điểm đến")
                     .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
             boundsBuilder.include(destinationDetails.latLng);
             hasBounds = true;

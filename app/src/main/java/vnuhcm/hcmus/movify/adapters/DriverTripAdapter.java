@@ -1,5 +1,6 @@
 package vnuhcm.hcmus.movify.adapters;
 
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +14,7 @@ import java.util.List;
 
 import vnuhcm.hcmus.movify.R;
 import vnuhcm.hcmus.movify.models.Trip;
+import vnuhcm.hcmus.movify.utils.CurrentLocationResolver;
 
 public class DriverTripAdapter extends RecyclerView.Adapter<DriverTripAdapter.TripViewHolder> {
 
@@ -71,10 +73,10 @@ public class DriverTripAdapter extends RecyclerView.Adapter<DriverTripAdapter.Tr
         }
 
         public void bind(Trip trip, int position, int selectedPosition) {
-            tvPickupAddress.setText(trip.getPickupAddress() != null ? trip.getPickupAddress() : "Unknown");
-            tvDestinationAddress.setText(trip.getDestinationAddress() != null ? trip.getDestinationAddress() : "Unknown");
+            tvPickupAddress.setText(formatTripAddress(trip.getPickupAddress(), "Chưa rõ điểm đón"));
+            tvDestinationAddress.setText(formatTripAddress(trip.getDestinationAddress(), "Chưa rõ điểm đến"));
             tvFare.setText(String.format("%.2fđ", trip.getFare()));
-            tvDistance.setText(String.format("%.1f km", trip.getDistance()));
+            tvDistance.setText(String.format("%s • %.1f km", mapTripTypeLabel(trip), trip.getDistance()));
 
             // Highlight selected trip
             if (position == selectedPosition) {
@@ -89,6 +91,19 @@ public class DriverTripAdapter extends RecyclerView.Adapter<DriverTripAdapter.Tr
                     onTripSelectedListener.onTripSelected(trip);
                 }
             });
+        }
+
+        private String mapTripTypeLabel(Trip trip) {
+            if ("Taxi".equalsIgnoreCase(trip.getTripType())) {
+                return itemView.getContext().getString(R.string.vehicle_car);
+            }
+
+            return itemView.getContext().getString(R.string.vehicle_bike);
+        }
+
+        private String formatTripAddress(String address, String fallback) {
+            String displayAddress = CurrentLocationResolver.getShareableLocationLabel(address);
+            return TextUtils.isEmpty(displayAddress) ? fallback : displayAddress;
         }
     }
 }

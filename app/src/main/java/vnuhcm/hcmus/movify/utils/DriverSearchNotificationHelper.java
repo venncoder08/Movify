@@ -53,6 +53,35 @@ public final class DriverSearchNotificationHelper {
         NotificationManagerCompat.from(context.getApplicationContext()).cancel(NOTIFICATION_ID);
     }
 
+    public static void notifyDriverAccepted(@NonNull Context context) {
+        Context appContext = context.getApplicationContext();
+        SEARCHING.set(false);
+        ensureChannel(appContext);
+
+        Intent intent = new Intent(appContext, HomeActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent contentIntent = PendingIntent.getActivity(
+                appContext,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(appContext, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_noti)
+                .setContentTitle("Tài xế đã nhận chuyến")
+                .setContentText("Tài xế đang di chuyển đến điểm đón của bạn.")
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText("Tài xế đang di chuyển đến điểm đón của bạn."))
+                .setContentIntent(contentIntent)
+                .setOngoing(false)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_STATUS);
+
+        NotificationManagerCompat.from(appContext).notify(NOTIFICATION_ID, builder.build());
+    }
+
     public static boolean isSearching() {
         return SEARCHING.get();
     }

@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import vnuhcm.hcmus.movify.models.AccountProfile;
 import vnuhcm.hcmus.movify.models.Trip;
 
 public final class DriverTripService {
@@ -59,10 +60,15 @@ public final class DriverTripService {
         JSONObject dataJson = root.optJSONObject("data");
 
         if (dataJson == null) {
-            throw new IOException("Backend không trả về dữ liệu trips hợp lệ");
+            throw new IOException("Máy chủ không trả về dữ liệu chuyến hợp lệ");
         }
 
         JSONArray tripsJson = dataJson.optJSONArray("trips");
+        String driverVehicleType = normalizeTripType(dataJson.optString("vehicleType", ""));
+        if (driverVehicleType.isEmpty()) {
+            driverVehicleType = resolveDriverVehicleType(context);
+        }
+
         List<Trip> trips = new ArrayList<>();
 
         if (tripsJson != null) {
@@ -70,7 +76,7 @@ public final class DriverTripService {
                 JSONObject tripJson = tripsJson.optJSONObject(i);
                 if (tripJson != null) {
                     Trip trip = parseTripFromJson(tripJson);
-                    if (trip != null) {
+                    if (trip != null && matchesVehicleType(driverVehicleType, trip.getTripType())) {
                         trips.add(trip);
                     }
                 }
@@ -102,17 +108,17 @@ public final class DriverTripService {
         JSONObject dataJson = root.optJSONObject("data");
 
         if (dataJson == null) {
-            throw new IOException("Backend không trả về dữ liệu trip hợp lệ");
+            throw new IOException("Máy chủ không trả về dữ liệu chuyến hợp lệ");
         }
 
         JSONObject tripJson = dataJson.optJSONObject("trip");
         if (tripJson == null) {
-            throw new IOException("Backend không trả về thông tin trip");
+            throw new IOException("Máy chủ không trả về thông tin chuyến");
         }
 
         Trip trip = parseTripFromJson(tripJson);
         if (trip == null) {
-            throw new IOException("Không thể parse trip từ response");
+            throw new IOException("Không thể đọc dữ liệu chuyến từ phản hồi");
         }
 
         return trip;
@@ -124,17 +130,18 @@ public final class DriverTripService {
     private static Trip parseTripFromJson(JSONObject json) {
         try {
             int id = json.getInt("id");
-            String pickupAddress = json.getString("pickupAddress");
-            double pickupLat = json.getDouble("pickupLat");
-            double pickupLng = json.getDouble("pickupLng");
-            String destinationAddress = json.getString("destinationAddress");
-            double destinationLat = json.getDouble("destinationLat");
-            double destinationLng = json.getDouble("destinationLng");
-            double fare = json.getDouble("fare");
-            double distance = json.getDouble("distance");
-            String status = json.getString("status");
+            String pickupAddress = json.optString("pickupAddress", "");
+            double pickupLat = json.optDouble("pickupLat", 0d);
+            double pickupLng = json.optDouble("pickupLng", 0d);
+            String destinationAddress = json.optString("destinationAddress", "");
+            double destinationLat = json.optDouble("destinationLat", 0d);
+            double destinationLng = json.optDouble("destinationLng", 0d);
+            double fare = json.optDouble("fare", 0d);
+            double distance = json.optDouble("distance", 0d);
+            String status = json.optString("status", "");
+            String tripType = json.optString("tripType", "");
 
-            return new Trip(
+            Trip trip = new Trip(
                     String.valueOf(id),
                     pickupLat,
                     pickupLng,
@@ -144,10 +151,78 @@ public final class DriverTripService {
                     destinationAddress,
                     fare,
                     status,
-                    distance
+                    distance,
+                    tripType
             );
+            applyPickupConfirmation(trip, json);
+            applyDriverLocation(trip, json);
+            applyDriverInfo(trip, json);
+            return trip;
         } catch (JSONException e) {
             return null;
         }
+    }
+
+    private static void applyPickupConfirmation(@NonNull Trip trip, @NonNull JSONObject tripJson) {
+        JSONObject pickupConfirmation = tripJson.optJSONObject("pickupConfirmation");
+        if (pickupConfirmation == null) {
+            return;
+        }
+
+        trip.setDriverPickupConfirmed(pickupConfirmation.optBoolean("driverConfirmed", false));
+        trip.setPassengerPickupConfirmed(pickupConfirmation.optBoolean("passengerConfirmed", false));
+    }
+
+    private static void applyDriverLocation(@NonNull Trip trip, @NonNull JSONObject tripJson) {
+        JSONObject driverLocation = tripJson.optJSONObject("driverLocation");
+        if (driverLocation == null) {
+            return;
+        }
+
+        if (!driverLocation.isNull("lat") && !driverLocation.isNull("lng")) {
+            trip.setDriverCurrentLat(driverLocation.optDouble("lat", 0d));
+            trip.setDriverCurrentLng(driverLocation.optDouble("lng", 0d));
+        }
+        trip.setDriverLocationUpdatedAt(driverLocation.optString("updatedAt", ""));
+    }
+
+    private static void applyDriverInfo(@NonNull Trip trip, @NonNull JSONObject tripJson) {
+        JSONObject driver = tripJson.optJSONObject("driver");
+        if (driver == null) {
+            return;
+        }
+
+        trip.setDriverFullName(driver.optString("fullName", ""));
+        trip.setDriverPhoneNumber(driver.optString("phoneNumber", ""));
+    }
+
+    @NonNull
+    private static String resolveDriverVehicleType(Context context) {
+        try {
+            AccountProfile profile = new AuthApiService(context).fetchCurrentUserProfile();
+            return normalizeTripType(profile.getVehicleType());
+        } catch (Exception ignored) {
+            return "";
+        }
+    }
+
+    private static boolean matchesVehicleType(String driverVehicleType, String tripType) {
+        String normalizedTripType = normalizeTripType(tripType);
+        return !driverVehicleType.isEmpty()
+                && !normalizedTripType.isEmpty()
+                && driverVehicleType.equals(normalizedTripType);
+    }
+
+    @NonNull
+    private static String normalizeTripType(String value) {
+        if ("Taxi".equalsIgnoreCase(value) || "car".equalsIgnoreCase(value)) {
+            return "Taxi";
+        }
+
+        if ("Motor".equalsIgnoreCase(value) || "motorbike".equalsIgnoreCase(value)) {
+            return "Motor";
+        }
+
+        return "";
     }
 }

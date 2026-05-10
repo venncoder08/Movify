@@ -6,29 +6,29 @@ const AppError = require("../utils/httpError");
 
 async function preview({ pickupQuery, destinationQuery }) {
   if (!pickupQuery || !destinationQuery) {
-    throw new AppError("Missing pickup or destination query parameter", 400);
+    throw new AppError("Thiếu tham số điểm đón hoặc điểm đến", 400);
   }
 
   const [pickup, destination] = await Promise.all([
     placeService.findPlaceByQuery(pickupQuery, {
-      missingMessage: "Missing pickup query parameter",
-      notFoundMessage: "Khong tim thay diem don"
+      missingMessage: "Thiếu tham số điểm đón",
+      notFoundMessage: "Không tìm thấy điểm đón"
     }),
     placeService.findPlaceByQuery(destinationQuery, {
-      missingMessage: "Missing destination query parameter",
-      notFoundMessage: "Khong tim thay diem den"
+      missingMessage: "Thiếu tham số điểm đến",
+      notFoundMessage: "Không tìm thấy điểm đến"
     })
   ]);
 
   const payload = await geoapifyRepository.fetchRoutePreview(pickup, destination);
   const feature = payload.features?.[0];
   if (!feature) {
-    throw new AppError("Geoapify khong tra ve route", 404);
+    throw new AppError("Geoapify không trả về tuyến đường", 404);
   }
 
   const routePoints = extractRoutePoints(feature.geometry);
   if (!routePoints.length) {
-    throw new AppError("Khong doc duoc route points", 404);
+    throw new AppError("Không đọc được dữ liệu tuyến đường", 404);
   }
 
   return new RoutePreviewModel({

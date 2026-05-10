@@ -23,12 +23,12 @@ async function fetchJson(pathname, params) {
   try {
     payload = bodyText ? JSON.parse(bodyText) : {};
   } catch (_error) {
-    throw new AppError("Geoapify returned invalid JSON", 502);
+    throw new AppError("Geoapify trả về JSON không hợp lệ", 502);
   }
 
   if (!response.ok) {
     throw new AppError(
-      payload.message || `Geoapify request failed with HTTP ${response.status}`,
+      payload.message || `Yêu cầu Geoapify thất bại với mã HTTP ${response.status}`,
       response.status,
       payload
     );
@@ -39,7 +39,7 @@ async function fetchJson(pathname, params) {
 
 function ensureApiKey() {
   if (!env.geoapifyApiKey) {
-    throw new AppError("Server is missing GEOAPIFY_API_KEY", 500);
+    throw new AppError("Máy chủ chưa cấu hình GEOAPIFY_API_KEY", 500);
   }
 }
 

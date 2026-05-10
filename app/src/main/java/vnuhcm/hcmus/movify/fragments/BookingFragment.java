@@ -9,12 +9,15 @@ import android.os.Looper;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.Manifest;
+import android.app.Activity;
+import android.content.Intent;
 import android.view.Gravity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AutoCompleteTextView;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -23,11 +26,22 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,28 +51,36 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import vnuhcm.hcmus.movify.R;
+import vnuhcm.hcmus.movify.activities.TripRatingActivity;
 import vnuhcm.hcmus.movify.adapters.PromotionAdapter;
 import vnuhcm.hcmus.movify.models.AccountProfile;
 import vnuhcm.hcmus.movify.models.Promotion;
 import vnuhcm.hcmus.movify.models.RoutePreview;
+import vnuhcm.hcmus.movify.models.Trip;
 import vnuhcm.hcmus.movify.services.AuthApiService;
 import vnuhcm.hcmus.movify.services.PromotionService;
 import vnuhcm.hcmus.movify.services.RouteService;
 import vnuhcm.hcmus.movify.utils.CurrentLocationResolver;
 import vnuhcm.hcmus.movify.utils.DriverSearchNotificationHelper;
 import vnuhcm.hcmus.movify.utils.LocationData;
+import vnuhcm.hcmus.movify.utils.LocationHistoryStore;
 import vnuhcm.hcmus.movify.utils.PlacesAutocompleteHelper;
 import vnuhcm.hcmus.movify.services.TripService;
 
-public class BookingFragment extends Fragment {
+public class BookingFragment extends Fragment implements OnMapReadyCallback {
 
     private static final String ARG_IS_DRIVER_MODE = "is_driver_mode";
     private static final String TAG = "BookingFragment";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 201;
+    private static final int CAMERA_PERMISSION_REQUEST_CODE = 202;
+    private static final int REQUEST_QR_SCAN = 301;
     private static final String VEHICLE_MOTORBIKE = "motorbike";
     private static final String VEHICLE_CAR = "car";
     private static final String PAYMENT_CASH = "cash";
     private static final String PAYMENT_BANK_TRANSFER = "bank_transfer";
+    private static final long TRIP_STATUS_POLL_INTERVAL_MS = 5000L;
+    private static final LatLng HCMC = new LatLng(10.8231, 106.6297);
+    private static final int ACTIVE_TRIP_ROUTE_PADDING_PX = 120;
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final List<Promotion> promotionList = new ArrayList<>();
@@ -79,6 +101,7 @@ public class BookingFragment extends Fragment {
     private LinearLayout btnSearchDriver;
     private LinearLayout promoContainer;
     private LinearLayout driverModeContainer;
+    private LinearLayout activeTripContainer;
     private FrameLayout iconMotorbike;
     private FrameLayout iconCar;
     private FrameLayout iconCash;
@@ -103,7 +126,13 @@ public class BookingFragment extends Fragment {
     private TextView tvChooseVehicle;
     private TextView tvPaymentTitle;
     private TextView tvPromoTitle;
+    private TextView tvActiveTripStatus;
+    private TextView tvActiveTripDriver;
+    private TextView tvActiveTripDistance;
+    private Button btnCancelActiveTrip;
     private RecyclerView rvPromotions;
+    private SupportMapFragment activeTripMapFragment;
+    private GoogleMap activeTripMap;
 
     private PromotionAdapter promotionAdapter;
     private ExecutorService promotionExecutor;
@@ -122,6 +151,12 @@ public class BookingFragment extends Fragment {
     private CountDownTimer searchCountdownTimer;
     private boolean isSearchingDriver = false;
     private String currentTripId = null;   // backend-assigned id after createTrip succeeds
+    private String activeTripId = null;
+    private Trip activeTrip = null;
+    private final List<LatLng> activeTripRoutePoints = new ArrayList<>();
+    private boolean activeTripRouteLoading = false;
+    private String activeTripRouteKey = "";
+    private Runnable pendingTripStatusPoll;
     private static final long SEARCH_TIMEOUT_MS = 10L * 60L * 1000L; // 10 minutes max
 
     public BookingFragment() {
@@ -168,8 +203,11 @@ public class BookingFragment extends Fragment {
             setupPaymentButtons();
             setupPromotions();
             setupSearchDriverButton();
+            setupQrScannerButton();
             setupPlacesAutocomplete();
+            setupActiveTripMap();
             attachRoutePreviewWatchers();
+            loadActiveTripForPassenger();
         }
             if (!isDriverMode && pickupLocation != null && !pickupLocation.isEmpty()) {
                 edtPickup.setText(pickupLocation);
@@ -194,26 +232,66 @@ public class BookingFragment extends Fragment {
             routeExecutor = null;
         }
         pendingCurrentLocationField = null;
+        activeTripMap = null;
+        activeTripMapFragment = null;
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode != LOCATION_PERMISSION_REQUEST_CODE) {
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (pendingCurrentLocationField != null) {
+                    resolveAndFillCurrentLocation(pendingCurrentLocationField);
+                }
+            } else {
+                Toast.makeText(requireContext(), "Cần quyền vị trí để dùng tùy chọn này", Toast.LENGTH_SHORT).show();
+            }
+            pendingCurrentLocationField = null;
             return;
         }
 
-        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            if (pendingCurrentLocationField != null) {
-                resolveAndFillCurrentLocation(pendingCurrentLocationField);
+        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // start scanner activity
+                Intent intent = new Intent(requireContext(), vnuhcm.hcmus.movify.activities.QrScannerActivity.class);
+                startActivityForResult(intent, REQUEST_QR_SCAN);
+            } else {
+                Toast.makeText(requireContext(), "Cần quyền camera để quét mã", Toast.LENGTH_SHORT).show();
             }
-        } else {
-            Toast.makeText(requireContext(), "Cần quyền vị trí để dùng option này", Toast.LENGTH_SHORT).show();
+            return;
         }
+    }
 
-        pendingCurrentLocationField = null;
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_QR_SCAN && resultCode == Activity.RESULT_OK && data != null) {
+            String value = data.getStringExtra("qr_value");
+            if (value != null) {
+                // Put scanned value into destination field and update route
+                edtDestination.setText(value);
+                scheduleRoutePreviewUpdate();
+                Toast.makeText(requireContext(), getString(R.string.scanned_value) + ": " + value, Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void setupQrScannerButton() {
+        if (ivQr == null) return;
+        ivQr.setOnClickListener(v -> {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(requireActivity(),
+                        new String[]{Manifest.permission.CAMERA},
+                        CAMERA_PERMISSION_REQUEST_CODE);
+                return;
+            }
+
+            Intent intent = new Intent(requireContext(), vnuhcm.hcmus.movify.activities.QrScannerActivity.class);
+            startActivityForResult(intent, REQUEST_QR_SCAN);
+        });
     }
 
     private void initViews(View view) {
@@ -233,6 +311,7 @@ public class BookingFragment extends Fragment {
         btnSearchDriver = view.findViewById(R.id.btnSearchDriver);
         promoContainer = view.findViewById(R.id.promoContainer);
         driverModeContainer = view.findViewById(R.id.driverModeContainer);
+        activeTripContainer = view.findViewById(R.id.activeTripContainer);
 
         iconMotorbike = view.findViewById(R.id.iconMotorbike);
         iconCar = view.findViewById(R.id.iconCar);
@@ -260,8 +339,27 @@ public class BookingFragment extends Fragment {
         tvChooseVehicle = view.findViewById(R.id.tvChooseVehicle);
         tvPaymentTitle = view.findViewById(R.id.tvPaymentTitle);
         tvPromoTitle = view.findViewById(R.id.tvPromoTitle);
+        tvActiveTripStatus = view.findViewById(R.id.tvActiveTripStatus);
+        tvActiveTripDriver = view.findViewById(R.id.tvActiveTripDriver);
+        tvActiveTripDistance = view.findViewById(R.id.tvActiveTripDistance);
+        btnCancelActiveTrip = view.findViewById(R.id.btnCancelActiveTrip);
 
         rvPromotions = view.findViewById(R.id.rvPromotions);
+    }
+
+    private void setupActiveTripMap() {
+        activeTripMapFragment = (SupportMapFragment) getChildFragmentManager()
+                .findFragmentById(R.id.mapActiveTrip);
+        if (activeTripMapFragment != null) {
+            activeTripMapFragment.getMapAsync(this);
+        }
+    }
+
+    @Override
+    public void onMapReady(@NonNull GoogleMap googleMap) {
+        activeTripMap = googleMap;
+        activeTripMap.moveCamera(CameraUpdateFactory.newLatLngZoom(HCMC, 12f));
+        renderActiveTripMap(activeTrip);
     }
 
     private void loadHeaderProfile() {
@@ -322,6 +420,7 @@ public class BookingFragment extends Fragment {
         setVisible(promoContainer, false);
         setVisible(btnSearchDriver, false);
         setVisible(routeSummaryContainer, false);
+        setVisible(activeTripContainer, false);
     }
 
     private void setVisible(View view, boolean visible) {
@@ -481,25 +580,21 @@ public class BookingFragment extends Fragment {
     }
 
     private void attachPlacesAutocomplete() {
-        new PlacesAutocompleteHelper(requireContext(), edtPickup, this::handleCurrentLocationSelection);
-        new PlacesAutocompleteHelper(requireContext(), edtDestination, this::handleCurrentLocationSelection);
+        new PlacesAutocompleteHelper(
+                requireContext(),
+                edtPickup,
+                this::handleCurrentLocationSelection,
+                LocationHistoryStore.KEY_PICKUP
+        );
+        new PlacesAutocompleteHelper(
+                requireContext(),
+                edtDestination,
+                this::handleCurrentLocationSelection,
+                LocationHistoryStore.KEY_DESTINATION
+        );
 
-        edtPickup.setOnClickListener(v -> openMapBooking());
-        edtDestination.setOnClickListener(v -> openMapBooking());
         pickupContainer.setOnClickListener(v -> openMapBooking());
         destinationContainer.setOnClickListener(v -> openMapBooking());
-
-        edtPickup.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) {
-                openMapBooking();
-            }
-        });
-
-        edtDestination.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) {
-                openMapBooking();
-            }
-        });
     }
 
     private void handleCurrentLocationSelection(@NonNull AutoCompleteTextView targetField) {
@@ -531,6 +626,10 @@ public class BookingFragment extends Fragment {
                     }
 
                     targetField.setText(currentLocationLabel);
+                    saveLocationHistoryForField(
+                            targetField,
+                            CurrentLocationResolver.getShareableLocationLabel(currentLocationLabel)
+                    );
                 });
             } catch (Exception exception) {
                 Log.w(TAG, "Unable to resolve current location", exception);
@@ -675,9 +774,15 @@ public class BookingFragment extends Fragment {
     }
 
     private void setupSearchDriverButton() {
+        btnCancelActiveTrip.setOnClickListener(v -> showCancelActiveTripDialog());
         btnSearchDriver.setOnClickListener(v -> {
             if (isSearchingDriver) {
                 stopSearchCountdown(true);
+                return;
+            }
+
+            if (activeTrip != null) {
+                handleActiveTripAction();
                 return;
             }
 
@@ -710,6 +815,8 @@ public class BookingFragment extends Fragment {
 
         final String pickup      = edtPickup.getText().toString().trim();
         final String destination = edtDestination.getText().toString().trim();
+        final String shareablePickup = CurrentLocationResolver.getShareableLocationLabel(pickup);
+        final String shareableDestination = CurrentLocationResolver.getShareableLocationLabel(destination);
 
         // Grab coordinates from the cached RoutePreview if available
         double pickupLat  = 0, pickupLng  = 0;
@@ -747,13 +854,14 @@ public class BookingFragment extends Fragment {
             try {
                 vnuhcm.hcmus.movify.models.Trip trip = TripService.createTrip(
                         requireContext().getApplicationContext(),
-                        pickup, fPickupLat, fPickupLng,
-                        destination, fDestLat, fDestLng,
+                        shareablePickup, fPickupLat, fPickupLng,
+                        shareableDestination, fDestLat, fDestLng,
                         selectedVehicle, selectedPayment,
                         promoId, finalFare, finalDist
                 );
                 mainHandler.post(() -> {
                     if (!isAdded()) return;
+                    saveLocationHistory(shareablePickup, shareableDestination);
                     currentTripId = trip.getId();
                     btnSearchDriver.setEnabled(true);
                     startSearchCountdown();
@@ -804,10 +912,19 @@ public class BookingFragment extends Fragment {
 
         // Show initial label immediately
         setSearchButtonSearching(getString(R.string.search_driver_in_progress, "00:00"));
+        scheduleTripStatusPoll();
     }
 
     private void stopSearchCountdown(boolean userCancelled) {
+        stopSearchCountdown(userCancelled, true);
+    }
+
+    private void stopSearchCountdown(boolean userCancelled, boolean cancelBackendTrip) {
         isSearchingDriver = false;
+        if (pendingTripStatusPoll != null) {
+            mainHandler.removeCallbacks(pendingTripStatusPoll);
+            pendingTripStatusPoll = null;
+        }
         if (searchCountdownTimer != null) {
             searchCountdownTimer.cancel();
             searchCountdownTimer = null;
@@ -821,7 +938,7 @@ public class BookingFragment extends Fragment {
         // Cancel trip on backend if we have an id
         final String tripId = currentTripId;
         currentTripId = null;
-        if (tripId != null && getContext() != null) {
+        if (cancelBackendTrip && tripId != null && getContext() != null) {
             final Context appCtx = requireContext().getApplicationContext();
             if (routeExecutor != null && !routeExecutor.isShutdown()) {
                 routeExecutor.execute(() -> {
@@ -836,6 +953,565 @@ public class BookingFragment extends Fragment {
         if (getContext() != null) {
             DriverSearchNotificationHelper.stop(requireContext().getApplicationContext());
         }
+    }
+
+    private void loadActiveTripForPassenger() {
+        if (routeExecutor == null || routeExecutor.isShutdown()) {
+            return;
+        }
+
+        final Context appContext = requireContext().getApplicationContext();
+        routeExecutor.execute(() -> {
+            try {
+                Trip trip = TripService.fetchActiveTrip(appContext);
+                mainHandler.post(() -> {
+                    if (!isAdded() || trip == null) {
+                        return;
+                    }
+
+                    if ("Pending".equalsIgnoreCase(trip.getStatus())) {
+                        currentTripId = trip.getId();
+                        activeTripId = null;
+                        activeTrip = null;
+                        isSearchingDriver = true;
+                        btnSearchDriver.setEnabled(true);
+        setSearchButtonSearching("Đang tìm tài xế...");
+                        scheduleTripStatusPoll();
+                        return;
+                    }
+
+                    handlePolledTripStatus(trip);
+                });
+            } catch (Exception exception) {
+                Log.w(TAG, "Unable to load active trip", exception);
+            }
+        });
+    }
+
+    private void setActiveTripMode(boolean active) {
+        setVisible(activeTripContainer, active);
+        setVisible(btnCancelActiveTrip, false);
+        setVisible(locationContainer, !active);
+        setVisible(routeSummaryContainer, !active && currentRoutePreview != null);
+        setVisible(tvChooseVehicle, !active);
+        setVisible(vehicleContainer, !active);
+        setVisible(tvPaymentTitle, !active);
+        setVisible(btnCash, !active);
+        setVisible(btnBankTransfer, !active);
+        setVisible(tvPromoTitle, !active);
+        setVisible(promoContainer, !active);
+        setVisible(btnSearchDriver, true);
+    }
+
+    private void renderPassengerActiveTrip(@NonNull Trip trip) {
+        activeTrip = trip;
+        activeTripId = trip.getId();
+        setActiveTripMode(true);
+
+        boolean inProgress = "InProgress".equalsIgnoreCase(trip.getStatus());
+        boolean canCancel = !inProgress && "Accepted".equalsIgnoreCase(trip.getStatus());
+        setVisible(btnCancelActiveTrip, canCancel);
+        btnCancelActiveTrip.setEnabled(canCancel);
+        tvActiveTripStatus.setText(inProgress
+                ? "Chuyến đi đang diễn ra"
+                : "Tài xế đang đến điểm đón");
+
+        String driverName = trip.getDriverFullName();
+        String driverPhone = trip.getDriverPhoneNumber();
+        if (TextUtils.isEmpty(driverName)) {
+            tvActiveTripDriver.setText("Tài xế đã nhận chuyến");
+        } else if (TextUtils.isEmpty(driverPhone)) {
+            tvActiveTripDriver.setText("Tài xế: " + driverName);
+        } else {
+            tvActiveTripDriver.setText("Tài xế: " + driverName + " - " + driverPhone);
+        }
+
+        LatLng driverLocation = getDriverLatLng(trip);
+        LatLng targetLocation = inProgress ? getDestinationLatLng(trip) : getPickupLatLng(trip);
+        if (driverLocation != null && targetLocation != null) {
+            double distanceMeters = calculateDistanceMeters(driverLocation, targetLocation);
+            tvActiveTripDistance.setText((inProgress ? "Còn " : "Cách điểm đón ")
+                    + formatMeters(distanceMeters));
+        } else {
+            tvActiveTripDistance.setText("Đang chờ cập nhật vị trí tài xế");
+        }
+
+        renderActiveTripMap(trip);
+        ensureActiveTripRoute(trip);
+    }
+
+    private void ensureActiveTripRoute(@Nullable Trip trip) {
+        if (trip == null || routeExecutor == null || routeExecutor.isShutdown()) {
+            return;
+        }
+
+        boolean inProgress = "InProgress".equalsIgnoreCase(trip.getStatus());
+        LatLng start = inProgress ? getPickupLatLng(trip) : getDriverLatLng(trip);
+        LatLng end = inProgress ? getDestinationLatLng(trip) : getPickupLatLng(trip);
+        if (start == null || end == null) {
+            return;
+        }
+
+        String key = trip.getId() + ":" + (inProgress ? "destination" : "pickup");
+        if (activeTripRouteLoading || key.equals(activeTripRouteKey)) {
+            return;
+        }
+
+        activeTripRouteLoading = true;
+        activeTripRoutePoints.clear();
+        renderActiveTripMap(trip);
+        final Context appContext = requireContext().getApplicationContext();
+        routeExecutor.execute(() -> {
+            try {
+                RoutePreview routePreview = RouteService.fetchRoutePreview(
+                        appContext,
+                        formatLatLng(start),
+                        formatLatLng(end)
+                );
+                List<LatLng> routePoints = new ArrayList<>(routePreview.routePoints);
+                mainHandler.post(() -> {
+                    if (!isAdded()) {
+                        activeTripRouteLoading = false;
+                        return;
+                    }
+                    activeTripRouteLoading = false;
+                    activeTripRouteKey = key;
+                    activeTripRoutePoints.clear();
+                    activeTripRoutePoints.addAll(routePoints);
+                    renderActiveTripMap(activeTrip);
+                });
+            } catch (Exception exception) {
+                Log.w(TAG, "Unable to draw passenger active route", exception);
+                mainHandler.post(() -> activeTripRouteLoading = false);
+            }
+        });
+    }
+
+    private void scheduleTripStatusPoll() {
+        String tripId = getTripIdForStatusPoll();
+        if (tripId == null) {
+            return;
+        }
+
+        if (pendingTripStatusPoll != null) {
+            mainHandler.removeCallbacks(pendingTripStatusPoll);
+        }
+
+        pendingTripStatusPoll = this::pollTripStatus;
+        mainHandler.postDelayed(pendingTripStatusPoll, TRIP_STATUS_POLL_INTERVAL_MS);
+    }
+
+    private void pollTripStatus() {
+        pendingTripStatusPoll = null;
+        final String tripId = getTripIdForStatusPoll();
+        if (tripId == null || routeExecutor == null || routeExecutor.isShutdown()) {
+            return;
+        }
+
+        final Context appContext = requireContext().getApplicationContext();
+        routeExecutor.execute(() -> {
+            try {
+                Trip trip = TripService.fetchTrip(appContext, tripId);
+                mainHandler.post(() -> handlePolledTripStatus(trip));
+            } catch (Exception exception) {
+                Log.w(TAG, "Unable to poll trip status", exception);
+                mainHandler.post(this::scheduleTripStatusPoll);
+            }
+        });
+    }
+
+    private void handlePolledTripStatus(@NonNull Trip trip) {
+        if (!isAdded()) {
+            return;
+        }
+
+        String status = trip.getStatus();
+        if ("Accepted".equalsIgnoreCase(status)) {
+            boolean wasSearching = isSearchingDriver;
+            activeTripId = trip.getId();
+            activeTrip = trip;
+            if (wasSearching) {
+                stopSearchCountdown(false, false);
+                DriverSearchNotificationHelper.notifyDriverAccepted(requireContext().getApplicationContext());
+                Toast.makeText(requireContext(), "Tài xế đã nhận chuyến và đang đến điểm đón", Toast.LENGTH_LONG).show();
+            }
+            renderPassengerActiveTrip(trip);
+            renderAcceptedTripState(trip);
+            scheduleTripStatusPoll();
+            return;
+        }
+
+        if ("InProgress".equalsIgnoreCase(status)) {
+            boolean wasAlreadyInProgress = activeTrip != null
+                    && "InProgress".equalsIgnoreCase(activeTrip.getStatus());
+            activeTripId = trip.getId();
+            activeTrip = trip;
+            if (isSearchingDriver) {
+                stopSearchCountdown(false, false);
+            }
+            renderPassengerActiveTrip(trip);
+            setSearchButtonSearching("Chuyến đi đang diễn ra");
+            btnSearchDriver.setEnabled(false);
+            if (!wasAlreadyInProgress) {
+                Toast.makeText(requireContext(), "Chuyến đi đã bắt đầu", Toast.LENGTH_SHORT).show();
+            }
+            scheduleTripStatusPoll();
+            return;
+        }
+
+        if ("Cancelled".equalsIgnoreCase(status) || "Completed".equalsIgnoreCase(status)) {
+            if (pendingTripStatusPoll != null) {
+                mainHandler.removeCallbacks(pendingTripStatusPoll);
+                pendingTripStatusPoll = null;
+            }
+            stopSearchCountdown(false, false);
+            btnSearchDriver.setEnabled(true);
+            setSearchButtonLabel(R.string.find_driver);
+            Toast.makeText(requireContext(),
+                    "Completed".equalsIgnoreCase(status)
+                            ? getString(R.string.trip_completed_rating_toast)
+                            : "Chuyến đi đã chuyển sang trạng thái " + mapTripStatusForDisplay(status),
+                    Toast.LENGTH_LONG).show();
+            currentTripId = null;
+            activeTripId = null;
+            activeTrip = null;
+            activeTripRouteKey = "";
+            activeTripRoutePoints.clear();
+            setActiveTripMode(false);
+            if ("Completed".equalsIgnoreCase(status)) {
+                openTripRatingScreen(trip);
+            }
+            return;
+        }
+
+        scheduleTripStatusPoll();
+    }
+
+    @Nullable
+    private String getTripIdForStatusPoll() {
+        if (isSearchingDriver && currentTripId != null) {
+            return currentTripId;
+        }
+
+        return activeTripId;
+    }
+
+    private String mapTripStatusForDisplay(String status) {
+        if ("Pending".equalsIgnoreCase(status)) {
+            return "đang chờ";
+        }
+
+        if ("Accepted".equalsIgnoreCase(status)) {
+            return "đã nhận";
+        }
+
+        if ("InProgress".equalsIgnoreCase(status)) {
+            return "đang diễn ra";
+        }
+
+        if ("Completed".equalsIgnoreCase(status)) {
+            return "đã hoàn thành";
+        }
+
+        if ("Cancelled".equalsIgnoreCase(status)) {
+            return "đã hủy";
+        }
+
+        return status;
+    }
+
+    private void openTripRatingScreen(@NonNull Trip trip) {
+        if (!isAdded() || TextUtils.isEmpty(trip.getId())) {
+            return;
+        }
+
+        Intent intent = new Intent(requireContext(), TripRatingActivity.class);
+        intent.putExtra(TripRatingActivity.EXTRA_TRIP_ID, trip.getId());
+        intent.putExtra(TripRatingActivity.EXTRA_DRIVER_NAME, trip.getDriverFullName());
+        startActivity(intent);
+    }
+
+    private void renderAcceptedTripState(@NonNull Trip trip) {
+        activeTrip = trip;
+        activeTripId = trip.getId();
+
+        if (trip.isPassengerPickupConfirmed()) {
+            setSearchButtonSearching("Đã xác nhận, chờ bắt đầu chuyến");
+            btnSearchDriver.setEnabled(false);
+            return;
+        }
+
+        if (trip.isDriverPickupConfirmed()) {
+            setSearchButtonSearching("Xác nhận đã lên xe");
+            btnSearchDriver.setEnabled(true);
+            return;
+        }
+
+        setSearchButtonSearching("Chờ tài xế đến điểm đón");
+        btnSearchDriver.setEnabled(false);
+    }
+
+    private void handleActiveTripAction() {
+        if (activeTrip == null) {
+            return;
+        }
+
+        if (!"Accepted".equalsIgnoreCase(activeTrip.getStatus())) {
+            Toast.makeText(requireContext(), "Chuyến đi đang ở trạng thái " + activeTrip.getStatus(), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!activeTrip.isDriverPickupConfirmed()) {
+            Toast.makeText(requireContext(), "Tài xế chưa xác nhận đã đến điểm đón", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (activeTrip.isPassengerPickupConfirmed()) {
+            Toast.makeText(requireContext(), "Bạn đã xác nhận lên xe", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        confirmPassengerPickup();
+    }
+
+    private void showCancelActiveTripDialog() {
+        if (activeTrip == null || activeTripId == null) {
+            return;
+        }
+
+        if ("InProgress".equalsIgnoreCase(activeTrip.getStatus())) {
+            Toast.makeText(requireContext(), "Chuyến đi đã bắt đầu nên không thể hủy", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Hủy chuyến")
+                .setMessage("Bạn có chắc muốn hủy chuyến này không?")
+                .setNegativeButton("Ở lại", null)
+                .setPositiveButton("Hủy chuyến", (dialog, which) -> cancelActiveTrip())
+                .show();
+    }
+
+    private void cancelActiveTrip() {
+        if (activeTripId == null || routeExecutor == null || routeExecutor.isShutdown()) {
+            return;
+        }
+
+        final String tripId = activeTripId;
+        final Context appContext = requireContext().getApplicationContext();
+        if (pendingTripStatusPoll != null) {
+            mainHandler.removeCallbacks(pendingTripStatusPoll);
+            pendingTripStatusPoll = null;
+        }
+        btnCancelActiveTrip.setEnabled(false);
+        btnSearchDriver.setEnabled(false);
+        setSearchButtonSearching("Đang hủy chuyến...");
+
+        routeExecutor.execute(() -> {
+            try {
+                TripService.cancelTrip(appContext, tripId);
+                mainHandler.post(() -> {
+                    if (!isAdded()) {
+                        return;
+                    }
+
+                    Toast.makeText(requireContext(), "Đã hủy chuyến", Toast.LENGTH_SHORT).show();
+                    currentTripId = null;
+                    activeTripId = null;
+                    activeTrip = null;
+                    activeTripRouteKey = "";
+                    activeTripRoutePoints.clear();
+                    activeTripRouteLoading = false;
+                    btnCancelActiveTrip.setEnabled(true);
+                    btnSearchDriver.setEnabled(true);
+                    setSearchButtonLabel(R.string.find_driver);
+                    setActiveTripMode(false);
+                });
+            } catch (Exception exception) {
+                Log.w(TAG, "Unable to cancel active trip", exception);
+                mainHandler.post(() -> {
+                    if (!isAdded()) {
+                        return;
+                    }
+
+                    btnCancelActiveTrip.setEnabled(true);
+                    if (activeTrip != null) {
+                        renderPassengerActiveTrip(activeTrip);
+                        renderAcceptedTripState(activeTrip);
+                        scheduleTripStatusPoll();
+                    } else {
+                        btnSearchDriver.setEnabled(true);
+                        setSearchButtonLabel(R.string.find_driver);
+                    }
+                    Toast.makeText(requireContext(), "Không thể hủy chuyến: " + exception.getMessage(), Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    private void confirmPassengerPickup() {
+        if (activeTripId == null || routeExecutor == null || routeExecutor.isShutdown()) {
+            return;
+        }
+
+        btnSearchDriver.setEnabled(false);
+        setSearchButtonSearching("Đang xác nhận...");
+        final String tripId = activeTripId;
+        final Context appContext = requireContext().getApplicationContext();
+        routeExecutor.execute(() -> {
+            try {
+                Trip updatedTrip = TripService.confirmPickup(appContext, tripId, null, null);
+                mainHandler.post(() -> {
+                    if (!isAdded()) {
+                        return;
+                    }
+
+                    Toast.makeText(requireContext(), "Đã xác nhận lên xe", Toast.LENGTH_SHORT).show();
+                    handlePolledTripStatus(updatedTrip);
+                });
+            } catch (Exception exception) {
+                Log.w(TAG, "Unable to confirm passenger pickup", exception);
+                mainHandler.post(() -> {
+                    if (!isAdded()) {
+                        return;
+                    }
+
+                    if (activeTrip != null) {
+                        renderAcceptedTripState(activeTrip);
+                    }
+                    Toast.makeText(requireContext(), "Không thể xác nhận: " + exception.getMessage(), Toast.LENGTH_LONG).show();
+                });
+            }
+        });
+    }
+
+    private void renderActiveTripMap(@Nullable Trip trip) {
+        if (activeTripMap == null || trip == null) {
+            return;
+        }
+
+        activeTripMap.clear();
+        LatLng driverLocation = getDriverLatLng(trip);
+        LatLng pickupLocation = getPickupLatLng(trip);
+        LatLng destinationLocation = getDestinationLatLng(trip);
+        boolean inProgress = "InProgress".equalsIgnoreCase(trip.getStatus());
+
+        if (driverLocation != null) {
+            activeTripMap.addMarker(new MarkerOptions()
+                    .position(driverLocation)
+                    .title("Vị trí tài xế")
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+        }
+
+        if (!inProgress && pickupLocation != null) {
+            activeTripMap.addMarker(new MarkerOptions()
+                    .position(pickupLocation)
+                    .title("Điểm đón")
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+        }
+
+        if (destinationLocation != null) {
+            activeTripMap.addMarker(new MarkerOptions()
+                    .position(destinationLocation)
+                    .title("Điểm đến")
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+        }
+
+        if (!activeTripRoutePoints.isEmpty()) {
+            activeTripMap.addPolyline(new PolylineOptions()
+                    .addAll(activeTripRoutePoints)
+                    .color(ContextCompat.getColor(requireContext(), R.color.primary))
+                    .width(10f)
+                    .geodesic(true));
+        }
+
+        fitActiveTripBounds(driverLocation, inProgress ? destinationLocation : pickupLocation);
+    }
+
+    private void fitActiveTripBounds(@Nullable LatLng first, @Nullable LatLng second) {
+        if (activeTripMap == null) {
+            return;
+        }
+
+        LatLngBounds.Builder builder = LatLngBounds.builder();
+        int included = 0;
+        if (first != null) {
+            builder.include(first);
+            included++;
+        }
+        if (second != null) {
+            builder.include(second);
+            included++;
+        }
+        for (LatLng routePoint : activeTripRoutePoints) {
+            if (routePoint != null) {
+                builder.include(routePoint);
+                included++;
+            }
+        }
+
+        if (included >= 2) {
+            activeTripMap.animateCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), ACTIVE_TRIP_ROUTE_PADDING_PX));
+        } else if (included == 1) {
+            LatLng focus = first != null ? first : second;
+            if (focus != null) {
+                activeTripMap.animateCamera(CameraUpdateFactory.newLatLngZoom(focus, 14f));
+            }
+        }
+    }
+
+    @Nullable
+    private LatLng getPickupLatLng(@NonNull Trip trip) {
+        return isValidCoordinate(trip.getPickupLat(), trip.getPickupLng())
+                ? new LatLng(trip.getPickupLat(), trip.getPickupLng())
+                : null;
+    }
+
+    @Nullable
+    private LatLng getDestinationLatLng(@NonNull Trip trip) {
+        return isValidCoordinate(trip.getDestinationLat(), trip.getDestinationLng())
+                ? new LatLng(trip.getDestinationLat(), trip.getDestinationLng())
+                : null;
+    }
+
+    @Nullable
+    private LatLng getDriverLatLng(@NonNull Trip trip) {
+        return isValidCoordinate(trip.getDriverCurrentLat(), trip.getDriverCurrentLng())
+                ? new LatLng(trip.getDriverCurrentLat(), trip.getDriverCurrentLng())
+                : null;
+    }
+
+    private boolean isValidCoordinate(double lat, double lng) {
+        return lat >= -90d && lat <= 90d
+                && lng >= -180d && lng <= 180d
+                && !(Math.abs(lat) < 0.000001d && Math.abs(lng) < 0.000001d);
+    }
+
+    private double calculateDistanceMeters(@NonNull LatLng start, @NonNull LatLng end) {
+        double earthRadiusMeters = 6371000d;
+        double dLat = Math.toRadians(end.latitude - start.latitude);
+        double dLng = Math.toRadians(end.longitude - start.longitude);
+        double startLat = Math.toRadians(start.latitude);
+        double endLat = Math.toRadians(end.latitude);
+        double a = Math.sin(dLat / 2d) * Math.sin(dLat / 2d)
+                + Math.cos(startLat) * Math.cos(endLat)
+                * Math.sin(dLng / 2d) * Math.sin(dLng / 2d);
+        double c = 2d * Math.atan2(Math.sqrt(a), Math.sqrt(1d - a));
+        return earthRadiusMeters * c;
+    }
+
+    @NonNull
+    private String formatMeters(double distanceMeters) {
+        if (distanceMeters >= 1000d) {
+            return String.format(Locale.getDefault(), "%.1f km", distanceMeters / 1000d);
+        }
+
+        return Math.max(1, Math.round(distanceMeters)) + " m";
+    }
+
+    @NonNull
+    private String formatLatLng(@NonNull LatLng latLng) {
+        return String.format(Locale.US, "%.6f,%.6f", latLng.latitude, latLng.longitude);
     }
 
     private void setSearchButtonLabel(int stringResId) {
@@ -873,11 +1549,13 @@ public class BookingFragment extends Fragment {
 
         if (pickupLocation != null && !pickupLocation.isEmpty() && !pickupLocation.equals(edtPickup.getText().toString())) {
             edtPickup.setText(pickupLocation);
+            LocationHistoryStore.saveLocation(requireContext(), LocationHistoryStore.KEY_PICKUP, pickupLocation);
             updated = true;
         }
 
         if (destinationLocation != null && !destinationLocation.isEmpty() && !destinationLocation.equals(edtDestination.getText().toString())) {
             edtDestination.setText(destinationLocation);
+            LocationHistoryStore.saveLocation(requireContext(), LocationHistoryStore.KEY_DESTINATION, destinationLocation);
             updated = true;
         }
 
@@ -886,6 +1564,7 @@ public class BookingFragment extends Fragment {
         }
 
         LocationData.clear();
+        loadActiveTripForPassenger();
     }
 
     private String getVehicleLabel() {
@@ -905,6 +1584,30 @@ public class BookingFragment extends Fragment {
     private void openMapBooking() {
         if (getActivity() instanceof vnuhcm.hcmus.movify.activities.HomeActivity) {
             ((vnuhcm.hcmus.movify.activities.HomeActivity) getActivity()).openMapBooking();
+        }
+    }
+
+    private void saveLocationHistory(String pickup, String destination) {
+        if (!isAdded()) {
+            return;
+        }
+
+        LocationHistoryStore.saveLocation(requireContext(), LocationHistoryStore.KEY_PICKUP, pickup);
+        LocationHistoryStore.saveLocation(requireContext(), LocationHistoryStore.KEY_DESTINATION, destination);
+    }
+
+    private void saveLocationHistoryForField(@NonNull AutoCompleteTextView targetField, String location) {
+        if (!isAdded()) {
+            return;
+        }
+
+        if (targetField == edtPickup) {
+            LocationHistoryStore.saveLocation(requireContext(), LocationHistoryStore.KEY_PICKUP, location);
+            return;
+        }
+
+        if (targetField == edtDestination) {
+            LocationHistoryStore.saveLocation(requireContext(), LocationHistoryStore.KEY_DESTINATION, location);
         }
     }
 

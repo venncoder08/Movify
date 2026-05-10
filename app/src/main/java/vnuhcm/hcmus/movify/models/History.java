@@ -13,13 +13,14 @@ public class History {
     private String distance;
     private String price;
     private String ratingText;
+    private String myComment;
     private int vehicleIconResId;
 
     public History(int tripId, String statusCode, String statusLabel, String dateTime,
                        String pickupAddress, String destinationAddress,
                        String driverName, String driverPlate,
                        String duration, String distance, String price,
-                       String ratingText,
+                       String ratingText, String myComment,
                        int vehicleIconResId) {
         this.tripId = tripId;
         this.statusCode = statusCode;
@@ -33,6 +34,7 @@ public class History {
         this.distance = distance;
         this.price = price;
         this.ratingText = ratingText;
+        this.myComment = myComment;
         this.vehicleIconResId = vehicleIconResId;
     }
 
@@ -82,6 +84,10 @@ public class History {
 
     public String getRatingText() {
         return ratingText;
+    }
+
+    public String getMyComment() {
+        return myComment;
     }
 
     public int getVehicleIconResId() {

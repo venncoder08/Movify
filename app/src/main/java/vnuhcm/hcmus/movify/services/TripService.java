@@ -105,6 +105,126 @@ public final class TripService {
                 context, "api/trips/" + tripId + "/cancel", jwt, body);
     }
 
+    /**
+     * Fetch the latest backend state for a trip.
+     */
+    @NonNull
+    public static Trip fetchTrip(@NonNull Context context, @NonNull String tripId)
+            throws IOException, JSONException {
+
+        String jwt = getJwt(context);
+        String responseBody = BackendApiService.executeAuthenticatedGet(
+                context,
+                "api/trips/" + tripId,
+                jwt,
+                new java.util.LinkedHashMap<>()
+        );
+
+        return parseTripResponse(responseBody);
+    }
+
+    /**
+     * Fetch the newest active trip for the authenticated passenger or driver.
+     */
+    @Nullable
+    public static Trip fetchActiveTrip(@NonNull Context context)
+            throws IOException, JSONException {
+
+        String jwt = getJwt(context);
+        String responseBody = BackendApiService.executeAuthenticatedGet(
+                context,
+                "api/trips/active",
+                jwt,
+                new java.util.LinkedHashMap<>()
+        );
+
+        JSONObject root = new JSONObject(responseBody);
+        JSONObject dataJson = root.optJSONObject("data");
+        if (dataJson == null || dataJson.isNull("trip")) {
+            return null;
+        }
+
+        JSONObject tripJson = dataJson.optJSONObject("trip");
+        return tripJson == null ? null : parseTripJson(tripJson);
+    }
+
+    /**
+     * Publish the driver's current position for the passenger's active-trip map.
+     */
+    @NonNull
+    public static Trip updateDriverLocation(@NonNull Context context,
+                                            @NonNull String tripId,
+                                            double driverLat,
+                                            double driverLng)
+            throws IOException, JSONException {
+
+        String jwt = getJwt(context);
+        JSONObject body = new JSONObject();
+        body.put("driverLat", driverLat);
+        body.put("driverLng", driverLng);
+
+        String responseBody = BackendApiService.executeAuthenticatedPatch(
+                context,
+                "api/trips/" + tripId + "/driver-location",
+                jwt,
+                body
+        );
+
+        return parseTripResponse(responseBody);
+    }
+
+    /**
+     * Confirm pickup. Drivers should pass their current coordinates; passengers can pass nulls.
+     */
+    @NonNull
+    public static Trip confirmPickup(@NonNull Context context,
+                                     @NonNull String tripId,
+                                     @Nullable Double driverLat,
+                                     @Nullable Double driverLng)
+            throws IOException, JSONException {
+
+        String jwt = getJwt(context);
+        JSONObject body = new JSONObject();
+        if (driverLat != null && driverLng != null) {
+            body.put("driverLat", driverLat);
+            body.put("driverLng", driverLng);
+        }
+
+        String responseBody = BackendApiService.executeAuthenticatedPost(
+                context,
+                "api/trips/" + tripId + "/pickup-confirm",
+                jwt,
+                body
+        );
+
+        return parseTripResponse(responseBody);
+    }
+
+    /**
+     * Complete an in-progress trip. Drivers must pass their current coordinates.
+     */
+    @NonNull
+    public static Trip completeTrip(@NonNull Context context,
+                                    @NonNull String tripId,
+                                    double driverLat,
+                                    double driverLng)
+            throws IOException, JSONException {
+
+        String jwt = getJwt(context);
+        JSONObject body = new JSONObject();
+        body.put("driverLat", driverLat);
+        body.put("driverLng", driverLng);
+
+        String responseBody = BackendApiService.executeAuthenticatedPost(
+                context,
+                "api/trips/" + tripId + "/complete",
+                jwt,
+                body
+        );
+
+        return parseTripResponse(responseBody);
+    }
+
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
@@ -131,7 +251,18 @@ public final class TripService {
         }
 
         if (tripJson == null || !tripJson.has("id")) {
-            throw new IOException("Backend không trả về thông tin trip hợp lệ");
+            throw new IOException("Máy chủ không trả về thông tin chuyến hợp lệ");
+        }
+
+        return parseTripJson(tripJson);
+    }
+
+    @NonNull
+    private static Trip parseTripJson(@NonNull JSONObject tripJson)
+            throws IOException, JSONException {
+
+        if (!tripJson.has("id")) {
+            throw new IOException("Máy chủ không trả về thông tin chuyến hợp lệ");
         }
 
         String id          = String.valueOf(tripJson.opt("id"));
@@ -144,8 +275,46 @@ public final class TripService {
         double fare        = tripJson.optDouble("fare",              0);
         String status      = tripJson.optString("status",            "pending");
         double distance    = tripJson.optDouble("distance",          0);
+        String tripType    = tripJson.optString("tripType",          "");
 
-        return new Trip(id, pickupLat, pickupLng, pickupAddr,
-                        destLat, destLng, destAddr, fare, status, distance);
+        Trip trip = new Trip(id, pickupLat, pickupLng, pickupAddr,
+                        destLat, destLng, destAddr, fare, status, distance, tripType);
+        applyPickupConfirmation(trip, tripJson);
+        applyDriverLocation(trip, tripJson);
+        applyDriverInfo(trip, tripJson);
+        return trip;
+    }
+
+    private static void applyPickupConfirmation(@NonNull Trip trip, @NonNull JSONObject tripJson) {
+        JSONObject pickupConfirmation = tripJson.optJSONObject("pickupConfirmation");
+        if (pickupConfirmation == null) {
+            return;
+        }
+
+        trip.setDriverPickupConfirmed(pickupConfirmation.optBoolean("driverConfirmed", false));
+        trip.setPassengerPickupConfirmed(pickupConfirmation.optBoolean("passengerConfirmed", false));
+    }
+
+    private static void applyDriverLocation(@NonNull Trip trip, @NonNull JSONObject tripJson) {
+        JSONObject driverLocation = tripJson.optJSONObject("driverLocation");
+        if (driverLocation == null) {
+            return;
+        }
+
+        if (!driverLocation.isNull("lat") && !driverLocation.isNull("lng")) {
+            trip.setDriverCurrentLat(driverLocation.optDouble("lat", 0d));
+            trip.setDriverCurrentLng(driverLocation.optDouble("lng", 0d));
+        }
+        trip.setDriverLocationUpdatedAt(driverLocation.optString("updatedAt", ""));
+    }
+
+    private static void applyDriverInfo(@NonNull Trip trip, @NonNull JSONObject tripJson) {
+        JSONObject driver = tripJson.optJSONObject("driver");
+        if (driver == null) {
+            return;
+        }
+
+        trip.setDriverFullName(driver.optString("fullName", ""));
+        trip.setDriverPhoneNumber(driver.optString("phoneNumber", ""));
     }
 }

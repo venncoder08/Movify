@@ -11,6 +11,14 @@ public class Trip {
     private double fare;
     private String status; // pending, accepted, completed, cancelled
     private double distance; // distance from driver's current location in km
+    private String tripType; // Motor or Taxi
+    private boolean driverPickupConfirmed;
+    private boolean passengerPickupConfirmed;
+    private double driverCurrentLat;
+    private double driverCurrentLng;
+    private String driverLocationUpdatedAt;
+    private String driverFullName;
+    private String driverPhoneNumber;
 
     public Trip() {
     }
@@ -18,6 +26,13 @@ public class Trip {
     public Trip(String id, double pickupLat, double pickupLng, String pickupAddress,
                 double destinationLat, double destinationLng, String destinationAddress,
                 double fare, String status, double distance) {
+        this(id, pickupLat, pickupLng, pickupAddress, destinationLat, destinationLng,
+                destinationAddress, fare, status, distance, "");
+    }
+
+    public Trip(String id, double pickupLat, double pickupLng, String pickupAddress,
+                double destinationLat, double destinationLng, String destinationAddress,
+                double fare, String status, double distance, String tripType) {
         this.id = id;
         this.pickupLat = pickupLat;
         this.pickupLng = pickupLng;
@@ -28,6 +43,7 @@ public class Trip {
         this.fare = fare;
         this.status = status;
         this.distance = distance;
+        this.tripType = tripType;
     }
 
     // Getters and Setters
@@ -109,5 +125,79 @@ public class Trip {
 
     public void setDistance(double distance) {
         this.distance = distance;
+    }
+
+    public String getTripType() {
+        return tripType;
+    }
+
+    public void setTripType(String tripType) {
+        this.tripType = tripType;
+    }
+
+    public boolean isDriverPickupConfirmed() {
+        return driverPickupConfirmed;
+    }
+
+    public void setDriverPickupConfirmed(boolean driverPickupConfirmed) {
+        this.driverPickupConfirmed = driverPickupConfirmed;
+    }
+
+    public boolean isPassengerPickupConfirmed() {
+        return passengerPickupConfirmed;
+    }
+
+    public void setPassengerPickupConfirmed(boolean passengerPickupConfirmed) {
+        this.passengerPickupConfirmed = passengerPickupConfirmed;
+    }
+
+    public double getDriverCurrentLat() {
+        return driverCurrentLat;
+    }
+
+    public void setDriverCurrentLat(double driverCurrentLat) {
+        this.driverCurrentLat = driverCurrentLat;
+    }
+
+    public double getDriverCurrentLng() {
+        return driverCurrentLng;
+    }
+
+    public void setDriverCurrentLng(double driverCurrentLng) {
+        this.driverCurrentLng = driverCurrentLng;
+    }
+
+    public String getDriverLocationUpdatedAt() {
+        return driverLocationUpdatedAt;
+    }
+
+    public void setDriverLocationUpdatedAt(String driverLocationUpdatedAt) {
+        this.driverLocationUpdatedAt = driverLocationUpdatedAt;
+    }
+
+    public String getDriverFullName() {
+        return driverFullName;
+    }
+
+    public void setDriverFullName(String driverFullName) {
+        this.driverFullName = driverFullName;
+    }
+
+    public String getDriverPhoneNumber() {
+        return driverPhoneNumber;
+    }
+
+    public void setDriverPhoneNumber(String driverPhoneNumber) {
+        this.driverPhoneNumber = driverPhoneNumber;
+    }
+
+    public boolean hasDriverLocation() {
+        return isValidCoordinate(driverCurrentLat, driverCurrentLng);
+    }
+
+    private boolean isValidCoordinate(double lat, double lng) {
+        return lat >= -90d && lat <= 90d
+                && lng >= -180d && lng <= 180d
+                && !(Math.abs(lat) < 0.000001d && Math.abs(lng) < 0.000001d);
     }
 }

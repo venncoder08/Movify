@@ -2,6 +2,8 @@ const PlaceModel = require("../models/placeModel");
 const geoapifyRepository = require("../repositories/geoapifyRepository");
 const AppError = require("../utils/httpError");
 
+const COORDINATE_PATTERN = /(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})/;
+
 async function autocomplete(query) {
   if (!query) {
     return { suggestions: [] };
@@ -25,8 +27,8 @@ async function autocomplete(query) {
 
 async function geocode(query) {
   const place = await findPlaceByQuery(query, {
-    missingMessage: "Missing q query parameter",
-    notFoundMessage: "Khong tim thay dia diem"
+    missingMessage: "Thiếu tham số địa điểm",
+    notFoundMessage: "Không tìm thấy địa điểm"
   });
 
   return { location: place };
@@ -35,6 +37,15 @@ async function geocode(query) {
 async function findPlaceByQuery(query, { missingMessage, notFoundMessage }) {
   if (!query) {
     throw new AppError(missingMessage, 400);
+  }
+
+  const embeddedCoordinates = parseEmbeddedCoordinates(query);
+  if (embeddedCoordinates) {
+    return new PlaceModel({
+      label: query,
+      lat: embeddedCoordinates.lat,
+      lng: embeddedCoordinates.lng
+    });
   }
 
   const payload = await geoapifyRepository.fetchGeocodeResults(query, 1);
@@ -48,6 +59,25 @@ async function findPlaceByQuery(query, { missingMessage, notFoundMessage }) {
     lat: firstResult.lat,
     lng: firstResult.lon
   });
+}
+
+function parseEmbeddedCoordinates(query) {
+  const match = query.match(COORDINATE_PATTERN);
+  if (!match) {
+    return null;
+  }
+
+  const lat = Number(match[1]);
+  const lng = Number(match[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return null;
+  }
+
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return null;
+  }
+
+  return { lat, lng };
 }
 
 module.exports = {

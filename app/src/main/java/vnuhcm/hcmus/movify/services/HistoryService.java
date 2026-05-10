@@ -1,6 +1,7 @@
 package vnuhcm.hcmus.movify.services;
 
 import android.content.Context;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -24,6 +25,8 @@ import vnuhcm.hcmus.movify.models.HistoryScreenData;
 
 public final class HistoryService {
 
+    private static final String TAG = "HistoryService";
+
     private HistoryService() {
     }
 
@@ -31,7 +34,7 @@ public final class HistoryService {
     public static HistoryScreenData fetchHistory(Context context) throws IOException, JSONException {
         String jwtToken = new AuthApiService(context).getJwtToken();
         if (jwtToken == null || jwtToken.isBlank()) {
-            throw new IOException("No JWT token available");
+            throw new IOException("Không tìm thấy mã phiên đăng nhập");
         }
 
         String responseBody = BackendApiService.executeAuthenticatedGet(
@@ -58,7 +61,8 @@ public final class HistoryService {
                 }
 
                 JSONObject driver = item.optJSONObject("driver");
-                double driverRatePoint = driver == null ? 0d : driver.optDouble("ratePoint", 0d);
+                double ratingScore = item.isNull("ratingScore") ? 0d : item.optDouble("ratingScore", 0d);
+                String ratingComment = normalizeText(item.optString("ratingComment", ""));
                 String statusCode = item.optString("status", "Pending");
                 String dateReference = firstNonEmpty(
                         item.optString("completedTime", ""),
@@ -74,19 +78,26 @@ public final class HistoryService {
                         item.optString("pickUpLocation", "Chưa cập nhật"),
                         item.optString("destinationLocation", "Chưa cập nhật"),
                         driver == null ? "Chưa có tài xế" : driver.optString("fullName", "Chưa có tài xế"),
-                        driver == null ? "Đang cập nhật" : driver.optString("vehicleRegistration", "Đang cập nhật"),
+                        "",
                         formatDuration(item),
                         formatDistance(item.optDouble("distance", 0d)),
                         formatCurrency(item.optDouble("totalAmount", 0d)),
-                        buildRating(driverRatePoint),
+                        buildRating(ratingScore),
+                        ratingComment,
                         mapTripIcon(item.optString("tripType", "Motor"))
                 ));
+
+                Log.d(TAG, "Parsed history item: tripId=" + item.optInt("id", 0)
+                        + ", status=" + statusCode
+                        + ", ratingScore=" + ratingScore
+                        + ", ratingComment=" + ratingComment
+                        + ", rawJson=" + item.toString());
             }
         }
 
         JSONObject summary = data.optJSONObject("summary");
         if (summary == null) {
-            return new HistoryScreenData(items, formatCurrency(0d), "0", formatDistance(0d), "Thang nay");
+            return new HistoryScreenData(items, formatCurrency(0d), "0", formatDistance(0d), "Tháng này");
         }
 
         return new HistoryScreenData(
@@ -152,12 +163,12 @@ public final class HistoryService {
     }
 
     @NonNull
-    private static String buildRating(double driverRatePoint) {
-        if (driverRatePoint <= 0d) {
+    private static String buildRating(double score) {
+        if (score <= 0d) {
             return "";
         }
 
-        return "Rating " + String.format(Locale.US, "%.1f", driverRatePoint);
+        return "Đánh giá tài xế: " + String.format(Locale.US, "%.1f", score) + " ★";
     }
 
     @NonNull
@@ -168,6 +179,20 @@ public final class HistoryService {
             }
         }
         return "";
+    }
+
+    @NonNull
+    private static String normalizeText(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        String trimmedValue = value.trim();
+        if (trimmedValue.isEmpty() || "null".equalsIgnoreCase(trimmedValue)) {
+            return "";
+        }
+
+        return trimmedValue;
     }
 
     private static Date parseDate(String rawDate) {

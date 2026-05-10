@@ -1,4 +1,5 @@
 const { PrismaClient } = require("@prisma/client");
+const { stripCurrentLocationLabel } = require("../utils/locationLabel");
 
 const prisma = new PrismaClient();
 
@@ -6,13 +7,41 @@ function getReferenceDate(trip) {
   return trip.CompletedTime || trip.PickUpTime || trip.CreatedAt;
 }
 
-function serializeTrip(trip) {
+function serializeTrip(trip, currentUserId, currentUserRole) {
+  const ratings = trip.Rating || [];
+  const rating = ratings.find((r) => {
+    if (currentUserRole === "Driver") {
+      return r.RateeID === currentUserId;
+    }
+
+    return r.RaterID === currentUserId;
+  });
+
+  console.log("[history] serializeTrip", {
+    tripId: trip.ID,
+    currentUserId,
+    currentUserRole,
+    ratingCount: ratings.length,
+    matchedRating: rating
+      ? {
+          id: rating.ID,
+          tripId: rating.TripID,
+          raterId: rating.RaterID,
+          rateeId: rating.RateeID,
+          score: Number(rating.Score),
+          comment: rating.Comment
+        }
+      : null
+  });
+
+  const driver = trip.Account_Trip_DriverIDToAccount;
+
   return {
     id: trip.ID,
     status: trip.Status,
     tripType: trip.TripType,
-    pickUpLocation: trip.PickUpLocation,
-    destinationLocation: trip.DestinationLocation,
+    pickUpLocation: stripCurrentLocationLabel(trip.PickUpLocation),
+    destinationLocation: stripCurrentLocationLabel(trip.DestinationLocation),
     duration: trip.Duration ? Number(trip.Duration) : null,
     distance: Number(trip.Distance),
     totalAmount: Number(trip.TotalAmount),
@@ -21,13 +50,15 @@ function serializeTrip(trip) {
     createdAt: trip.CreatedAt,
     paymentMethod: trip.PaymentMethod,
     paymentStatus: trip.PaymentStatus,
-    driver: trip.Account_Trip_DriverIDToAccount
+    ratingScore: rating ? Number(rating.Score) : null,
+    ratingComment: rating ? (rating.Comment || null) : null,
+    driver: driver
       ? {
-          id: trip.Account_Trip_DriverIDToAccount.ID,
-          fullName: trip.Account_Trip_DriverIDToAccount.FullName,
-          vehicleRegistration: trip.Account_Trip_DriverIDToAccount.VehicleRegistration,
-          ratePoint: Number(trip.Account_Trip_DriverIDToAccount.RatePoint),
-          avatar: trip.Account_Trip_DriverIDToAccount.Avatar
+          id: driver.ID,
+          fullName: driver.FullName,
+          vehicleRegistration: driver.VehicleRegistration,
+          ratePoint: Number(driver.RatePoint),
+          avatar: driver.Avatar
         }
       : null
   };
@@ -35,11 +66,23 @@ function serializeTrip(trip) {
 
 async function getHistory(req, res) {
   try {
+    const isDriver = req.user.role === "Driver";
+    console.log("[history] request", {
+      userId: req.user.id,
+      role: req.user.role,
+      isDriver
+    });
+
     const trips = await prisma.trip.findMany({
-      where: {
-        UserID: req.user.id,
-        DeletedAt: null
-      },
+      where: isDriver
+        ? {
+            DriverID: req.user.id,
+            DeletedAt: null
+          }
+        : {
+            UserID: req.user.id,
+            DeletedAt: null
+          },
       orderBy: {
         CreatedAt: "desc"
       },
@@ -52,6 +95,14 @@ async function getHistory(req, res) {
             RatePoint: true,
             Avatar: true
           }
+        },
+        Rating: {
+          select: {
+            RaterID: true,
+            RateeID: true,
+            Score: true,
+            Comment: true
+          }
         }
       }
     });
@@ -60,14 +111,27 @@ async function getHistory(req, res) {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const currentMonthTrips = trips.filter((trip) => {
       const referenceDate = getReferenceDate(trip);
-      return referenceDate >= monthStart && trip.Status !== "Cancelled";
+      const keep = referenceDate >= monthStart && trip.Status !== "Cancelled";
+      if (!keep) {
+        console.log("[history] filtered trip", {
+          tripId: trip.ID,
+          status: trip.Status,
+          referenceDate,
+          monthStart
+        });
+      }
+      return keep;
+    });
+
+    console.log("[history] trips loaded", {
+      totalTrips: trips.length,
+      currentMonthTrips: currentMonthTrips.length
     });
 
     const summary = currentMonthTrips.reduce((result, trip) => {
-      result.totalTrips += 1;
-      result.totalDistance += Number(trip.Distance);
-
       if (trip.Status === "Completed") {
+        result.totalTrips += 1;
+        result.totalDistance += Number(trip.Distance);
         result.totalAmount += Number(trip.TotalAmount);
       }
 
@@ -82,9 +146,9 @@ async function getHistory(req, res) {
       data: {
         summary: {
           ...summary,
-          periodLabel: "Thang nay"
+          periodLabel: "Tháng này"
         },
-        items: trips.map(serializeTrip)
+        items: currentMonthTrips.map((trip) => serializeTrip(trip, req.user.id, req.user.role))
       }
     });
   } catch (error) {
