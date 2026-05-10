@@ -3,12 +3,12 @@ const { Readable } = require("stream");
 const cloudinary = require("../config/cloudinary");
 const env = require("../config/env");
 
-function uploadAvatar(req, res) {
+function uploadImageWithMessage(req, res, missingMessage, successMessage) {
   try {
     if (!req.file) {
       return res.status(400).json({
         error: "Validation Error",
-        message: "Avatar image is required"
+        message: missingMessage
       });
     }
 
@@ -28,7 +28,7 @@ function uploadAvatar(req, res) {
         }
 
         return res.status(200).json({
-          message: "Avatar uploaded successfully",
+          message: successMessage,
           data: {
             url: result.secure_url,
             publicId: result.public_id
@@ -46,6 +46,15 @@ function uploadAvatar(req, res) {
   }
 }
 
+function uploadAvatar(req, res) {
+  return uploadImageWithMessage(req, res, "Vui lòng chọn ảnh đại diện", "Tải ảnh đại diện lên thành công");
+}
+
+function uploadImage(req, res) {
+  return uploadImageWithMessage(req, res, "Vui lòng chọn ảnh", "Tải ảnh lên thành công");
+}
+
 module.exports = {
-  uploadAvatar
+  uploadAvatar,
+  uploadImage
 };

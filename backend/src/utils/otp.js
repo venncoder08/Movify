@@ -1,8 +1,24 @@
+const crypto = require("crypto");
+const { PrismaClient } = require("@prisma/client");
 const env = require("../config/env");
 
-// In-memory OTP storage (for development)
-// In production, use Redis or database
-const otpStore = new Map();
+const prisma = new PrismaClient();
+const MAX_OTP_ATTEMPTS = 5;
+
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function normalizePurpose(purpose) {
+  return String(purpose || "generic").trim();
+}
+
+function hashOTP(otp) {
+  return crypto
+    .createHash("sha256")
+    .update(String(otp))
+    .digest("hex");
+}
 
 /**
  * Generate random OTP
@@ -15,102 +31,144 @@ function generateOTP() {
 }
 
 /**
- * Store OTP with expiration
+ * Store OTP with expiration.
  * @param {string} email - User email
  * @param {string} otp - OTP code
+ * @param {string} purpose - OTP purpose
  */
-function storeOTP(email, otp) {
-  const expiresAt = Date.now() + env.otpExpiration * 1000;
-  otpStore.set(email, {
-    otp,
-    expiresAt,
-    attempts: 0
-  });
+async function storeOTP(email, otp, purpose = "generic") {
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedPurpose = normalizePurpose(purpose);
+  const expiresAt = new Date(Date.now() + env.otpExpiration * 1000);
 
-  // Auto-clean expired OTP after expiration time
-  setTimeout(() => {
-    if (otpStore.has(email)) {
-      const stored = otpStore.get(email);
-      if (stored.expiresAt <= Date.now()) {
-        otpStore.delete(email);
+  await prisma.otpCode.upsert({
+    where: {
+      Email_Purpose: {
+        Email: normalizedEmail,
+        Purpose: normalizedPurpose
       }
+    },
+    create: {
+      Email: normalizedEmail,
+      Purpose: normalizedPurpose,
+      CodeHash: hashOTP(otp),
+      Attempts: 0,
+      ExpiresAt: expiresAt
+    },
+    update: {
+      CodeHash: hashOTP(otp),
+      Attempts: 0,
+      ExpiresAt: expiresAt
     }
-  }, env.otpExpiration * 1000 + 1000);
+  });
 }
 
 /**
- * Verify OTP
+ * Verify OTP.
  * @param {string} email - User email
  * @param {string} otp - OTP code to verify
+ * @param {string} purpose - OTP purpose
  * @returns {object} { valid: boolean, message: string }
  */
-function verifyOTP(email, otp) {
-  if (!otpStore.has(email)) {
+async function verifyOTP(email, otp, purpose = "generic") {
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedPurpose = normalizePurpose(purpose);
+
+  const stored = await prisma.otpCode.findUnique({
+    where: {
+      Email_Purpose: {
+        Email: normalizedEmail,
+        Purpose: normalizedPurpose
+      }
+    }
+  });
+
+  if (!stored) {
     return {
       valid: false,
-      message: "OTP not found or expired"
+      message: "Không tìm thấy mã OTP hoặc mã đã hết hạn"
     };
   }
 
-  const stored = otpStore.get(email);
-
-  // Check expiration
-  if (stored.expiresAt <= Date.now()) {
-    otpStore.delete(email);
+  if (stored.ExpiresAt.getTime() <= Date.now()) {
+    await prisma.otpCode.delete({ where: { ID: stored.ID } });
     return {
       valid: false,
-      message: "OTP has expired"
+      message: "Mã OTP đã hết hạn"
     };
   }
 
-  // Check attempts (max 5 attempts)
-  if (stored.attempts >= 5) {
-    otpStore.delete(email);
+  if (stored.Attempts >= MAX_OTP_ATTEMPTS) {
+    await prisma.otpCode.delete({ where: { ID: stored.ID } });
     return {
       valid: false,
-      message: "Maximum OTP attempts exceeded. Request a new OTP."
+      message: "Bạn đã nhập sai OTP quá số lần cho phép. Vui lòng yêu cầu mã mới."
     };
   }
 
-  // Verify OTP
-  if (stored.otp !== otp) {
-    stored.attempts += 1;
+  if (stored.CodeHash !== hashOTP(otp)) {
+    const attempts = stored.Attempts + 1;
+
+    if (attempts >= MAX_OTP_ATTEMPTS) {
+      await prisma.otpCode.delete({ where: { ID: stored.ID } });
+      return {
+        valid: false,
+        message: "Bạn đã nhập sai OTP quá số lần cho phép. Vui lòng yêu cầu mã mới."
+      };
+    }
+
+    await prisma.otpCode.update({
+      where: { ID: stored.ID },
+      data: { Attempts: attempts }
+    });
+
     return {
       valid: false,
-      message: `Invalid OTP. ${5 - stored.attempts} attempts remaining.`
+      message: `Mã OTP không đúng. Còn ${MAX_OTP_ATTEMPTS - attempts} lần thử.`
     };
   }
 
-  // Valid OTP - delete from store
-  otpStore.delete(email);
+  await prisma.otpCode.delete({ where: { ID: stored.ID } });
   return {
     valid: true,
-    message: "OTP verified successfully"
+    message: "Xác thực OTP thành công"
   };
 }
 
 /**
- * Get OTP info (for testing)
+ * Get OTP info (for testing).
  * @param {string} email - User email
+ * @param {string} purpose - OTP purpose
  * @returns {object} OTP info
  */
-function getOTPInfo(email) {
-  return otpStore.get(email);
+function getOTPInfo(email, purpose = "generic") {
+  return prisma.otpCode.findUnique({
+    where: {
+      Email_Purpose: {
+        Email: normalizeEmail(email),
+        Purpose: normalizePurpose(purpose)
+      }
+    }
+  });
 }
 
 /**
- * Clear OTP
+ * Clear OTP.
  * @param {string} email - User email
+ * @param {string} purpose - OTP purpose
  */
-function clearOTP(email) {
-  otpStore.delete(email);
+async function clearOTP(email, purpose = "generic") {
+  const stored = await getOTPInfo(email, purpose);
+  if (stored) {
+    await prisma.otpCode.delete({ where: { ID: stored.ID } });
+  }
 }
 
 /**
- * Clear all OTPs (for testing/development)
+ * Clear all OTPs (for testing/development).
  */
 function clearAllOTPs() {
-  otpStore.clear();
+  return prisma.otpCode.deleteMany({});
 }
 
 module.exports = {

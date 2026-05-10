@@ -47,17 +47,17 @@ async function sendOTPEmail(toEmail, otp, purpose = "verify-email") {
       console.error("Email service not configured");
       return {
         success: false,
-        message: "Email service not configured"
+        message: "Dịch vụ email chưa được cấu hình"
       };
     }
 
     const transporter = initializeTransporter();
 
     const subject = {
-      "verify-email": "Verify Your Movify Email",
-      "reset-password": "Reset Your Movify Password",
-      "two-factor": "Your Movify Two-Factor Authentication Code"
-    }[purpose] || "Movify OTP Verification";
+      "verify-email": "Xác thực email Movify",
+      "reset-password": "Đặt lại mật khẩu Movify",
+      "two-factor": "Mã xác thực hai lớp Movify"
+    }[purpose] || "Xác thực OTP Movify";
 
     const htmlTemplate = getEmailTemplate(otp, purpose);
 
@@ -66,7 +66,7 @@ async function sendOTPEmail(toEmail, otp, purpose = "verify-email") {
       to: toEmail,
       subject,
       html: htmlTemplate,
-      text: `Your OTP is: ${otp}. Valid for 10 minutes.`
+      text: `Mã OTP của bạn là: ${otp}. Có hiệu lực trong 10 phút.`
     };
 
     const info = await transporter.sendMail(mailOptions);
@@ -74,7 +74,7 @@ async function sendOTPEmail(toEmail, otp, purpose = "verify-email") {
     console.log("Email sent:", info.response);
     return {
       success: true,
-      message: "OTP email sent successfully",
+      message: "Gửi email OTP thành công",
       messageId: info.messageId
     };
   } catch (error) {
@@ -94,10 +94,10 @@ async function sendOTPEmail(toEmail, otp, purpose = "verify-email") {
  */
 function getEmailTemplate(otp, purpose) {
   const purposeText = {
-    "verify-email": "Verify Your Email",
-    "reset-password": "Reset Your Password",
-    "two-factor": "Complete Two-Factor Authentication"
-  }[purpose] || "OTP Verification";
+    "verify-email": "Xác thực email",
+    "reset-password": "Đặt lại mật khẩu",
+    "two-factor": "Hoàn tất xác thực hai lớp"
+  }[purpose] || "Xác thực OTP";
 
   return `
     <!DOCTYPE html>
@@ -142,19 +142,19 @@ function getEmailTemplate(otp, purpose) {
         </div>
         <div class="content">
           <h2>${purposeText}</h2>
-          <p>Your One-Time Password (OTP) for Movify is:</p>
+          <p>Mã OTP Movify của bạn là:</p>
           <div class="otp-box">
             <div class="otp-code">${otp}</div>
           </div>
           <div class="message">
-            <p><strong>This OTP is valid for 10 minutes</strong></p>
-            <p>Do not share this code with anyone. Movify staff will never ask for your OTP.</p>
-            <p><span class="warning">⚠️ If you didn't request this code, please ignore this email.</span></p>
+            <p><strong>Mã OTP này có hiệu lực trong 10 phút</strong></p>
+            <p>Không chia sẻ mã này với bất kỳ ai. Nhân viên Movify sẽ không bao giờ yêu cầu mã OTP của bạn.</p>
+            <p><span class="warning">⚠️ Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email.</span></p>
           </div>
         </div>
         <div class="footer">
-          <p>&copy; 2024 Movify. All rights reserved.</p>
-          <p>This is an automated email. Please do not reply to this address.</p>
+          <p>&copy; 2024 Movify. Đã đăng ký bản quyền.</p>
+          <p>Đây là email tự động. Vui lòng không trả lời địa chỉ này.</p>
         </div>
       </div>
     </body>
@@ -173,7 +173,7 @@ async function sendWelcomeEmail(toEmail, fullName) {
     if (!env.emailUser || !env.emailPassword) {
       return {
         success: false,
-        message: "Email service not configured"
+        message: "Dịch vụ email chưa được cấu hình"
       };
     }
 
@@ -196,23 +196,23 @@ async function sendWelcomeEmail(toEmail, fullName) {
       <body>
         <div class="container">
           <div class="header">
-            <h1>🚗 Welcome to Movify</h1>
+            <h1>🚗 Chào mừng đến với Movify</h1>
           </div>
           <div class="content">
-            <p>Hi ${fullName},</p>
-            <p>Welcome to Movify! We're excited to have you on board.</p>
-            <p>Your account has been successfully created. You can now:</p>
+            <p>Xin chào ${fullName},</p>
+            <p>Chào mừng bạn đến với Movify! Rất vui khi có bạn đồng hành.</p>
+            <p>Tài khoản của bạn đã được tạo thành công. Bạn có thể:</p>
             <ul>
-              <li>Book rides with our trusted drivers</li>
-              <li>Track your ride in real-time</li>
-              <li>Manage your profile and preferences</li>
-              <li>Access exclusive offers and promotions</li>
+              <li>Đặt xe với các tài xế đáng tin cậy</li>
+              <li>Theo dõi chuyến đi theo thời gian thực</li>
+              <li>Quản lý hồ sơ và tùy chọn cá nhân</li>
+              <li>Nhận các ưu đãi và khuyến mãi dành riêng cho bạn</li>
             </ul>
-            <p>If you have any questions, feel free to contact our support team.</p>
-            <p>Happy riding!<br><strong>Movify Team</strong></p>
+            <p>Nếu có câu hỏi, bạn có thể liên hệ đội ngũ hỗ trợ của Movify.</p>
+            <p>Chúc bạn có những chuyến đi thật thuận tiện!<br><strong>Đội ngũ Movify</strong></p>
           </div>
           <div class="footer">
-            <p>&copy; 2024 Movify. All rights reserved.</p>
+            <p>&copy; 2024 Movify. Đã đăng ký bản quyền.</p>
           </div>
         </div>
       </body>
@@ -222,7 +222,7 @@ async function sendWelcomeEmail(toEmail, fullName) {
     const mailOptions = {
       from: env.emailFrom,
       to: toEmail,
-      subject: "Welcome to Movify! 🚗",
+      subject: "Chào mừng đến với Movify! 🚗",
       html: htmlTemplate
     };
 
@@ -231,7 +231,7 @@ async function sendWelcomeEmail(toEmail, fullName) {
     console.log("Welcome email sent:", info.response);
     return {
       success: true,
-      message: "Welcome email sent successfully"
+      message: "Gửi email chào mừng thành công"
     };
   } catch (error) {
     console.error("Error sending welcome email:", error);
@@ -251,7 +251,7 @@ async function testEmailConfiguration() {
     if (!env.emailUser || !env.emailPassword) {
       return {
         success: false,
-        message: "Email configuration not set"
+        message: "Chưa thiết lập cấu hình email"
       };
     }
 
@@ -260,7 +260,7 @@ async function testEmailConfiguration() {
 
     return {
       success: true,
-      message: "Email configuration is valid"
+      message: "Cấu hình email hợp lệ"
     };
   } catch (error) {
     console.error("Email configuration error:", error);

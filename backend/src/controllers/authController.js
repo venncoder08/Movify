@@ -1,10 +1,13 @@
 const { PrismaClient } = require("@prisma/client");
+const { OAuth2Client } = require("google-auth-library");
+const env = require("../config/env");
 const { generateToken } = require("../utils/jwt");
 const { hashPassword, comparePassword, needsPasswordRehash } = require("../utils/password");
-const { generateOTP, storeOTP } = require("../utils/otp");
+const { generateOTP, storeOTP, verifyOTP } = require("../utils/otp");
 const { sendOTPEmail } = require("../services/emailService");
 
 const prisma = new PrismaClient();
+const googleClient = new OAuth2Client();
 
 function serializeAccount(account) {
   if (!account) {
@@ -23,6 +26,7 @@ function serializeAccount(account) {
     idCard: account.IDCard,
     driverLicense: account.DriverLicense,
     vehicleRegistration: account.VehicleRegistration,
+    vehicleType: account.VehicleType,
     driverStatus: account.DriverStatus,
     isActive: account.IsActive,
     createdAt: account.CreatedAt,
@@ -30,18 +34,19 @@ function serializeAccount(account) {
   };
 }
 
-function decodeJwtPayload(token) {
-  const parts = token.split(".");
-  if (parts.length < 2) {
-    throw new Error("Invalid JWT format");
+async function verifyGoogleIdToken(idToken) {
+  if (!env.googleClientId) {
+    const error = new Error("Google client ID is not configured");
+    error.statusCode = 500;
+    throw error;
   }
 
-  const payload = parts[1]
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
-  const normalizedPayload = payload.padEnd(Math.ceil(payload.length / 4) * 4, "=");
+  const ticket = await googleClient.verifyIdToken({
+    idToken,
+    audience: env.googleClientId
+  });
 
-  return JSON.parse(Buffer.from(normalizedPayload, "base64").toString("utf8"));
+  return ticket.getPayload();
 }
 
 /**
@@ -50,13 +55,13 @@ function decodeJwtPayload(token) {
  */
 async function register(req, res) {
   try {
-    const { email, phoneNumber, password, fullName, role } = req.body;
+    const { email, phoneNumber, password, fullName, otp } = req.body;
 
     // Validation
-    if (!email || !phoneNumber || !password || !fullName) {
+    if (!email || !phoneNumber || !password || !fullName || !otp) {
       return res.status(400).json({
         error: "Validation Error",
-        message: "Email, phone number, password, and full name are required"
+        message: "Vui lòng nhập email, mã OTP, số điện thoại, mật khẩu và họ tên"
       });
     }
 
@@ -70,7 +75,15 @@ async function register(req, res) {
     if (existingUser) {
       return res.status(409).json({
         error: "Conflict",
-        message: "Email or phone number already registered"
+        message: "Email hoặc số điện thoại đã được đăng ký"
+      });
+    }
+
+    const otpResult = await verifyOTP(email, otp, "verify-email");
+    if (!otpResult.valid) {
+      return res.status(400).json({
+        error: "Invalid OTP",
+        message: otpResult.message
       });
     }
 
@@ -84,7 +97,7 @@ async function register(req, res) {
         PhoneNumber: phoneNumber,
         HashedPassword: hashedPassword,
         FullName: fullName,
-        Role: role || "User",
+        Role: "User",
         IsActive: true
       },
       select: {
@@ -106,7 +119,7 @@ async function register(req, res) {
     });
 
     res.status(201).json({
-      message: "User registered successfully",
+      message: "Đăng ký thành công",
       data: {
         user,
         token
@@ -133,7 +146,7 @@ async function login(req, res) {
     if (!email || !password) {
       return res.status(400).json({
         error: "Validation Error",
-        message: "Email and password are required"
+        message: "Vui lòng nhập email và mật khẩu"
       });
     }
 
@@ -155,21 +168,21 @@ async function login(req, res) {
     if (!user) {
       return res.status(401).json({
         error: "Unauthorized",
-        message: "Invalid email or password"
+        message: "Email hoặc mật khẩu không đúng"
       });
     }
 
     if (!user.IsActive) {
       return res.status(403).json({
         error: "Forbidden",
-        message: "Account is deactivated"
+        message: "Tài khoản đã bị vô hiệu hóa"
       });
     }
 
     if (!user.HashedPassword) {
       return res.status(400).json({
         error: "Bad Request",
-        message: "This account uses Google Sign-In. Please continue with Google."
+        message: "Tài khoản này dùng đăng nhập Google. Vui lòng tiếp tục bằng Google."
       });
     }
 
@@ -178,7 +191,7 @@ async function login(req, res) {
     if (!isPasswordValid) {
       return res.status(401).json({
         error: "Unauthorized",
-        message: "Invalid email or password"
+        message: "Email hoặc mật khẩu không đúng"
       });
     }
 
@@ -202,7 +215,7 @@ async function login(req, res) {
     const { HashedPassword, ...userWithoutPassword } = user;
 
     res.status(200).json({
-      message: "Login successful",
+      message: "Đăng nhập thành công",
       token,
       user: userWithoutPassword,
       data: {
@@ -239,6 +252,7 @@ async function getProfile(req, res) {
         IDCard: true,
         DriverLicense: true,
         VehicleRegistration: true,
+        VehicleType: true,
         DriverStatus: true,
         IsActive: true,
         CreatedAt: true,
@@ -249,7 +263,7 @@ async function getProfile(req, res) {
     if (!user) {
       return res.status(404).json({
         error: "Not Found",
-        message: "User not found"
+        message: "Không tìm thấy người dùng"
       });
     }
 
@@ -283,7 +297,7 @@ async function updateProfile(req, res) {
     if (!user) {
       return res.status(404).json({
         error: "Not Found",
-        message: "User not found"
+        message: "Không tìm thấy người dùng"
       });
     }
 
@@ -306,7 +320,7 @@ async function updateProfile(req, res) {
       if (existingPhoneUser) {
         return res.status(400).json({
           error: "Bad Request",
-          message: "Phone number is already in use"
+          message: "Số điện thoại đã được sử dụng"
         });
       }
     }
@@ -323,7 +337,7 @@ async function updateProfile(req, res) {
     });
 
     res.status(200).json({
-      message: "Profile updated successfully",
+      message: "Cập nhật hồ sơ thành công",
       data: serializeAccount(updatedUser)
     });
   } catch (error) {
@@ -353,7 +367,7 @@ async function refreshToken(req, res) {
     if (!user) {
       return res.status(404).json({
         error: "Not Found",
-        message: "User not found"
+        message: "Không tìm thấy người dùng"
       });
     }
 
@@ -364,7 +378,7 @@ async function refreshToken(req, res) {
     });
 
     res.status(200).json({
-      message: "Token refreshed successfully",
+      message: "Làm mới mã phiên thành công",
       data: { token: newToken }
     });
   } catch (error) {
@@ -390,7 +404,7 @@ async function logout(req, res) {
     console.log(`User ${userId} logged out at ${new Date().toISOString()}`);
 
     res.status(200).json({
-      message: "Logout successful. Please delete the token from your device.",
+      message: "Đăng xuất thành công. Vui lòng xóa mã phiên khỏi thiết bị.",
       data: {
         userId,
         loggedOutAt: new Date().toISOString()
@@ -417,7 +431,7 @@ async function forgotPassword(req, res) {
     if (!email) {
       return res.status(400).json({
         error: "Validation Error",
-        message: "Email is required"
+        message: "Vui lòng nhập email"
       });
     }
 
@@ -430,7 +444,7 @@ async function forgotPassword(req, res) {
     if (!user) {
       // Don't reveal if email doesn't exist (security best practice)
       return res.status(200).json({
-        message: "If this email is registered, an OTP will be sent to reset your password"
+        message: "Nếu email này đã được đăng ký, mã OTP đặt lại mật khẩu sẽ được gửi đến email"
       });
     }
 
@@ -438,7 +452,7 @@ async function forgotPassword(req, res) {
     const otp = generateOTP();
 
     // Store OTP
-    storeOTP(email, otp);
+    await storeOTP(email, otp, "reset-password");
 
     // Send OTP email
     const emailResult = await sendOTPEmail(email, otp, "reset-password");
@@ -451,7 +465,7 @@ async function forgotPassword(req, res) {
     }
 
     res.status(200).json({
-      message: "OTP sent to your email. Check your inbox to reset your password.",
+      message: "Đã gửi mã OTP đến email. Vui lòng kiểm tra hộp thư để đặt lại mật khẩu.",
       data: {
         email,
         expiresIn: 600 // 10 minutes
@@ -478,27 +492,26 @@ async function resetPassword(req, res) {
     if (!email || !otp || !newPassword || !confirmPassword) {
       return res.status(400).json({
         error: "Validation Error",
-        message: "Email, OTP, and new password are required"
+        message: "Vui lòng nhập email, mã OTP và mật khẩu mới"
       });
     }
 
     if (newPassword !== confirmPassword) {
       return res.status(400).json({
         error: "Validation Error",
-        message: "Passwords do not match"
+        message: "Mật khẩu xác nhận không khớp"
       });
     }
 
     if (newPassword.length < 6) {
       return res.status(400).json({
         error: "Validation Error",
-        message: "Password must be at least 6 characters"
+        message: "Mật khẩu phải có ít nhất 6 ký tự"
       });
     }
 
     // Verify OTP
-    const { verifyOTP } = require("../utils/otp");
-    const otpResult = verifyOTP(email, otp);
+    const otpResult = await verifyOTP(email, otp, "reset-password");
 
     if (!otpResult.valid) {
       return res.status(400).json({
@@ -515,7 +528,7 @@ async function resetPassword(req, res) {
     if (!user) {
       return res.status(404).json({
         error: "Not Found",
-        message: "User not found"
+        message: "Không tìm thấy người dùng"
       });
     }
 
@@ -529,7 +542,7 @@ async function resetPassword(req, res) {
     });
 
     res.status(200).json({
-      message: "Password reset successfully. You can now login with your new password.",
+      message: "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới.",
       data: {
         email,
         resetAt: new Date().toISOString()
@@ -557,38 +570,35 @@ async function googleSignIn(req, res) {
     if (!idToken) {
       return res.status(400).json({
         error: "Validation Error",
-        message: "ID token is required"
+        message: "Vui lòng cung cấp mã xác thực Google"
       });
     }
 
-    // Verify token with Firebase Auth
-    // Note: Requires Firebase Admin SDK initialization
-    // For now, we'll implement a simpler version that works with Google's public API
-    
-    // In production, use Firebase Admin SDK:
-    // const decodedToken = await admin.auth().verifyIdToken(idToken);
-    
-    // Alternative: Decode JWT manually (without verification for now)
-    // In production, always verify the token signature
     let decodedToken;
     try {
-      // Simple JWT decode (NOT SECURE - only for development)
-      // In production, use Firebase Admin SDK for proper verification
-      decodedToken = decodeJwtPayload(idToken);
+      decodedToken = await verifyGoogleIdToken(idToken);
     } catch (error) {
-      console.error("Token decode error:", error);
-      return res.status(401).json({
-        error: "Unauthorized",
-        message: "Invalid ID token"
+      console.error("Token verification error:", error);
+      const statusCode = error.statusCode || 401;
+      return res.status(statusCode).json({
+        error: statusCode === 500 ? "Configuration Error" : "Unauthorized",
+        message: statusCode === 500 ? error.message : "Mã xác thực Google không hợp lệ"
       });
     }
 
-    const { email, name, picture, sub } = decodedToken;
+    const { email, name, picture, sub, email_verified: emailVerified } = decodedToken;
 
     if (!email) {
       return res.status(401).json({
         error: "Unauthorized",
-        message: "Email not found in token"
+        message: "Không tìm thấy email trong mã xác thực"
+      });
+    }
+
+    if (emailVerified === false) {
+      return res.status(401).json({
+        error: "Unauthorized",
+        message: "Email Google chưa được xác minh"
       });
     }
 
@@ -657,7 +667,7 @@ async function googleSignIn(req, res) {
     });
 
     res.status(200).json({
-      message: "Google Sign-In successful",
+      message: "Đăng nhập Google thành công",
       token,
       user,
       data: {

@@ -12,7 +12,7 @@ function authMiddleware(req, res, next) {
     if (!token) {
       return res.status(401).json({
         error: "Unauthorized",
-        message: "Missing or invalid authorization token"
+        message: "Thiếu mã phiên hoặc mã phiên không hợp lệ"
       });
     }
 
@@ -20,7 +20,7 @@ function authMiddleware(req, res, next) {
     if (!decoded) {
       return res.status(401).json({
         error: "Unauthorized",
-        message: "Invalid or expired token"
+        message: "Mã phiên không hợp lệ hoặc đã hết hạn"
       });
     }
 
@@ -42,14 +42,14 @@ function roleMiddleware(allowedRoles) {
     if (!req.user) {
       return res.status(401).json({
         error: "Unauthorized",
-        message: "User not authenticated"
+        message: "Người dùng chưa đăng nhập"
       });
     }
 
     if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({
         error: "Forbidden",
-        message: `This action requires one of these roles: ${allowedRoles.join(", ")}`
+        message: `Thao tác này yêu cầu một trong các vai trò: ${allowedRoles.join(", ")}`
       });
     }
 

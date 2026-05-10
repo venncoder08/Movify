@@ -28,7 +28,7 @@ function validateRequest(schema) {
 
         return res.status(400).json({
           error: "Validation Error",
-          message: "Invalid request data",
+          message: "Dữ liệu yêu cầu không hợp lệ",
           details: errors
         });
       }

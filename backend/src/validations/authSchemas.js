@@ -7,51 +7,51 @@ const { z } = require("zod");
 // Register schema
 const registerSchema = z.object({
   body: z.object({
-    email: z.string().email("Invalid email address"),
-    phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    fullName: z.string().min(2, "Full name must be at least 2 characters"),
-    role: z.enum(["User", "Driver", "Admin"]).optional().default("User")
+    email: z.string().email("Email không hợp lệ"),
+    phoneNumber: z.string().min(10, "Số điện thoại phải có ít nhất 10 chữ số"),
+    password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+    fullName: z.string().min(2, "Họ tên phải có ít nhất 2 ký tự"),
+    otp: z.string().regex(/^\d{6}$/, "Mã OTP phải gồm 6 chữ số")
   })
 });
 
 // Login schema
 const loginSchema = z.object({
   body: z.object({
-    email: z.string().email("Invalid email address"),
-    password: z.string().min(1, "Password is required")
+    email: z.string().email("Email không hợp lệ"),
+    password: z.string().min(1, "Vui lòng nhập mật khẩu")
   })
 });
 
 // Profile update schema
 const profileUpdateSchema = z.object({
   body: z.object({
-    fullName: z.string().min(2, "Full name must be at least 2 characters").max(100, "Full name must be at most 100 characters").optional(),
-    phoneNumber: z.string().min(10, "Phone number must be at least 10 digits").max(15, "Phone number must be at most 15 digits").optional(),
-    avatar: z.string().url("Invalid avatar URL").optional(),
+    fullName: z.string().min(2, "Họ tên phải có ít nhất 2 ký tự").max(100, "Họ tên chỉ được tối đa 100 ký tự").optional(),
+    phoneNumber: z.string().min(10, "Số điện thoại phải có ít nhất 10 chữ số").max(15, "Số điện thoại chỉ được tối đa 15 chữ số").optional(),
+    avatar: z.string().url("Đường dẫn ảnh đại diện không hợp lệ").optional(),
     gender: z.enum(["Male", "Female", "Other"]).optional(),
-    dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date of birth").optional()
+    dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày sinh không hợp lệ").optional()
   }).refine((data) => Object.values(data).some((value) => value !== undefined), {
-    message: "At least one field must be provided"
+    message: "Vui lòng cung cấp ít nhất một trường cần cập nhật"
   })
 });
 
 // Forgot password schema
 const forgotPasswordSchema = z.object({
   body: z.object({
-    email: z.string().email("Invalid email address")
+    email: z.string().email("Email không hợp lệ")
   })
 });
 
 // Reset password schema
 const resetPasswordSchema = z.object({
   body: z.object({
-    email: z.string().email("Invalid email address"),
-    otp: z.string().regex(/^\d{6}$/, "OTP must be a 6-digit number"),
-    newPassword: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string().min(6, "Password must be at least 6 characters")
+    email: z.string().email("Email không hợp lệ"),
+    otp: z.string().regex(/^\d{6}$/, "Mã OTP phải gồm 6 chữ số"),
+    newPassword: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+    confirmPassword: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự")
   }).refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords do not match",
+    message: "Mật khẩu xác nhận không khớp",
     path: ["confirmPassword"]
   })
 });
@@ -59,7 +59,7 @@ const resetPasswordSchema = z.object({
 // Google Sign-In schema
 const googleSignInSchema = z.object({
   body: z.object({
-    idToken: z.string().min(1, "ID token is required")
+    idToken: z.string().min(1, "Vui lòng cung cấp mã phiên Google")
   })
 });
 

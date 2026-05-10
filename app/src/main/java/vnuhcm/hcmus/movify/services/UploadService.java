@@ -23,7 +23,8 @@ import java.util.concurrent.Executors;
  */
 public class UploadService {
     private static final String TAG = "UploadService";
-    private static final String UPLOAD_ENDPOINT = "/api/uploads/avatar";
+    private static final String AVATAR_UPLOAD_ENDPOINT = "/api/uploads/avatar";
+    private static final String IMAGE_UPLOAD_ENDPOINT = "/api/uploads/image";
 
     private final Context context;
     private final ExecutorService executorService;
@@ -34,11 +35,24 @@ public class UploadService {
     }
 
     public void uploadImage(@NonNull Uri imageUri, String jwtToken, @NonNull UploadCallback callback) {
+        uploadMultipartImage(imageUri, jwtToken, AVATAR_UPLOAD_ENDPOINT, "avatar", "avatar.jpg", callback);
+    }
+
+    public void uploadDocumentImage(@NonNull Uri imageUri, String jwtToken, @NonNull UploadCallback callback) {
+        uploadMultipartImage(imageUri, jwtToken, IMAGE_UPLOAD_ENDPOINT, "image", "driver-document.jpg", callback);
+    }
+
+    private void uploadMultipartImage(@NonNull Uri imageUri,
+                                      String jwtToken,
+                                      String endpoint,
+                                      String fieldName,
+                                      String fileName,
+                                      @NonNull UploadCallback callback) {
         executorService.execute(() -> {
             HttpURLConnection connection = null;
             try {
                 String boundary = "----MovifyBoundary" + UUID.randomUUID();
-                String requestUrl = BackendApiService.resolveBackendBaseUrl(context) + UPLOAD_ENDPOINT;
+                String requestUrl = BackendApiService.resolveBackendBaseUrl(context) + endpoint;
 
                 connection = (HttpURLConnection) new URL(requestUrl).openConnection();
                 connection.setRequestMethod("POST");
@@ -59,14 +73,13 @@ public class UploadService {
                         throw new IOException("Không đọc được ảnh đã chọn");
                     }
 
-                    String fileName = "avatar.jpg";
                     String mimeType = context.getContentResolver().getType(imageUri);
                     if (mimeType == null || mimeType.isBlank()) {
                         mimeType = "image/jpeg";
                     }
 
                     writer.write("--" + boundary + "\r\n");
-                    writer.write("Content-Disposition: form-data; name=\"avatar\"; filename=\"" + fileName + "\"\r\n");
+                    writer.write("Content-Disposition: form-data; name=\"" + fieldName + "\"; filename=\"" + fileName + "\"\r\n");
                     writer.write("Content-Type: " + mimeType + "\r\n\r\n");
                     writer.flush();
 
@@ -87,18 +100,18 @@ public class UploadService {
                 if (responseCode < HttpURLConnection.HTTP_OK || responseCode >= HttpURLConnection.HTTP_MULT_CHOICE) {
                     throw new IOException(BackendApiService.extractErrorMessage(
                             responseBody,
-                            "Upload failed " + responseCode
+                            "Tải ảnh lên thất bại " + responseCode
                     ));
                 }
 
                 String imageUrl = extractUploadedUrl(responseBody);
                 if (imageUrl.isEmpty()) {
-                    throw new IOException("Backend did not return image URL");
+                    throw new IOException("Máy chủ không trả về đường dẫn ảnh");
                 }
 
                 callback.onSuccess(imageUrl);
             } catch (Exception exception) {
-                callback.onFailure(exception.getMessage() == null ? "Upload failed" : exception.getMessage());
+            callback.onFailure(exception.getMessage() == null ? "Tải ảnh lên thất bại" : exception.getMessage());
             } finally {
                 if (connection != null) {
                     connection.disconnect();

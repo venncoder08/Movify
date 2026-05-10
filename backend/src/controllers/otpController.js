@@ -1,5 +1,7 @@
 const { generateOTP, storeOTP, verifyOTP } = require("../utils/otp");
 const { sendOTPEmail } = require("../services/emailService");
+const { generateToken } = require("../utils/jwt");
+const { hashPassword } = require("../utils/password");
 const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
@@ -16,14 +18,14 @@ async function requestOTP(req, res) {
     if (!email) {
       return res.status(400).json({
         error: "Validation Error",
-        message: "Email is required"
+        message: "Vui lòng nhập email"
       });
     }
 
     if (!purpose || !["verify-email", "reset-password", "two-factor"].includes(purpose)) {
       return res.status(400).json({
         error: "Validation Error",
-        message: 'Purpose must be one of: "verify-email", "reset-password", "two-factor"'
+        message: 'Mục đích OTP phải là một trong: "verify-email", "reset-password", "two-factor"'
       });
     }
 
@@ -36,7 +38,7 @@ async function requestOTP(req, res) {
       if (existingUser && existingUser.IsActive) {
         return res.status(409).json({
           error: "Conflict",
-          message: "Email already registered"
+          message: "Email đã được đăng ký"
         });
       }
     }
@@ -50,7 +52,7 @@ async function requestOTP(req, res) {
       if (!user) {
         // Don't reveal if email doesn't exist (security)
         return res.status(200).json({
-          message: "If this email is registered, an OTP will be sent"
+          message: "Nếu email này đã được đăng ký, mã OTP sẽ được gửi đến email"
         });
       }
     }
@@ -59,7 +61,7 @@ async function requestOTP(req, res) {
     const otp = generateOTP();
 
     // Store OTP
-    storeOTP(email, otp);
+    await storeOTP(email, otp, purpose);
 
     // Send OTP email
     const emailResult = await sendOTPEmail(email, otp, purpose);
@@ -72,7 +74,7 @@ async function requestOTP(req, res) {
     }
 
     res.status(200).json({
-      message: "OTP sent to your email",
+      message: "Đã gửi mã OTP đến email",
       data: {
         email,
         purpose,
@@ -94,18 +96,18 @@ async function requestOTP(req, res) {
  */
 async function verifyOTPCode(req, res) {
   try {
-    const { email, otp } = req.body;
+    const { email, otp, purpose = "verify-email" } = req.body;
 
     // Validation
     if (!email || !otp) {
       return res.status(400).json({
         error: "Validation Error",
-        message: "Email and OTP are required"
+        message: "Vui lòng nhập email và mã OTP"
       });
     }
 
     // Verify OTP
-    const result = verifyOTP(email, otp);
+    const result = await verifyOTP(email, otp, purpose);
 
     if (!result.valid) {
       return res.status(400).json({
@@ -118,6 +120,7 @@ async function verifyOTPCode(req, res) {
       message: result.message,
       data: {
         email,
+        purpose,
         verified: true
       }
     });
@@ -137,18 +140,18 @@ async function verifyOTPCode(req, res) {
  */
 async function registerWithOTP(req, res) {
   try {
-    const { email, otp, phoneNumber, password, fullName, role } = req.body;
+    const { email, otp, phoneNumber, password, fullName } = req.body;
 
     // Validation
     if (!email || !otp || !phoneNumber || !password || !fullName) {
       return res.status(400).json({
         error: "Validation Error",
-        message: "Email, OTP, phone number, password, and full name are required"
+      message: "Vui lòng nhập email, mã OTP, số điện thoại, mật khẩu và họ tên"
       });
     }
 
     // Verify OTP
-    const otpResult = verifyOTP(email, otp);
+    const otpResult = await verifyOTP(email, otp, "verify-email");
     if (!otpResult.valid) {
       return res.status(400).json({
         error: "Invalid OTP",
@@ -166,13 +169,12 @@ async function registerWithOTP(req, res) {
     if (existingUser) {
       return res.status(409).json({
         error: "Conflict",
-        message: "Email or phone number already registered"
+        message: "Email hoặc số điện thoại đã được đăng ký"
       });
     }
 
-    // Hash password (use bcryptjs)
-    const bcrypt = require("bcryptjs");
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password
+    const hashedPassword = await hashPassword(password);
 
     // Create user
     const user = await prisma.account.create({
@@ -181,7 +183,7 @@ async function registerWithOTP(req, res) {
         PhoneNumber: phoneNumber,
         HashedPassword: hashedPassword,
         FullName: fullName,
-        Role: role || "User",
+        Role: "User",
         IsActive: true
       },
       select: {
@@ -196,7 +198,6 @@ async function registerWithOTP(req, res) {
     });
 
     // Generate JWT token
-    const { generateToken } = require("../utils/jwt");
     const token = generateToken({
       id: user.ID,
       email: user.Email,
@@ -204,7 +205,7 @@ async function registerWithOTP(req, res) {
     });
 
     res.status(201).json({
-      message: "User registered successfully",
+      message: "Đăng ký thành công",
       data: {
         user,
         token

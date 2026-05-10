@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 
 import vnuhcm.hcmus.movify.R;
 import vnuhcm.hcmus.movify.models.AccountProfile;
+import vnuhcm.hcmus.movify.utils.NotificationWorkScheduler;
 
 /**
  * Service for authentication API calls
@@ -109,7 +110,7 @@ public class AuthApiService {
         String response = executePost(endpoint, requestBody);
         JSONObject responseObj = new JSONObject(response);
 
-        return responseObj.optString("message", "OTP sent to email");
+        return responseObj.optString("message", "Đã gửi mã OTP đến email");
     }
 
     /**
@@ -145,7 +146,7 @@ public class AuthApiService {
             Log.d(TAG, "Profile updated, new JWT saved");
         }
 
-        return responseObj.optString("message", "Profile updated successfully");
+        return responseObj.optString("message", "Cập nhật hồ sơ thành công");
     }
 
     private void putIfPresent(JSONObject requestBody, String key, String value) throws JSONException {
@@ -174,7 +175,7 @@ public class AuthApiService {
         String response = executePost(endpoint, requestBody);
         JSONObject responseObj = new JSONObject(response);
 
-        return responseObj.optString("message", "Password reset successful");
+        return responseObj.optString("message", "Đặt lại mật khẩu thành công");
     }
 
     public String registerWithOTP(String fullName,
@@ -189,7 +190,6 @@ public class AuthApiService {
         requestBody.put("email", email);
         requestBody.put("otp", otp);
         requestBody.put("password", password);
-        requestBody.put("role", "User");
 
         String response = executePost(endpoint, requestBody);
         JSONObject responseObj = new JSONObject(response);
@@ -221,7 +221,7 @@ public class AuthApiService {
         Log.d(TAG, "Logout successful");
 
         JSONObject responseObj = new JSONObject(response);
-        return responseObj.optString("message", "Logged out");
+        return responseObj.optString("message", "Đã đăng xuất");
     }
 
     /**
@@ -234,7 +234,7 @@ public class AuthApiService {
         String jwtToken = getJwtToken();
 
         if (jwtToken == null || jwtToken.isEmpty()) {
-            throw new IOException("No JWT token available");
+            throw new IOException("Không tìm thấy mã phiên đăng nhập");
         }
 
         return executeGet(endpoint, jwtToken);
@@ -260,6 +260,7 @@ public class AuthApiService {
                 extractText(data, "idCard"),
                 extractText(data, "driverLicense"),
                 extractText(data, "vehicleRegistration"),
+                extractText(data, "vehicleType"),
                 extractText(data, "driverStatus")
         );
     }
@@ -315,7 +316,7 @@ public class AuthApiService {
             if (responseCode < 200 || responseCode >= 300) {
                 throw new IOException(BackendApiService.extractErrorMessage(
                         responseBody,
-                        "HTTP error " + responseCode
+                        "Lỗi HTTP " + responseCode
                 ));
             }
 
@@ -367,7 +368,7 @@ public class AuthApiService {
             if (responseCode < 200 || responseCode >= 300) {
                 throw new IOException(BackendApiService.extractErrorMessage(
                         responseBody,
-                        "HTTP error " + responseCode
+                        "Lỗi HTTP " + responseCode
                 ));
             }
 
@@ -405,7 +406,7 @@ public class AuthApiService {
             if (responseCode < 200 || responseCode >= 300) {
                 throw new IOException(BackendApiService.extractErrorMessage(
                         responseBody,
-                        "HTTP error " + responseCode
+                        "Lỗi HTTP " + responseCode
                 ));
             }
 
@@ -477,6 +478,7 @@ public class AuthApiService {
      */
     public void saveJwtToken(String token) {
         prefs.edit().putString(KEY_JWT_TOKEN, token).apply();
+        NotificationWorkScheduler.schedule(context);
     }
 
     public String getJwtToken() {
@@ -485,6 +487,7 @@ public class AuthApiService {
 
     public void clearJwtToken() {
         prefs.edit().remove(KEY_JWT_TOKEN).apply();
+        NotificationWorkScheduler.cancel(context);
     }
 
     /**
@@ -504,6 +507,7 @@ public class AuthApiService {
 
     public void clearSession() {
         prefs.edit().clear().apply();
+        NotificationWorkScheduler.cancel(context);
     }
 
     /**
