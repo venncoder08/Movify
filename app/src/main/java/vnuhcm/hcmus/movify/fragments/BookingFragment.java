@@ -1000,7 +1000,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
                         isSearchingDriver = true;
                         setNearbyRecommendationsVisible(false);
                         btnSearchDriver.setEnabled(true);
-        setSearchButtonSearching("Đang tìm tài xế...");
+                        setSearchButtonSearching("Đang tìm tài xế...");
                         scheduleTripStatusPoll();
                         return;
                     }

@@ -17,6 +17,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
 
 import org.json.JSONObject;
 
@@ -53,6 +54,7 @@ public class ChatActivity extends AppCompatActivity implements SocketManager.Soc
     private int tripId;
     private boolean historyMode;
     private boolean canSend;
+    private String shownEligibilityTripId;
 
     private TextView tvChatTitle;
     private TextView tvChatStatus;
@@ -249,11 +251,54 @@ public class ChatActivity extends AppCompatActivity implements SocketManager.Soc
             return;
         }
 
+        if ("conversation:eligibility".equals(eventName)) {
+            handleConversationEligibility(payload);
+            return;
+        }
+
         int payloadParticipantId = payload == null ? 0 : payload.optInt("participantId", 0);
+        if (payloadParticipantId == accountId) {
+            loadConversation(false);
+        }
+    }
+
+    private void handleConversationEligibility(@Nullable JSONObject payload) {
+        if (payload == null) {
+            return;
+        }
+
+        int payloadParticipantId = payload.optInt("participantId", 0);
         if (payloadParticipantId != accountId) {
             return;
         }
 
-        loadConversation(false);
+        JSONObject activeTrip = payload.optJSONObject("activeTrip");
+        boolean canSendNow = payload.optBoolean("canSend", false);
+        if (!canSendNow || activeTrip == null) {
+            return;
+        }
+
+        String status = activeTrip.optString("status", "");
+        if (!"Accepted".equalsIgnoreCase(status) && !"InProgress".equalsIgnoreCase(status)) {
+            return;
+        }
+
+        String activeTripId = activeTrip.optString("id", "");
+        if (TextUtils.isEmpty(activeTripId) || activeTripId.equals(shownEligibilityTripId)) {
+            return;
+        }
+
+        shownEligibilityTripId = activeTripId;
+        mainHandler.post(() -> {
+            if (isFinishing() || isDestroyed()) {
+                return;
+            }
+
+            new AlertDialog.Builder(this)
+                    .setTitle("Chuyến đi đã sẵn sàng chat")
+                    .setMessage("Tài xế đã nhận chuyến. Bạn có thể nhắn tin ngay bây giờ.")
+                    .setPositiveButton("Đóng", null)
+                    .show();
+        });
     }
 }
