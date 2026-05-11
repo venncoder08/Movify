@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import vnuhcm.hcmus.movify.R;
+import vnuhcm.hcmus.movify.activities.HomeActivity;
 import vnuhcm.hcmus.movify.adapters.NotificationAdapter;
 import vnuhcm.hcmus.movify.models.Notification;
 import vnuhcm.hcmus.movify.models.NotificationFeed;
@@ -113,6 +114,10 @@ public class NotificationFragment extends Fragment {
     }
 
     private void updateUnreadCount() {
+        updateUnreadCount(true);
+    }
+
+    private void updateUnreadCount(boolean updateBottomBadge) {
         int count = 0;
         for (Notification item : notificationList) {
             if (item.isUnread()) {
@@ -123,6 +128,10 @@ public class NotificationFragment extends Fragment {
         tvNewBadge.setText(count + " mới");
         tvMarkAllRead.setEnabled(count > 0);
         tvMarkAllRead.setAlpha(count > 0 ? 1f : 0.5f);
+
+        if (updateBottomBadge && getActivity() instanceof HomeActivity) {
+            ((HomeActivity) getActivity()).setNotificationUnreadBadge(count > 0);
+        }
     }
 
     private void renderNotificationLoading() {
@@ -182,7 +191,7 @@ public class NotificationFragment extends Fragment {
         tvEmptyState.setText("Chưa có thông báo nào");
         notificationList.clear();
         adapter.notifyDataSetChanged();
-        updateUnreadCount();
+        updateUnreadCount(false);
         showError(exception, "Không tải được thông báo");
     }
 

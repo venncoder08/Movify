@@ -135,7 +135,7 @@ public class PersonalInfoActivity extends AppCompatActivity {
         currentDateOfBirth = profile.getDateOfBirth();
         currentAvatar = profile.getAvatar();
 
-        RemoteImageLoader.loadAvatar(ivAvatar, profile.getAvatar());
+        RemoteImageLoader.loadCircularAvatar(ivAvatar, profile.getAvatar());
         tvFullNameValue.setText(fallback(profile.getFullName(), buildDisplayName(profile.getEmail())));
         tvEmailValue.setText(fallback(profile.getEmail(), authApiService.getUserEmail()));
         tvPhoneValue.setText(fallback(profile.getPhoneNumber(), getString(R.string.not_updated)));
@@ -154,7 +154,7 @@ public class PersonalInfoActivity extends AppCompatActivity {
         currentDateOfBirth = null;
         currentAvatar = null;
 
-        RemoteImageLoader.loadAvatar(ivAvatar, null);
+        RemoteImageLoader.loadCircularAvatar(ivAvatar, null);
         tvFullNameValue.setText(buildDisplayName(cachedEmail));
         tvEmailValue.setText(fallback(cachedEmail, getString(R.string.not_updated)));
         tvPhoneValue.setText(getString(R.string.not_updated));

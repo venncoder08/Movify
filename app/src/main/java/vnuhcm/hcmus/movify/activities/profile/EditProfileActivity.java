@@ -55,7 +55,7 @@ public class EditProfileActivity extends AppCompatActivity {
 				if (uri != null) {
 					selectedImageUri = uri;
 					selectedAvatar = null;
-					ivAvatar.setImageURI(uri);
+					showSelectedAvatarUri(uri);
 				}
 			});
 
@@ -274,15 +274,22 @@ public class EditProfileActivity extends AppCompatActivity {
 
 	private void updateAvatarPreview() {
 		if (selectedImageUri != null) {
-			ivAvatar.setImageURI(selectedImageUri);
+			showSelectedAvatarUri(selectedImageUri);
 			return;
 		}
 
-		RemoteImageLoader.loadAvatar(ivAvatar, selectedAvatar);
+		RemoteImageLoader.loadCircularAvatar(ivAvatar, selectedAvatar);
 
 		if (TextUtils.isEmpty(selectedAvatar)) {
 			ivAvatar.setImageResource(R.drawable.ic_user);
 		}
+	}
+
+	private void showSelectedAvatarUri(Uri uri) {
+		ivAvatar.setPadding(0, 0, 0, 0);
+		ivAvatar.setImageTintList(null);
+		ivAvatar.setScaleType(ImageView.ScaleType.CENTER_CROP);
+		ivAvatar.setImageURI(uri);
 	}
 
 	private String formatOrPlaceholder(String value, String placeholder) {

@@ -77,6 +77,7 @@ function emitConversationEligibilityForTrip(trip) {
 }
 
 module.exports = {
+  ACTIVE_CHAT_TRIP_STATUSES,
   serializeActiveTrip,
   findSharedActiveTrip,
   getConversationState,

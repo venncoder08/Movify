@@ -8,9 +8,12 @@
         android:id="@+id/containerIncoming"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_input"
+        android:background="@drawable/bg_chat_bubble_incoming"
         android:orientation="vertical"
-        android:padding="10dp">
+        android:paddingStart="12dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp">
 
         <ImageView
             android:id="@+id/ivIncomingImage"
@@ -42,9 +45,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end"
-        android:background="@drawable/bg_primary"
+        android:background="@drawable/bg_chat_bubble_outgoing"
         android:orientation="vertical"
-        android:padding="10dp"
+        android:paddingStart="12dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp"
         android:visibility="gone">
 
         <ImageView

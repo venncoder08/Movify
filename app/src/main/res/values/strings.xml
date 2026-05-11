@@ -51,7 +51,6 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="message_title">Tin nhắn</string>
     <string name="message_placeholder">Tính năng nhắn tin đang được hoàn thiện.</string>
-    <string name="message_subtitle">Chat với tài xế hoặc hành khách khi chuyến đi đang hoạt động.</string>
     <string name="message_empty">Chưa có cuộc trò chuyện nào.</string>
     <string name="message_active_trip">Đang hoạt động</string>
     <string name="message_read_only">Chỉ xem</string>

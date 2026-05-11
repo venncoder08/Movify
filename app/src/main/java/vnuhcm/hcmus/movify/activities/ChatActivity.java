@@ -145,14 +145,7 @@ public class ChatActivity extends AppCompatActivity implements SocketManager.Soc
         messages.clear();
         messages.addAll(detail.getMessages());
         adapter.notifyDataSetChanged();
-        canSend = detail.canSend();
-        composerContainer.setVisibility(View.VISIBLE);
-        edtMessage.setEnabled(canSend);
-        btnSend.setEnabled(canSend);
-        btnPickImage.setEnabled(canSend);
-        tvChatStatus.setText(canSend
-                ? getString(R.string.message_status_active)
-                : getString(R.string.message_status_read_only));
+        setComposerEnabled(detail.canSend());
         scrollToBottom(initial);
     }
 
@@ -164,6 +157,17 @@ public class ChatActivity extends AppCompatActivity implements SocketManager.Soc
         composerContainer.setVisibility(View.GONE);
         tvChatStatus.setText(getString(R.string.message_status_history, detail.getTripId()));
         scrollToBottom(initial);
+    }
+
+    private void setComposerEnabled(boolean enabled) {
+        canSend = enabled;
+        composerContainer.setVisibility(View.VISIBLE);
+        edtMessage.setEnabled(enabled);
+        btnSend.setEnabled(enabled);
+        btnPickImage.setEnabled(enabled);
+        tvChatStatus.setText(enabled
+                ? getString(R.string.message_status_active)
+                : getString(R.string.message_status_read_only));
     }
 
     private void sendTextMessage() {
@@ -180,8 +184,8 @@ public class ChatActivity extends AppCompatActivity implements SocketManager.Soc
         final android.content.Context appContext = getApplicationContext();
         dataExecutor.execute(() -> {
             try {
-                MessageService.sendTextMessage(appContext, accountId, content);
-                mainHandler.post(() -> loadConversation(false));
+                ChatMessage sentMessage = MessageService.sendTextMessage(appContext, accountId, content);
+                mainHandler.post(() -> appendMessageIfMissing(sentMessage));
             } catch (Exception exception) {
                 mainHandler.post(() -> {
                     edtMessage.setText(content);
@@ -212,15 +216,16 @@ public class ChatActivity extends AppCompatActivity implements SocketManager.Soc
 
                 dataExecutor.execute(() -> {
                     try {
-                        MessageService.sendImageMessage(getApplicationContext(), accountId, imageUrl, "");
+                        ChatMessage sentMessage = MessageService.sendImageMessage(getApplicationContext(), accountId, imageUrl, "");
                         mainHandler.post(() -> {
-                            tvChatStatus.setText(canSend
-                                    ? getString(R.string.message_status_active)
-                                    : getString(R.string.message_status_read_only));
-                            loadConversation(false);
+                            setComposerEnabled(canSend);
+                            appendMessageIfMissing(sentMessage);
                         });
                     } catch (Exception exception) {
-                        mainHandler.post(() -> Toast.makeText(ChatActivity.this, exception.getMessage(), Toast.LENGTH_SHORT).show());
+                        mainHandler.post(() -> {
+                            setComposerEnabled(canSend);
+                            Toast.makeText(ChatActivity.this, exception.getMessage(), Toast.LENGTH_SHORT).show();
+                        });
                     }
                 });
             }
@@ -228,9 +233,7 @@ public class ChatActivity extends AppCompatActivity implements SocketManager.Soc
             @Override
             public void onFailure(String errorMessage) {
                 mainHandler.post(() -> {
-                    tvChatStatus.setText(canSend
-                            ? getString(R.string.message_status_active)
-                            : getString(R.string.message_status_read_only));
+                    setComposerEnabled(canSend);
                     Toast.makeText(ChatActivity.this, errorMessage, Toast.LENGTH_SHORT).show();
                 });
             }
@@ -256,24 +259,47 @@ public class ChatActivity extends AppCompatActivity implements SocketManager.Soc
             return;
         }
 
-        int payloadParticipantId = payload == null ? 0 : payload.optInt("participantId", 0);
-        if (payloadParticipantId == accountId) {
+        if ("message:new".equals(eventName)) {
+            handleNewMessage(payload);
+            return;
+        }
+
+        if ("conversation:read".equals(eventName)) {
+            return;
+        }
+    }
+
+    private void handleNewMessage(@Nullable JSONObject payload) {
+        if (!isPayloadForCurrentConversation(payload)) {
+            return;
+        }
+
+        if (payload.has("canSend")) {
+            setComposerEnabled(payload.optBoolean("canSend", canSend));
+        }
+
+        JSONObject messageJson = payload.optJSONObject("message");
+        if (messageJson == null) {
             loadConversation(false);
+            return;
+        }
+
+        ChatMessage message = MessageService.parseMessage(messageJson);
+        appendMessageIfMissing(message);
+        if (!message.isMine()) {
+            markConversationAsReadAsync();
         }
     }
 
     private void handleConversationEligibility(@Nullable JSONObject payload) {
-        if (payload == null) {
+        if (!isPayloadForCurrentConversation(payload)) {
             return;
         }
 
-        int payloadParticipantId = payload.optInt("participantId", 0);
-        if (payloadParticipantId != accountId) {
-            return;
-        }
-
+        boolean wasCanSend = canSend;
         JSONObject activeTrip = payload.optJSONObject("activeTrip");
         boolean canSendNow = payload.optBoolean("canSend", false);
+        setComposerEnabled(canSendNow);
         if (!canSendNow || activeTrip == null) {
             return;
         }
@@ -289,6 +315,10 @@ public class ChatActivity extends AppCompatActivity implements SocketManager.Soc
         }
 
         shownEligibilityTripId = activeTripId;
+        if (wasCanSend) {
+            return;
+        }
+
         mainHandler.post(() -> {
             if (isFinishing() || isDestroyed()) {
                 return;
@@ -299,6 +329,47 @@ public class ChatActivity extends AppCompatActivity implements SocketManager.Soc
                     .setMessage("Tài xế đã nhận chuyến. Bạn có thể nhắn tin ngay bây giờ.")
                     .setPositiveButton("Đóng", null)
                     .show();
+        });
+    }
+
+    private boolean isPayloadForCurrentConversation(@Nullable JSONObject payload) {
+        return payload != null && payload.optInt("participantId", 0) == accountId;
+    }
+
+    private void appendMessageIfMissing(@NonNull ChatMessage message) {
+        if (hasMessage(message.getId())) {
+            return;
+        }
+
+        messages.add(message);
+        adapter.notifyDataSetChanged();
+        scrollToBottom(false);
+    }
+
+    private boolean hasMessage(int messageId) {
+        if (messageId <= 0) {
+            return false;
+        }
+
+        for (ChatMessage message : messages) {
+            if (message.getId() == messageId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void markConversationAsReadAsync() {
+        if (dataExecutor == null || dataExecutor.isShutdown()) {
+            return;
+        }
+
+        final android.content.Context appContext = getApplicationContext();
+        dataExecutor.execute(() -> {
+            try {
+                MessageService.markConversationAsRead(appContext, accountId);
+            } catch (Exception ignored) {
+            }
         });
     }
 }

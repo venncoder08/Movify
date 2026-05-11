@@ -24,6 +24,7 @@ import java.util.concurrent.Executors;
 
 import vnuhcm.hcmus.movify.R;
 import vnuhcm.hcmus.movify.activities.ChatActivity;
+import vnuhcm.hcmus.movify.activities.HomeActivity;
 import vnuhcm.hcmus.movify.adapters.ConversationAdapter;
 import vnuhcm.hcmus.movify.models.ConversationSummary;
 import vnuhcm.hcmus.movify.services.MessageService;
@@ -31,8 +32,11 @@ import vnuhcm.hcmus.movify.services.SocketManager;
 
 public class MessageFragment extends Fragment implements SocketManager.SocketEventListener {
 
+    private static final long SOCKET_REFRESH_DEBOUNCE_MS = 250L;
+
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final List<ConversationSummary> conversations = new ArrayList<>();
+    private final Runnable socketRefreshRunnable = this::loadConversations;
 
     private ExecutorService dataExecutor;
     private ConversationAdapter adapter;
@@ -81,6 +85,7 @@ public class MessageFragment extends Fragment implements SocketManager.SocketEve
     public void onDestroyView() {
         super.onDestroyView();
         mainHandler.removeCallbacksAndMessages(null);
+        mainHandler.removeCallbacks(socketRefreshRunnable);
         if (dataExecutor != null) {
             dataExecutor.shutdownNow();
             dataExecutor = null;
@@ -100,6 +105,7 @@ public class MessageFragment extends Fragment implements SocketManager.SocketEve
                     conversations.clear();
                     conversations.addAll(loadedItems);
                     adapter.notifyDataSetChanged();
+                    notifyUnreadBadgeChanged(loadedItems);
                 });
             } catch (Exception exception) {
                 mainHandler.post(() -> Toast.makeText(requireContext(), exception.getMessage(), Toast.LENGTH_SHORT).show());
@@ -116,6 +122,35 @@ public class MessageFragment extends Fragment implements SocketManager.SocketEve
 
     @Override
     public void onSocketEvent(@NonNull String eventName, @Nullable JSONObject payload) {
-        loadConversations();
+        if (!shouldRefreshConversationList(eventName, payload)) {
+            return;
+        }
+
+        mainHandler.removeCallbacks(socketRefreshRunnable);
+        mainHandler.postDelayed(socketRefreshRunnable, SOCKET_REFRESH_DEBOUNCE_MS);
+    }
+
+    private boolean shouldRefreshConversationList(@NonNull String eventName, @Nullable JSONObject payload) {
+        if (!"message:new".equals(eventName)
+                && !"conversation:read".equals(eventName)
+                && !"conversation:eligibility".equals(eventName)) {
+            return false;
+        }
+
+        return payload == null || payload.optInt("participantId", 0) > 0;
+    }
+
+    private void notifyUnreadBadgeChanged(@NonNull List<ConversationSummary> loadedItems) {
+        boolean hasUnread = false;
+        for (ConversationSummary item : loadedItems) {
+            if (item.getUnreadCount() > 0) {
+                hasUnread = true;
+                break;
+            }
+        }
+
+        if (getActivity() instanceof HomeActivity) {
+            ((HomeActivity) getActivity()).setMessageUnreadBadge(hasUnread);
+        }
     }
 }

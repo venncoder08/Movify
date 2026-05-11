@@ -11,8 +11,10 @@
         android:id="@+id/ivConversationAvatar"
         android:layout_width="52dp"
         android:layout_height="52dp"
-        android:background="@drawable/bg_primary"
+        android:background="@drawable/bg_circle_blue"
+        android:clipToOutline="true"
         android:padding="12dp"
+        android:scaleType="centerCrop"
         android:src="@drawable/ic_user" />
 
     <LinearLayout
@@ -63,17 +65,15 @@
 
             <TextView
                 android:id="@+id/tvConversationUnread"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_primary"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_badge_red"
                 android:gravity="center"
-                android:minWidth="24dp"
-                android:paddingStart="6dp"
-                android:paddingTop="2dp"
-                android:paddingEnd="6dp"
-                android:paddingBottom="2dp"
+                android:includeFontPadding="false"
+                android:maxLines="1"
                 android:textColor="@color/white"
-                android:textSize="12sp"
+                android:textSize="11sp"
                 android:textStyle="bold"
                 android:visibility="gone" />
         </LinearLayout>

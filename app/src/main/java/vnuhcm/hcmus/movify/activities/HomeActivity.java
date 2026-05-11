@@ -10,11 +10,15 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+
+import org.json.JSONObject;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,19 +38,23 @@ import vnuhcm.hcmus.movify.fragments.ProfileFragment;
 import vnuhcm.hcmus.movify.models.AccountProfile;
 import vnuhcm.hcmus.movify.models.NotificationFeed;
 import vnuhcm.hcmus.movify.services.AuthApiService;
+import vnuhcm.hcmus.movify.services.MessageService;
 import vnuhcm.hcmus.movify.services.NotificationService;
 import vnuhcm.hcmus.movify.services.SocketManager;
 import vnuhcm.hcmus.movify.utils.DriverSearchNotificationHelper;
 import vnuhcm.hcmus.movify.utils.NotificationWorkScheduler;
 import vnuhcm.hcmus.movify.utils.SystemNotificationHelper;
 
-public class HomeActivity extends AppCompatActivity implements BottomNavFragment.MainNavigator {
+public class HomeActivity extends AppCompatActivity
+        implements BottomNavFragment.MainNavigator, SocketManager.SocketEventListener {
 
     public static final String EXTRA_OPEN_TAB = "vnuhcm.hcmus.movify.extra.OPEN_TAB";
 
     private static final String STATE_CURRENT_TAB = "state_current_tab";
     private static final String STATE_ROLE_MODE = "state_role_mode";
     private static final String STATE_ROLE_RESOLVED = "state_role_resolved";
+    private static final String STATE_HAS_UNREAD_NOTIFICATIONS = "state_has_unread_notifications";
+    private static final String STATE_HAS_UNREAD_MESSAGES = "state_has_unread_messages";
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 501;
     private static final long SYSTEM_NOTIFICATION_POLL_INTERVAL_MS = 10_000L;
 
@@ -59,6 +67,8 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
     private String currentTab = BottomNavFragment.TAB_BOOKING;
     private String roleMode = BottomNavFragment.ROLE_USER;
     private boolean roleResolved = false;
+    private volatile boolean hasUnreadNotifications = false;
+    private volatile boolean hasUnreadMessages = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,11 +79,14 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
         roleExecutor = Executors.newSingleThreadExecutor();
         notificationExecutor = Executors.newSingleThreadExecutor();
         SocketManager.getInstance(this).connect();
+        SocketManager.getInstance(this).addListener(this);
 
         if (savedInstanceState != null) {
             currentTab = savedInstanceState.getString(STATE_CURRENT_TAB, BottomNavFragment.TAB_BOOKING);
             roleMode = savedInstanceState.getString(STATE_ROLE_MODE, BottomNavFragment.ROLE_USER);
             roleResolved = savedInstanceState.getBoolean(STATE_ROLE_RESOLVED, false);
+            hasUnreadNotifications = savedInstanceState.getBoolean(STATE_HAS_UNREAD_NOTIFICATIONS, false);
+            hasUnreadMessages = savedInstanceState.getBoolean(STATE_HAS_UNREAD_MESSAGES, false);
         }
 
         handleOpenTabIntent(getIntent());
@@ -93,6 +106,7 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        SocketManager.getInstance(this).removeListener(this);
         mainHandler.removeCallbacksAndMessages(null);
         if (roleExecutor != null) {
             roleExecutor.shutdownNow();
@@ -101,6 +115,14 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
         if (notificationExecutor != null) {
             notificationExecutor.shutdownNow();
             notificationExecutor = null;
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (roleResolved) {
+            refreshUnreadBadges();
         }
     }
 
@@ -134,6 +156,7 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
     @Override
     protected void onUserLeaveHint() {
         super.onUserLeaveHint();
+        NotificationWorkScheduler.startBackgroundWatch(getApplicationContext());
         if (DriverSearchNotificationHelper.isSearching()) {
             DriverSearchNotificationHelper.notifyAppExited(getApplicationContext());
         }
@@ -180,14 +203,11 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
 
         Context appContext = getApplicationContext();
         notificationExecutor.execute(() -> {
-            try {
-                NotificationFeed feed = NotificationService.fetchNotifications(appContext);
-                SystemNotificationHelper.notifyNewUnread(appContext, feed.getNotifications());
-            } catch (Exception ignored) {
-                // Notification polling should not interrupt the active screen.
-            } finally {
-                mainHandler.post(this::scheduleNextNotificationPoll);
-            }
+            UnreadBadgeState badgeState = loadUnreadBadgeState(appContext, true);
+            mainHandler.post(() -> {
+                applyUnreadBadges(badgeState);
+                scheduleNextNotificationPoll();
+            });
         });
     }
 
@@ -222,6 +242,8 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
         outState.putString(STATE_CURRENT_TAB, currentTab);
         outState.putString(STATE_ROLE_MODE, roleMode);
         outState.putBoolean(STATE_ROLE_RESOLVED, roleResolved);
+        outState.putBoolean(STATE_HAS_UNREAD_NOTIFICATIONS, hasUnreadNotifications);
+        outState.putBoolean(STATE_HAS_UNREAD_MESSAGES, hasUnreadMessages);
     }
 
     private void loadScreen(Fragment fragment, String tab) {
@@ -232,7 +254,12 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
                 .commit();
 
         getSupportFragmentManager().beginTransaction()
-                .replace(R.id.bottomNavContainer, BottomNavFragment.newInstance(tab, roleMode))
+                .replace(R.id.bottomNavContainer, BottomNavFragment.newInstance(
+                        tab,
+                        roleMode,
+                        hasUnreadNotifications,
+                        hasUnreadMessages
+                ))
                 .commit();
     }
 
@@ -298,7 +325,12 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
                 .commit();
 
         getSupportFragmentManager().beginTransaction()
-                .replace(R.id.bottomNavContainer, BottomNavFragment.newInstance(BottomNavFragment.TAB_BOOKING, roleMode))
+                .replace(R.id.bottomNavContainer, BottomNavFragment.newInstance(
+                        BottomNavFragment.TAB_BOOKING,
+                        roleMode,
+                        hasUnreadNotifications,
+                        hasUnreadMessages
+                ))
                 .commit();
     }
 
@@ -372,6 +404,7 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
         if (initialRender || roleChanged) {
             refreshCurrentTab();
         }
+        refreshUnreadBadges();
     }
 
     private void handleRoleLoadFailure() {
@@ -406,5 +439,96 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
 
     private boolean isAdminMode() {
         return BottomNavFragment.ROLE_ADMIN.equals(roleMode);
+    }
+
+    public void setNotificationUnreadBadge(boolean hasUnread) {
+        hasUnreadNotifications = hasUnread;
+        updateBottomNavBadges();
+    }
+
+    public void setMessageUnreadBadge(boolean hasUnread) {
+        hasUnreadMessages = !isAdminMode() && hasUnread;
+        updateBottomNavBadges();
+    }
+
+    public void refreshUnreadBadges() {
+        if (notificationExecutor == null || notificationExecutor.isShutdown()) {
+            return;
+        }
+
+        Context appContext = getApplicationContext();
+        notificationExecutor.execute(() -> {
+            UnreadBadgeState badgeState = loadUnreadBadgeState(appContext, false);
+            mainHandler.post(() -> applyUnreadBadges(badgeState));
+        });
+    }
+
+    private UnreadBadgeState loadUnreadBadgeState(Context appContext, boolean postSystemNotifications) {
+        boolean notificationUnread = hasUnreadNotifications;
+        boolean messageUnread = isAdminMode() ? false : hasUnreadMessages;
+
+        try {
+            NotificationFeed feed = NotificationService.fetchNotifications(appContext);
+            if (postSystemNotifications) {
+                SystemNotificationHelper.notifyNewUnread(appContext, feed.getNotifications());
+            }
+            notificationUnread = feed.getUnreadCount() > 0;
+        } catch (Exception ignored) {
+            // Badge polling should not interrupt the active screen.
+        }
+
+        if (isAdminMode()) {
+            messageUnread = false;
+        } else {
+            try {
+                messageUnread = MessageService.fetchUnreadCount(appContext) > 0;
+            } catch (Exception ignored) {
+                // Keep the previous state if the message count cannot be refreshed.
+            }
+        }
+
+        return new UnreadBadgeState(notificationUnread, messageUnread);
+    }
+
+    private void applyUnreadBadges(UnreadBadgeState badgeState) {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
+
+        hasUnreadNotifications = badgeState.hasUnreadNotifications;
+        hasUnreadMessages = !isAdminMode() && badgeState.hasUnreadMessages;
+        updateBottomNavBadges();
+    }
+
+    private void updateBottomNavBadges() {
+        Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.bottomNavContainer);
+        if (fragment instanceof BottomNavFragment) {
+            ((BottomNavFragment) fragment).setUnreadBadges(hasUnreadNotifications, hasUnreadMessages);
+        }
+    }
+
+    @Override
+    public void onSocketEvent(@NonNull String eventName, @Nullable JSONObject payload) {
+        if ("message:new".equals(eventName)) {
+            JSONObject message = payload == null ? null : payload.optJSONObject("message");
+            if (message != null && !message.optBoolean("isMine", false)) {
+                setMessageUnreadBadge(true);
+            }
+            return;
+        }
+
+        if ("conversation:read".equals(eventName)) {
+            refreshUnreadBadges();
+        }
+    }
+
+    private static final class UnreadBadgeState {
+        private final boolean hasUnreadNotifications;
+        private final boolean hasUnreadMessages;
+
+        private UnreadBadgeState(boolean hasUnreadNotifications, boolean hasUnreadMessages) {
+            this.hasUnreadNotifications = hasUnreadNotifications;
+            this.hasUnreadMessages = hasUnreadMessages;
+        }
     }
 }

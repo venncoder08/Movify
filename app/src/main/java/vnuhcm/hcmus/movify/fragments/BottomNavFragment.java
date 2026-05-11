@@ -19,6 +19,8 @@ public class BottomNavFragment extends Fragment {
 
     private static final String ARG_CURRENT_TAB = "current_tab";
     private static final String ARG_ROLE_MODE = "role_mode";
+    private static final String ARG_HAS_UNREAD_NOTIFICATIONS = "has_unread_notifications";
+    private static final String ARG_HAS_UNREAD_MESSAGES = "has_unread_messages";
 
     public static final String ROLE_USER = "user";
     public static final String ROLE_DRIVER = "driver";
@@ -31,19 +33,31 @@ public class BottomNavFragment extends Fragment {
 
     private String currentTab = TAB_BOOKING;
     private String roleMode = ROLE_USER;
+    private boolean hasUnreadNotifications = false;
+    private boolean hasUnreadMessages = false;
 
     private LinearLayout tabProfile, tabNotification, tabBooking, tabHistory, tabMessage;
     private ImageView iconProfile, iconNotification, iconBooking, iconHistory, iconMessage;
     private TextView tvProfile, tvNotification, tvBooking, tvHistory, tvMessage;
+    private View dotNotificationUnread, dotMessageUnread;
 
     public BottomNavFragment() {
     }
 
     public static BottomNavFragment newInstance(String currentTab, String roleMode) {
+        return newInstance(currentTab, roleMode, false, false);
+    }
+
+    public static BottomNavFragment newInstance(String currentTab,
+                                                String roleMode,
+                                                boolean hasUnreadNotifications,
+                                                boolean hasUnreadMessages) {
         BottomNavFragment fragment = new BottomNavFragment();
         Bundle args = new Bundle();
         args.putString(ARG_CURRENT_TAB, currentTab);
         args.putString(ARG_ROLE_MODE, roleMode);
+        args.putBoolean(ARG_HAS_UNREAD_NOTIFICATIONS, hasUnreadNotifications);
+        args.putBoolean(ARG_HAS_UNREAD_MESSAGES, hasUnreadMessages);
         fragment.setArguments(args);
         return fragment;
     }
@@ -61,6 +75,8 @@ public class BottomNavFragment extends Fragment {
         if (getArguments() != null) {
             currentTab = getArguments().getString(ARG_CURRENT_TAB, TAB_BOOKING);
             roleMode = getArguments().getString(ARG_ROLE_MODE, ROLE_USER);
+            hasUnreadNotifications = getArguments().getBoolean(ARG_HAS_UNREAD_NOTIFICATIONS, false);
+            hasUnreadMessages = getArguments().getBoolean(ARG_HAS_UNREAD_MESSAGES, false);
         }
 
         tabProfile = view.findViewById(R.id.tabProfile);
@@ -80,10 +96,13 @@ public class BottomNavFragment extends Fragment {
         tvBooking = view.findViewById(R.id.tvBooking);
         tvHistory = view.findViewById(R.id.tvHistory);
         tvMessage = view.findViewById(R.id.tvMessage);
+        dotNotificationUnread = view.findViewById(R.id.dotNotificationUnread);
+        dotMessageUnread = view.findViewById(R.id.dotMessageUnread);
 
         configureTabsForRole(view);
         applyLabels();
         updateSelectedTab();
+        updateUnreadBadgeViews();
 
         tabProfile.setOnClickListener(v -> navigateTo(TAB_PROFILE));
         tabNotification.setOnClickListener(v -> navigateTo(TAB_NOTIFICATION));
@@ -139,6 +158,29 @@ public class BottomNavFragment extends Fragment {
         tabMessage.setVisibility(isAdminMode() ? View.GONE : View.VISIBLE);
         iconBooking.setImageResource(isAdminMode() ? R.drawable.ic_policy : R.drawable.ic_logo);
         iconHistory.setImageResource(isAdminMode() ? R.drawable.ic_voucher : R.drawable.ic_history);
+    }
+
+    public void setUnreadBadges(boolean hasUnreadNotifications, boolean hasUnreadMessages) {
+        this.hasUnreadNotifications = hasUnreadNotifications;
+        this.hasUnreadMessages = hasUnreadMessages;
+
+        Bundle arguments = getArguments();
+        if (arguments != null) {
+            arguments.putBoolean(ARG_HAS_UNREAD_NOTIFICATIONS, hasUnreadNotifications);
+            arguments.putBoolean(ARG_HAS_UNREAD_MESSAGES, hasUnreadMessages);
+        }
+
+        updateUnreadBadgeViews();
+    }
+
+    private void updateUnreadBadgeViews() {
+        if (dotNotificationUnread != null) {
+            dotNotificationUnread.setVisibility(hasUnreadNotifications ? View.VISIBLE : View.GONE);
+        }
+
+        if (dotMessageUnread != null) {
+            dotMessageUnread.setVisibility(!isAdminMode() && hasUnreadMessages ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void updateSelectedTab() {

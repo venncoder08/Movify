@@ -21,6 +21,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import vnuhcm.hcmus.movify.R;
+import vnuhcm.hcmus.movify.activities.ChatActivity;
 import vnuhcm.hcmus.movify.activities.HomeActivity;
 import vnuhcm.hcmus.movify.fragments.BottomNavFragment;
 import vnuhcm.hcmus.movify.models.Notification;
@@ -31,6 +32,7 @@ public final class SystemNotificationHelper {
     private static final String KEY_LAST_NOTIFIED_ID = "last_notified_notification_id";
     private static final String CHANNEL_ID = "movify_updates_channel";
     private static final int NOTIFICATION_ID_BASE = 33052026;
+    private static final int CHAT_NOTIFICATION_ID_BASE = 33053026;
 
     private SystemNotificationHelper() {
     }
@@ -79,6 +81,60 @@ public final class SystemNotificationHelper {
         }
     }
 
+    public static void notifyChatMessage(@NonNull Context context,
+                                         int participantId,
+                                         @NonNull String participantName,
+                                         @NonNull String message,
+                                         int messageId,
+                                         int backendNotificationId) {
+        Context appContext = context.getApplicationContext();
+        if (!canPostNotifications(appContext)) {
+            return;
+        }
+
+        ensureChannel(appContext);
+
+        Intent intent = new Intent(appContext, ChatActivity.class);
+        intent.putExtra(ChatActivity.EXTRA_ACCOUNT_ID, participantId);
+        intent.putExtra(ChatActivity.EXTRA_TITLE, participantName);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        int requestCode = messageId > 0 ? messageId : participantId;
+        PendingIntent contentIntent = PendingIntent.getActivity(
+                appContext,
+                requestCode,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        String title = TextUtils.isEmpty(participantName)
+                ? appContext.getString(R.string.app_name)
+                : participantName;
+        String body = TextUtils.isEmpty(message)
+                ? appContext.getString(R.string.system_notification_default_body)
+                : message;
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(appContext, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_message)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+                .setContentIntent(contentIntent)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE);
+
+        try {
+            NotificationManagerCompat.from(appContext).notify(
+                    CHAT_NOTIFICATION_ID_BASE + requestCode,
+                    builder.build()
+            );
+            markNotificationIdPosted(appContext, backendNotificationId);
+        } catch (SecurityException ignored) {
+            // Runtime notification permission can be revoked at any time.
+        }
+    }
+
     private static void postSystemNotification(@NonNull Context context, @NonNull Notification notification) {
         String title = TextUtils.isEmpty(notification.getTitle())
                 ? context.getString(R.string.app_name)
@@ -122,6 +178,18 @@ public final class SystemNotificationHelper {
             return R.drawable.ic_warning;
         }
         return R.drawable.ic_noti;
+    }
+
+    private static void markNotificationIdPosted(@NonNull Context context, int notificationId) {
+        if (notificationId <= 0) {
+            return;
+        }
+
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        int lastNotifiedId = prefs.getInt(KEY_LAST_NOTIFIED_ID, 0);
+        if (notificationId > lastNotifiedId) {
+            prefs.edit().putInt(KEY_LAST_NOTIFIED_ID, notificationId).apply();
+        }
     }
 
     private static boolean canPostNotifications(@NonNull Context context) {

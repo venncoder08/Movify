@@ -18,6 +18,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
+import vnuhcm.hcmus.movify.MovifyApplication;
+import vnuhcm.hcmus.movify.utils.SystemNotificationHelper;
 
 public final class SocketManager {
 
@@ -70,6 +72,7 @@ public final class SocketManager {
             IO.Options options = new IO.Options();
             options.reconnection = true;
             options.forceNew = false;
+            options.auth = Collections.singletonMap("token", token);
             options.extraHeaders = Collections.singletonMap(
                     "Authorization",
                     Arrays.asList("Bearer " + token)
@@ -115,9 +118,43 @@ public final class SocketManager {
 
         JSONObject finalPayload = payload;
         mainHandler.post(() -> {
+            maybeNotifyBackgroundMessage(eventName, finalPayload);
             for (SocketEventListener listener : listeners) {
                 listener.onSocketEvent(eventName, finalPayload);
             }
         });
+    }
+
+    private void maybeNotifyBackgroundMessage(@NonNull String eventName, @Nullable JSONObject payload) {
+        if (!EVENT_MESSAGE_NEW.equals(eventName) || payload == null || MovifyApplication.isAppInForeground()) {
+            return;
+        }
+
+        JSONObject message = payload.optJSONObject("message");
+        if (message == null || message.optBoolean("isMine", false)) {
+            return;
+        }
+
+        int participantId = payload.optInt("participantId", 0);
+        if (participantId <= 0) {
+            return;
+        }
+
+        JSONObject sender = message.optJSONObject("sender");
+        String participantName = sender == null ? "" : sender.optString("fullName", "");
+        String content = message.optString("content", "").trim();
+        String contentType = message.optString("contentType", "Text");
+        if (content.isEmpty()) {
+            content = "Image".equalsIgnoreCase(contentType) ? "[Image]" : "New message";
+        }
+
+        SystemNotificationHelper.notifyChatMessage(
+                appContext,
+                participantId,
+                participantName,
+                content,
+                message.optInt("id", 0),
+                payload.optInt("notificationId", 0)
+        );
     }
 }

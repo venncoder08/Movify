@@ -61,7 +61,7 @@ public class AdminDriverRequestAdapter extends RecyclerView.Adapter<AdminDriverR
         holder.tvRequestStatus.setText(mapStatus(context, request.getStatus()));
         holder.tvVehicleType.setText(mapVehicleType(context, request.getVehicleType()));
 
-        RemoteImageLoader.loadAvatar(holder.ivDriverAvatar, request.getDriverAvatar());
+        RemoteImageLoader.loadCircularAvatar(holder.ivDriverAvatar, request.getDriverAvatar());
         RemoteImageLoader.loadImage(holder.ivIdCardImage, request.getIdCardImageUrl(), R.drawable.ic_card);
         RemoteImageLoader.loadImage(holder.ivDriverLicenseImage, request.getDriverLicenseImageUrl(), R.drawable.ic_card);
         RemoteImageLoader.loadImage(holder.ivVehicleRegistrationImage, request.getVehicleRegistrationImageUrl(), R.drawable.ic_card);

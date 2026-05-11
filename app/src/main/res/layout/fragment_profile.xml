@@ -50,15 +50,18 @@
                 <FrameLayout
                     android:layout_width="120dp"
                     android:layout_height="120dp"
-                    android:background="@drawable/bg_selected"
+                    android:background="@drawable/bg_circle_blue"
                     android:elevation="4dp">
 
                     <ImageView
                         android:id="@+id/ivAvatar"
-                        android:layout_width="100dp"
-                        android:layout_height="100dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
                         android:layout_gravity="center"
-                        android:scaleType="centerInside"
+                        android:background="@drawable/bg_circle_blue"
+                        android:clipToOutline="true"
+                        android:padding="30dp"
+                        android:scaleType="centerCrop"
                         android:src="@drawable/ic_user"
                         app:tint="@color/white" />
                 </FrameLayout>

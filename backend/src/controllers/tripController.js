@@ -595,6 +595,7 @@ async function confirmPickup(req, res) {
       };
     });
 
+    emitConversationEligibilityForTrip(result.trip);
     return res.status(200).json({
       data: {
         message: result.trip.Status === "InProgress"

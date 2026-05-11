@@ -71,6 +71,19 @@ public final class MessageService {
         return conversations;
     }
 
+    public static int fetchUnreadCount(@NonNull Context context) throws IOException, JSONException {
+        String responseBody = BackendApiService.executeAuthenticatedGet(
+                context,
+                "api/messages",
+                requireJwtToken(context),
+                new LinkedHashMap<>()
+        );
+
+        JSONObject root = new JSONObject(responseBody);
+        JSONObject data = root.optJSONObject("data");
+        return data == null ? 0 : data.optInt("unreadCount", 0);
+    }
+
     @NonNull
     public static ConversationDetail fetchConversation(@NonNull Context context, int accountId)
             throws IOException, JSONException {
@@ -210,7 +223,7 @@ public final class MessageService {
     }
 
     @NonNull
-    private static ChatMessage parseMessage(@NonNull JSONObject item) {
+    public static ChatMessage parseMessage(@NonNull JSONObject item) {
         Integer tripId = item.isNull("tripId") ? null : item.optInt("tripId", 0);
         return new ChatMessage(
                 item.optInt("id", 0),

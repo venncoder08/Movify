@@ -250,7 +250,7 @@ public class ProfileFragment extends Fragment {
         tvUserName.setText(R.string.loading_dots);
         tvPhone.setText(R.string.loading_dots);
         tvEmail.setText(R.string.loading_dots);
-        RemoteImageLoader.loadAvatar(ivAvatar, null);
+        RemoteImageLoader.loadCircularAvatar(ivAvatar, null);
 
         setupArrowItem(
                 itemPersonalInfo,
@@ -272,7 +272,7 @@ public class ProfileFragment extends Fragment {
         tvUserName.setText(fullName);
         tvPhone.setText(phoneNumber);
         tvEmail.setText(fallbackValue(email, "Chưa cập nhật email"));
-        RemoteImageLoader.loadAvatar(ivAvatar, profile.getAvatar());
+        RemoteImageLoader.loadCircularAvatar(ivAvatar, profile.getAvatar());
 
         setupArrowItem(
                 itemPersonalInfo,
@@ -291,7 +291,7 @@ public class ProfileFragment extends Fragment {
         tvUserName.setText(buildDisplayName(cachedEmail));
         tvPhone.setText("Chưa cập nhật số điện thoại");
         tvEmail.setText(fallbackValue(cachedEmail, "Chưa cập nhật email"));
-        RemoteImageLoader.loadAvatar(ivAvatar, null);
+        RemoteImageLoader.loadCircularAvatar(ivAvatar, null);
 
         setupArrowItem(
                 itemPersonalInfo,

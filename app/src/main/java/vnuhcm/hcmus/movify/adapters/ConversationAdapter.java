@@ -63,11 +63,11 @@ public class ConversationAdapter extends BaseAdapter {
                 ? context.getString(R.string.message_no_messages)
                 : item.getLastMessagePreview());
         holder.tvTime.setText(formatTime(item.getUpdatedAt()));
-        RemoteImageLoader.loadAvatar(holder.ivAvatar, item.getParticipant().getAvatar());
+        RemoteImageLoader.loadCircularAvatar(holder.ivAvatar, item.getParticipant().getAvatar());
 
         if (item.getUnreadCount() > 0) {
             holder.tvUnread.setVisibility(View.VISIBLE);
-            holder.tvUnread.setText(String.valueOf(item.getUnreadCount()));
+            holder.tvUnread.setText(formatUnreadCount(item.getUnreadCount()));
         } else {
             holder.tvUnread.setVisibility(View.GONE);
         }
@@ -99,6 +99,10 @@ public class ConversationAdapter extends BaseAdapter {
             }
         }
         return "";
+    }
+
+    private String formatUnreadCount(int unreadCount) {
+        return unreadCount > 99 ? "99+" : String.valueOf(unreadCount);
     }
 
     private static class ViewHolder {

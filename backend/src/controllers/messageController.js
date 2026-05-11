@@ -1,6 +1,7 @@
 const prisma = require("../config/prisma");
 const { emitToAccounts } = require("../socket");
 const {
+  ACTIVE_CHAT_TRIP_STATUSES,
   getConversationState,
   findSharedActiveTrip,
   serializeActiveTrip
@@ -59,6 +60,12 @@ function buildMessagePreview(content, maxLength = 80) {
   return `${normalized.slice(0, maxLength - 3)}...`;
 }
 
+function getTripParticipant(trip, currentUserId) {
+  return trip.UserID === currentUserId
+    ? trip.Account_Trip_DriverIDToAccount
+    : trip.Account_Trip_UserIDToAccount;
+}
+
 async function findChatAccount(accountId) {
   return prisma.account.findFirst({
     where: {
@@ -73,30 +80,76 @@ async function findChatAccount(accountId) {
 async function listConversations(req, res) {
   try {
     const currentUserId = req.user.id;
-    const messages = await prisma.message.findMany({
-      where: {
-        DeletedAt: null,
-        OR: [
-          { SenderID: currentUserId },
-          { RecipientID: currentUserId }
-        ]
-      },
-      orderBy: [
-        { CreatedAt: "desc" },
-        { ID: "desc" }
-      ],
-      include: {
-        Account_Message_SenderIDToAccount: {
-          select: accountSelect
+    const [messages, activeTrips] = await Promise.all([
+      prisma.message.findMany({
+        where: {
+          DeletedAt: null,
+          OR: [
+            { SenderID: currentUserId },
+            { RecipientID: currentUserId }
+          ]
         },
-        Account_Message_RecipientIDToAccount: {
-          select: accountSelect
+        orderBy: [
+          { CreatedAt: "desc" },
+          { ID: "desc" }
+        ],
+        include: {
+          Account_Message_SenderIDToAccount: {
+            select: accountSelect
+          },
+          Account_Message_RecipientIDToAccount: {
+            select: accountSelect
+          }
         }
-      }
-    });
+      }),
+      prisma.trip.findMany({
+        where: {
+          DeletedAt: null,
+          Status: { in: ACTIVE_CHAT_TRIP_STATUSES },
+          OR: [
+            { UserID: currentUserId },
+            { DriverID: currentUserId }
+          ]
+        },
+        orderBy: [
+          { UpdatedAt: "desc" },
+          { ID: "desc" }
+        ],
+        include: {
+          Account_Trip_UserIDToAccount: {
+            select: accountSelect
+          },
+          Account_Trip_DriverIDToAccount: {
+            select: accountSelect
+          }
+        }
+      })
+    ]);
 
     const conversations = new Map();
+    const activeTripByParticipantId = new Map();
     let unreadCount = 0;
+
+    for (const trip of activeTrips) {
+      const participantId = trip.UserID === currentUserId ? trip.DriverID : trip.UserID;
+      if (!participantId || activeTripByParticipantId.has(participantId)) {
+        continue;
+      }
+
+      const participant = getTripParticipant(trip, currentUserId);
+      if (!participant) {
+        continue;
+      }
+
+      activeTripByParticipantId.set(participantId, serializeActiveTrip(trip));
+      conversations.set(participantId, {
+        participant: serializeParticipant(participant),
+        lastMessage: null,
+        unreadCount: 0,
+        updatedAt: trip.UpdatedAt,
+        lastTripId: trip.ID
+      });
+    }
 
     for (const message of messages) {
       const participant = message.SenderID === currentUserId
@@ -115,8 +168,14 @@ async function listConversations(req, res) {
           participant: serializeParticipant(participant),
           lastMessage: serializeMessage(message, currentUserId),
           unreadCount: 0,
-          updatedAt: message.CreatedAt
+          updatedAt: message.CreatedAt,
+          lastTripId: message.TripID ?? null
         });
+      } else if (!conversations.get(participantId).lastMessage) {
+        const conversation = conversations.get(participantId);
+        conversation.lastMessage = serializeMessage(message, currentUserId);
+        conversation.updatedAt = message.CreatedAt;
+        conversation.lastTripId = message.TripID ?? null;
       }
 
       if (isIncomingUnread) {
@@ -125,15 +184,15 @@ async function listConversations(req, res) {
       }
     }
 
-    const items = await Promise.all(Array.from(conversations.values()).map(async (conversation) => {
-      const state = await getConversationState(currentUserId, conversation.participant.id);
+    const items = Array.from(conversations.values()).map((conversation) => {
+      const activeTrip = activeTripByParticipantId.get(conversation.participant.id) || null;
       return {
         ...conversation,
-        activeTrip: state.activeTrip,
-        canSend: state.canSend,
-        lastTripId: conversation.lastMessage.tripId
+        activeTrip,
+        canSend: Boolean(activeTrip),
+        lastTripId: conversation.lastTripId
       };
-    }));
+    });
 
     items.sort((left, right) => {
       const activeDelta = Number(Boolean(right.activeTrip)) - Number(Boolean(left.activeTrip));
@@ -277,7 +336,7 @@ async function sendMessage(req, res) {
       });
     }
 
-    const createdMessage = await prisma.$transaction(async (transaction) => {
+    const result = await prisma.$transaction(async (transaction) => {
       const message = await transaction.message.create({
         data: {
           SenderID: currentUserId,
@@ -298,33 +357,36 @@ async function sendMessage(req, res) {
         }
       });
 
-      await transaction.notification.create({
+      const notification = await transaction.notification.create({
         data: {
           AccountID: participantId,
           Title: "New message",
           Body: contentType === "Image"
             ? `${sender.FullName || "Someone"} sent you an image`
             : `${sender.FullName || "Someone"}: ${buildMessagePreview(content)}`,
-          IsRead: false
+          IsRead: false,
+          UpdatedAt: new Date()
         }
       });
 
-      return message;
+      return { message, notification };
     });
 
-    const serializedMessage = serializeMessage(createdMessage, currentUserId);
+    const senderMessage = serializeMessage(result.message, currentUserId);
+    const recipientMessage = serializeMessage(result.message, participantId);
     const activeTripPayload = serializeActiveTrip(activeTrip);
 
     emitToAccounts([currentUserId], "message:new", {
       participantId,
-      message: serializedMessage,
+      message: senderMessage,
       activeTrip: activeTripPayload,
       canSend: true
     });
 
     emitToAccounts([participantId], "message:new", {
       participantId: currentUserId,
-      message: serializedMessage,
+      message: recipientMessage,
+      notificationId: result.notification.ID,
       activeTrip: activeTripPayload,
       canSend: true
     });
@@ -332,7 +394,7 @@ async function sendMessage(req, res) {
     res.status(201).json({
       message: "Message sent successfully",
       data: {
-        message: serializedMessage,
+        message: senderMessage,
         activeTrip: activeTripPayload,
         canSend: true
       }
@@ -460,6 +522,9 @@ async function getTripMessages(req, res) {
     });
 
     const participantId = isPassenger ? trip.DriverID : trip.UserID;
+    const canSend = !isAdmin
+      && Boolean(participantId)
+      && ACTIVE_CHAT_TRIP_STATUSES.includes(trip.Status);
 
     res.status(200).json({
       data: {
@@ -468,8 +533,8 @@ async function getTripMessages(req, res) {
           status: trip.Status
         },
         participantId: participantId ?? null,
-        canSend: false,
-        activeTrip: null,
+        canSend,
+        activeTrip: canSend ? serializeActiveTrip(trip) : null,
         items: messages.map((message) => serializeMessage(message, currentUserId))
       }
     });
