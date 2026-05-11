@@ -7,5 +7,6 @@ const router = express.Router();
 
 router.get("/autocomplete", asyncHandler(placeController.autocomplete));
 router.get("/geocode", asyncHandler(placeController.geocode));
+router.get("/recommendations", asyncHandler(placeController.recommendNearby));
 
 module.exports = router;

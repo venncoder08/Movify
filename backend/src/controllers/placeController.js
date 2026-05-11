@@ -10,7 +10,19 @@ async function geocode(req, res) {
   res.json(payload);
 }
 
+async function recommendNearby(req, res) {
+  const payload = await placeService.recommendNearby({
+    query: String(req.query.q || "").trim(),
+    lat: req.query.lat,
+    lng: req.query.lng,
+    radiusMeters: req.query.radiusMeters,
+    limit: req.query.limit
+  });
+  res.json(payload);
+}
+
 module.exports = {
   autocomplete,
-  geocode
+  geocode,
+  recommendNearby
 };
