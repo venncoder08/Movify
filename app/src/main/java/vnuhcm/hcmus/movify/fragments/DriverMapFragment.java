@@ -230,8 +230,6 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
                         : (driverLocation != null ? driverLocation : HCMC);
                 double lat = currentLocation.latitude;
                 double lng = currentLocation.longitude;
-                // Large radius so address-only trips (no coordinates) always appear;
-                // the backend returns them regardless of distance.
                 double radius = 50.0;
 
                 // Fetch nearby trips from backend

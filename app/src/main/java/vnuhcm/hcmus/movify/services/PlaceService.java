@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import vnuhcm.hcmus.movify.models.DestinationRecommendation;
 import vnuhcm.hcmus.movify.models.PlaceDetails;
 
 public final class PlaceService {
@@ -65,10 +66,60 @@ public final class PlaceService {
     }
 
     @NonNull
+    public static List<DestinationRecommendation> fetchDestinationRecommendations(Context context,
+                                                                                  String query,
+                                                                                  LatLng origin)
+            throws IOException, JSONException {
+        Map<String, String> queryParams = new LinkedHashMap<>();
+        queryParams.put("q", query);
+        queryParams.put("lat", String.valueOf(origin.latitude));
+        queryParams.put("lng", String.valueOf(origin.longitude));
+        queryParams.put("radiusMeters", "5000");
+        queryParams.put("limit", "10");
+
+        String responseBody = BackendApiService.executeGet(context, "api/places/recommendations", queryParams);
+        JSONObject root = new JSONObject(responseBody);
+        JSONObject dataJson = root.optJSONObject("data");
+        JSONArray recommendationsJson = dataJson != null
+                ? dataJson.optJSONArray("recommendations")
+                : root.optJSONArray("recommendations");
+        List<DestinationRecommendation> recommendations = new ArrayList<>();
+        if (recommendationsJson == null) {
+            return recommendations;
+        }
+
+        for (int i = 0; i < recommendationsJson.length(); i++) {
+            JSONObject itemJson = recommendationsJson.optJSONObject(i);
+            if (itemJson != null) {
+                recommendations.add(parseDestinationRecommendation(itemJson));
+            }
+        }
+
+        return recommendations;
+    }
+
+    @NonNull
     static PlaceDetails parsePlaceDetails(JSONObject jsonObject) throws JSONException {
         double lat = jsonObject.getDouble("lat");
         double lng = jsonObject.getDouble("lng");
         String label = jsonObject.optString("label", String.format(Locale.US, "%f,%f", lat, lng));
         return new PlaceDetails(label, new LatLng(lat, lng));
+    }
+
+    @NonNull
+    private static DestinationRecommendation parseDestinationRecommendation(JSONObject jsonObject) throws JSONException {
+        return new DestinationRecommendation(
+                jsonObject.optString("placeId", ""),
+                jsonObject.optString("name", "Địa điểm phù hợp"),
+                jsonObject.optString("label", ""),
+                jsonObject.optString("address", ""),
+                jsonObject.optString("categoryLabel", "Dịch vụ gần đây"),
+                jsonObject.optString("reason", ""),
+                jsonObject.getDouble("lat"),
+                jsonObject.getDouble("lng"),
+                jsonObject.optDouble("distanceMeters", 0d),
+                jsonObject.optDouble("similarityScore", 0d),
+                jsonObject.optDouble("recommendationScore", 0d)
+        );
     }
 }

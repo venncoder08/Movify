@@ -6,6 +6,15 @@
     <string name="pickup_hint">Nhập điểm đón</string>
     <string name="destination_hint">Nhập điểm đến</string>
     <string name="current_location">Vị trí hiện tại</string>
+    <string name="nearby_recommendation_title">Gợi ý điểm đến</string>
+    <string name="nearby_recommendation_subtitle">Tìm dịch vụ tương đồng gần đây.</string>
+    <string name="nearby_recommendation_hint">Bệnh viện, bưu điện, công viên...</string>
+    <string name="nearby_recommendation_search">Gợi ý</string>
+    <string name="nearby_recommendation_loading">Đang tìm gợi ý phù hợp...</string>
+    <string name="nearby_recommendation_empty">Không tìm thấy địa điểm phù hợp gần đây</string>
+    <string name="nearby_recommendation_need_query">Nhập loại địa điểm bạn muốn tìm</string>
+    <string name="nearby_recommendation_origin_error">Không thể xác định vị trí để gợi ý</string>
+    <string name="nearby_recommendation_selected">Đã chọn điểm đến được gợi ý</string>
 
     <string name="choose_vehicle">Chọn loại xe</string>
     <string name="vehicle_bike">Xe Máy</string>
