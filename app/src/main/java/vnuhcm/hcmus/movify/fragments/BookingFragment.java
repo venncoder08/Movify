@@ -52,12 +52,15 @@ import java.util.concurrent.Executors;
 
 import vnuhcm.hcmus.movify.R;
 import vnuhcm.hcmus.movify.activities.TripRatingActivity;
+import vnuhcm.hcmus.movify.adapters.DestinationRecommendationAdapter;
 import vnuhcm.hcmus.movify.adapters.PromotionAdapter;
 import vnuhcm.hcmus.movify.models.AccountProfile;
+import vnuhcm.hcmus.movify.models.DestinationRecommendation;
 import vnuhcm.hcmus.movify.models.Promotion;
 import vnuhcm.hcmus.movify.models.RoutePreview;
 import vnuhcm.hcmus.movify.models.Trip;
 import vnuhcm.hcmus.movify.services.AuthApiService;
+import vnuhcm.hcmus.movify.services.PlaceService;
 import vnuhcm.hcmus.movify.services.PromotionService;
 import vnuhcm.hcmus.movify.services.RouteService;
 import vnuhcm.hcmus.movify.utils.CurrentLocationResolver;
@@ -99,6 +102,8 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
     private LinearLayout btnCash;
     private LinearLayout btnBankTransfer;
     private LinearLayout btnSearchDriver;
+    private TextView btnFindNearby;
+    private LinearLayout nearbyRecommendationContainer;
     private LinearLayout promoContainer;
     private LinearLayout driverModeContainer;
     private LinearLayout activeTripContainer;
@@ -130,13 +135,18 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
     private TextView tvActiveTripDriver;
     private TextView tvActiveTripDistance;
     private TextView btnCancelActiveTrip;
+    private AutoCompleteTextView edtNearbyQuery;
+    private TextView tvNearbyRecommendationStatus;
+    private RecyclerView rvNearbyRecommendations;
     private RecyclerView rvPromotions;
     private SupportMapFragment activeTripMapFragment;
     private GoogleMap activeTripMap;
 
     private PromotionAdapter promotionAdapter;
+    private DestinationRecommendationAdapter nearbyRecommendationAdapter;
     private ExecutorService promotionExecutor;
     private ExecutorService routeExecutor;
+    private ExecutorService nearbyExecutor;
     private AuthApiService authApiService;
 
     private boolean isDriverMode;
@@ -144,6 +154,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
     private Runnable pendingRouteUpdate;
     private AutoCompleteTextView pendingCurrentLocationField;
     private vnuhcm.hcmus.movify.models.Promotion selectedPromotion = null;
+    private final List<DestinationRecommendation> nearbyRecommendationList = new ArrayList<>();
     private String selectedVehicle = VEHICLE_MOTORBIKE;
     private String selectedPayment = PAYMENT_CASH;
 
@@ -157,6 +168,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
     private boolean activeTripRouteLoading = false;
     private String activeTripRouteKey = "";
     private Runnable pendingTripStatusPoll;
+    private boolean pickupAutoFillRequested = false;
     private static final long SEARCH_TIMEOUT_MS = 10L * 60L * 1000L; // 10 minutes max
 
     public BookingFragment() {
@@ -186,6 +198,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
 
         promotionExecutor = Executors.newSingleThreadExecutor();
         routeExecutor = Executors.newSingleThreadExecutor();
+        nearbyExecutor = Executors.newSingleThreadExecutor();
         authApiService = new AuthApiService(requireContext());
         initViews(view);
         renderHeaderLoading();
@@ -205,6 +218,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
             setupSearchDriverButton();
             setupQrScannerButton();
             setupPlacesAutocomplete();
+            setupNearbyRecommendations();
             setupActiveTripMap();
             attachRoutePreviewWatchers();
             loadActiveTripForPassenger();
@@ -215,6 +229,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
             if (!isDriverMode && destinationLocation != null && !destinationLocation.isEmpty()) {
                 edtDestination.setText(destinationLocation);
             }
+            maybeAutoFillPickupWithCurrentLocation();
     }
 
     @Override
@@ -230,6 +245,10 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
         if (routeExecutor != null) {
             routeExecutor.shutdownNow();
             routeExecutor = null;
+        }
+        if (nearbyExecutor != null) {
+            nearbyExecutor.shutdownNow();
+            nearbyExecutor = null;
         }
         pendingCurrentLocationField = null;
         activeTripMap = null;
@@ -309,6 +328,11 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
         btnCash = view.findViewById(R.id.btnCash);
         btnBankTransfer = view.findViewById(R.id.btnBankTransfer);
         btnSearchDriver = view.findViewById(R.id.btnSearchDriver);
+        btnFindNearby = view.findViewById(R.id.btnFindNearby);
+        nearbyRecommendationContainer = view.findViewById(R.id.nearbyRecommendationContainer);
+        edtNearbyQuery = view.findViewById(R.id.edtNearbyQuery);
+        tvNearbyRecommendationStatus = view.findViewById(R.id.tvNearbyRecommendationStatus);
+        rvNearbyRecommendations = view.findViewById(R.id.rvNearbyRecommendations);
         promoContainer = view.findViewById(R.id.promoContainer);
         driverModeContainer = view.findViewById(R.id.driverModeContainer);
         activeTripContainer = view.findViewById(R.id.activeTripContainer);
@@ -974,6 +998,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
                         activeTripId = null;
                         activeTrip = null;
                         isSearchingDriver = true;
+                        setNearbyRecommendationsVisible(false);
                         btnSearchDriver.setEnabled(true);
         setSearchButtonSearching("Đang tìm tài xế...");
                         scheduleTripStatusPoll();
@@ -1001,6 +1026,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
         setVisible(tvPromoTitle, !active);
         setVisible(promoContainer, !active);
         setVisible(btnSearchDriver, true);
+        setNearbyRecommendationsVisible(!active);
     }
 
     private void renderPassengerActiveTrip(@NonNull Trip trip) {
@@ -1130,6 +1156,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
             boolean wasSearching = isSearchingDriver;
             activeTripId = trip.getId();
             activeTrip = trip;
+            setNearbyRecommendationsVisible(false);
             if (wasSearching) {
                 stopSearchCountdown(false, false);
                 DriverSearchNotificationHelper.notifyDriverAccepted(requireContext().getApplicationContext());
@@ -1146,6 +1173,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
                     && "InProgress".equalsIgnoreCase(activeTrip.getStatus());
             activeTripId = trip.getId();
             activeTrip = trip;
+            setNearbyRecommendationsVisible(false);
             if (isSearchingDriver) {
                 stopSearchCountdown(false, false);
             }
@@ -1178,6 +1206,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
             activeTripRouteKey = "";
             activeTripRoutePoints.clear();
             setActiveTripMode(false);
+            setNearbyRecommendationsVisible(true);
             if ("Completed".equalsIgnoreCase(status)) {
                 openTripRatingScreen(trip);
             }
@@ -1613,5 +1642,114 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
 
     private void setupPlacesAutocomplete() {
         attachPlacesAutocomplete();
+    }
+
+    private void setNearbyRecommendationsVisible(boolean visible) {
+        if (nearbyRecommendationContainer != null) {
+            nearbyRecommendationContainer.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void maybeAutoFillPickupWithCurrentLocation() {
+        if (isDriverMode || pickupAutoFillRequested || edtPickup == null) {
+            return;
+        }
+
+        if (!TextUtils.isEmpty(edtPickup.getText().toString().trim())) {
+            return;
+        }
+
+        pickupAutoFillRequested = true;
+        handleCurrentLocationSelection(edtPickup);
+    }
+
+    private void setupNearbyRecommendations() {
+        if (rvNearbyRecommendations == null || btnFindNearby == null || edtNearbyQuery == null) {
+            return;
+        }
+
+        nearbyRecommendationAdapter = new DestinationRecommendationAdapter(nearbyRecommendationList, recommendation -> {
+            String destinationLabel = recommendation.getLabel();
+            if (TextUtils.isEmpty(destinationLabel)) {
+                destinationLabel = recommendation.getName();
+            }
+
+            edtDestination.setText(destinationLabel);
+            setNearbyStatus(getString(R.string.nearby_recommendation_selected));
+            rvNearbyRecommendations.setVisibility(View.GONE);
+            scheduleRoutePreviewUpdate();
+        });
+
+        rvNearbyRecommendations.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvNearbyRecommendations.setAdapter(nearbyRecommendationAdapter);
+
+        btnFindNearby.setOnClickListener(v -> performNearbyRecommendationSearch());
+    }
+
+    private void performNearbyRecommendationSearch() {
+        if (!isAdded() || nearbyExecutor == null || nearbyExecutor.isShutdown()) {
+            return;
+        }
+
+        String query = edtNearbyQuery.getText().toString().trim();
+        if (TextUtils.isEmpty(query)) {
+            edtNearbyQuery.setError(getString(R.string.nearby_recommendation_hint));
+            return;
+        }
+
+        btnFindNearby.setEnabled(false);
+        setNearbyStatus(getString(R.string.nearby_recommendation_loading));
+
+        final Context appContext = requireContext().getApplicationContext();
+        final LatLng origin = HCMC;
+        final String searchQuery = query;
+
+        nearbyExecutor.execute(() -> {
+            try {
+                List<DestinationRecommendation> recommendations = PlaceService.fetchDestinationRecommendations(
+                        appContext,
+                        searchQuery,
+                        origin
+                );
+
+                mainHandler.post(() -> {
+                    if (!isAdded()) {
+                        return;
+                    }
+
+                    nearbyRecommendationList.clear();
+                    nearbyRecommendationList.addAll(recommendations);
+                    nearbyRecommendationAdapter.notifyDataSetChanged();
+                    rvNearbyRecommendations.setVisibility(recommendations.isEmpty() ? View.GONE : View.VISIBLE);
+                    setNearbyStatus(recommendations.isEmpty()
+                            ? "Không có gợi ý phù hợp"
+                            : getString(R.string.nearby_recommendation_selected));
+                    btnFindNearby.setEnabled(true);
+                });
+            } catch (Exception exception) {
+                Log.w(TAG, "Unable to load nearby recommendations", exception);
+                mainHandler.post(() -> {
+                    if (!isAdded()) {
+                        return;
+                    }
+
+                    btnFindNearby.setEnabled(true);
+                    rvNearbyRecommendations.setVisibility(View.GONE);
+                    setNearbyStatus(getString(R.string.nearby_recommendation_origin_error));
+                    Toast.makeText(requireContext(),
+                            exception.getMessage() != null ? exception.getMessage() : getString(R.string.nearby_recommendation_origin_error),
+                            Toast.LENGTH_SHORT).show();
+                });
+            }
+        });
+    }
+
+    private void setNearbyStatus(@NonNull String message) {
+        if (tvNearbyRecommendationStatus == null) {
+            return;
+        }
+
+        tvNearbyRecommendationStatus.setText(message);
+        tvNearbyRecommendationStatus.setVisibility(View.VISIBLE);
     }
 }
