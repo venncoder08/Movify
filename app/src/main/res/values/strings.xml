@@ -51,6 +51,20 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="message_title">Tin nhắn</string>
     <string name="message_placeholder">Tính năng nhắn tin đang được hoàn thiện.</string>
+    <string name="message_subtitle">Chat với tài xế hoặc hành khách khi chuyến đi đang hoạt động.</string>
+    <string name="message_empty">Chưa có cuộc trò chuyện nào.</string>
+    <string name="message_active_trip">Đang hoạt động</string>
+    <string name="message_read_only">Chỉ xem</string>
+    <string name="message_unknown_user">Người dùng Movify</string>
+    <string name="message_no_messages">Chưa có tin nhắn</string>
+    <string name="message_input_hint">Nhập tin nhắn...</string>
+    <string name="message_send">Gửi</string>
+    <string name="message_status_active">Cuộc trò chuyện này đang mở để nhắn tin.</string>
+    <string name="message_status_read_only">Chuyến đi đã kết thúc. Bạn chỉ có thể xem lại tin nhắn.</string>
+    <string name="message_status_history">Lịch sử tin nhắn chuyến #%1$d</string>
+    <string name="message_uploading_image">Đang tải ảnh lên...</string>
+    <string name="message_open_driver">Nhắn tin với tài xế</string>
+    <string name="message_open_passenger">Nhắn tin với khách</string>
     <string name="home_loading_title">Đang tải dữ liệu</string>
     <string name="home_loading_subtitle">Movify đang chuẩn bị giao diện phù hợp với tài khoản của bạn.</string>
 

@@ -1,5 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const { stripCurrentLocationLabel } = require("../utils/locationLabel");
+const { emitConversationEligibilityForTrip } = require("../services/messageTripService");
 
 const prisma = new PrismaClient();
 const ACTIVE_DRIVER_TRIP_STATUSES = ["Accepted", "InProgress"];
@@ -25,7 +26,7 @@ function calculateDistance(lat1, lng1, lat2, lng2) {
  * Serialize trip data
  */
 function serializeTrip(trip, distance) {
-  return {
+  const serialized = {
     id: trip.ID,
     pickupAddress: stripCurrentLocationLabel(trip.PickUpLocation),
     pickupLat: trip.PickUpLatitude ? parseFloat(trip.PickUpLatitude) : null,
@@ -51,6 +52,17 @@ function serializeTrip(trip, distance) {
       updatedAt: trip.DriverLocationUpdatedAt || null
     }
   };
+
+  if (trip.Account_Trip_UserIDToAccount) {
+    serialized.passenger = {
+      id: trip.Account_Trip_UserIDToAccount.ID,
+      fullName: trip.Account_Trip_UserIDToAccount.FullName,
+      phoneNumber: trip.Account_Trip_UserIDToAccount.PhoneNumber,
+      avatar: trip.Account_Trip_UserIDToAccount.Avatar
+    };
+  }
+
+  return serialized;
 }
 
 function buildDriverAcceptedNotification(driver) {
@@ -304,6 +316,8 @@ async function acceptTrip(req, res) {
         where: { ID: tripId },
         select: {
           ID: true,
+          UserID: true,
+          DriverID: true,
           PickUpLocation: true,
           PickUpLatitude: true,
           PickUpLongitude: true,
@@ -318,7 +332,15 @@ async function acceptTrip(req, res) {
           DriverCurrentLatitude: true,
           DriverCurrentLongitude: true,
           DriverLocationUpdatedAt: true,
-          CreatedAt: true
+          CreatedAt: true,
+          Account_Trip_UserIDToAccount: {
+            select: {
+              ID: true,
+              FullName: true,
+              PhoneNumber: true,
+              Avatar: true
+            }
+          }
         }
       });
 
@@ -341,6 +363,7 @@ async function acceptTrip(req, res) {
         trip: serializeTrip(updatedTrip, 0)
       }
     });
+    emitConversationEligibilityForTrip(updatedTrip);
   } catch (error) {
     console.error("Accept trip error:", error);
     if (error.statusCode) {

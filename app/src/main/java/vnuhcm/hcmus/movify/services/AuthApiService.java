@@ -479,6 +479,7 @@ public class AuthApiService {
     public void saveJwtToken(String token) {
         prefs.edit().putString(KEY_JWT_TOKEN, token).apply();
         NotificationWorkScheduler.schedule(context);
+        SocketManager.getInstance(context).connect();
     }
 
     public String getJwtToken() {
@@ -488,6 +489,7 @@ public class AuthApiService {
     public void clearJwtToken() {
         prefs.edit().remove(KEY_JWT_TOKEN).apply();
         NotificationWorkScheduler.cancel(context);
+        SocketManager.getInstance(context).disconnect();
     }
 
     /**
@@ -508,6 +510,7 @@ public class AuthApiService {
     public void clearSession() {
         prefs.edit().clear().apply();
         NotificationWorkScheduler.cancel(context);
+        SocketManager.getInstance(context).disconnect();
     }
 
     /**

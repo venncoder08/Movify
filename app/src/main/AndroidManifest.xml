@@ -65,6 +65,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".activities.ChatActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".activities.LoadingActivity"
             android:exported="true">
             <intent-filter>

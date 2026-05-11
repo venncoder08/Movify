@@ -101,10 +101,11 @@ model Trip {
   UserID                         Int
   DriverID                       Int?
   PromotionID                    Int?
-  CreatedAt                      DateTime      @default(now()) @db.Timestamptz(6)
-  UpdatedAt                      DateTime      @updatedAt @db.Timestamptz(6)
-  DeletedAt                      DateTime?     @db.Timestamptz(6)
-  Rating                         Rating[]
+    CreatedAt                      DateTime      @default(now()) @db.Timestamptz(6)
+    UpdatedAt                      DateTime      @updatedAt @db.Timestamptz(6)
+    DeletedAt                      DateTime?     @db.Timestamptz(6)
+    Message                        Message[]
+    Rating                         Rating[]
   Account_Trip_DriverIDToAccount Account?      @relation("Trip_DriverIDToAccount", fields: [DriverID], references: [ID])
   Promotion                      Promotion?    @relation(fields: [PromotionID], references: [ID])
   Account_Trip_UserIDToAccount   Account       @relation("Trip_UserIDToAccount", fields: [UserID], references: [ID])
@@ -180,21 +181,25 @@ model ToDriverRequest {
 model Message {
   ID                                   Int           @id @default(autoincrement())
   SenderID                             Int
-  RecipientID                          Int
-  Content                              String
-  ContentType                          MessageType   @default(Text)
-  IsRead                               Boolean       @default(false)
+    RecipientID                          Int
+    TripID                               Int?
+    Content                              String
+    ContentType                          MessageType   @default(Text)
+    MediaUrl                             String?       @db.VarChar(500)
+    IsRead                               Boolean       @default(false)
   CreatedAt                            DateTime      @default(now()) @db.Timestamptz(6)
   UpdatedAt                            DateTime      @updatedAt @db.Timestamptz(6)
   DeletedAt                            DateTime?     @db.Timestamptz(6)
-  Account_Message_RecipientIDToAccount Account       @relation("Message_RecipientIDToAccount", fields: [RecipientID], references: [ID], onDelete: Cascade)
-  Account_Message_SenderIDToAccount    Account       @relation("Message_SenderIDToAccount", fields: [SenderID], references: [ID], onDelete: Cascade)
+    Account_Message_RecipientIDToAccount Account       @relation("Message_RecipientIDToAccount", fields: [RecipientID], references: [ID], onDelete: Cascade)
+    Account_Message_SenderIDToAccount    Account       @relation("Message_SenderIDToAccount", fields: [SenderID], references: [ID], onDelete: Cascade)
+    Trip                                 Trip?         @relation(fields: [TripID], references: [ID], onDelete: SetNull)
 
-  @@index([DeletedAt], map: "idx_message_deleted")
-  @@index([IsRead], map: "idx_message_read")
-  @@index([RecipientID], map: "idx_message_recipient")
-  @@index([SenderID], map: "idx_message_sender")
-}
+    @@index([DeletedAt], map: "idx_message_deleted")
+    @@index([IsRead], map: "idx_message_read")
+    @@index([RecipientID], map: "idx_message_recipient")
+    @@index([SenderID], map: "idx_message_sender")
+    @@index([TripID], map: "idx_message_trip")
+  }
 
 enum AccountRole {
   User

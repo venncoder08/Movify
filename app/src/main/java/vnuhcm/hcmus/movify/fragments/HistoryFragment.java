@@ -3,6 +3,7 @@ package vnuhcm.hcmus.movify.fragments;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import vnuhcm.hcmus.movify.R;
+import vnuhcm.hcmus.movify.activities.ChatActivity;
 import vnuhcm.hcmus.movify.adapters.HistoryAdapter;
 import vnuhcm.hcmus.movify.models.History;
 import vnuhcm.hcmus.movify.models.HistoryScreenData;
@@ -84,6 +86,7 @@ public class HistoryFragment extends Fragment {
         adapter = new HistoryAdapter(requireContext(), historyList, isDriverMode);
         lvHistory.setAdapter(adapter);
         lvHistory.setEmptyView(tvEmptyState);
+        lvHistory.setOnItemClickListener((parent, itemView, position, id) -> openTripMessages(historyList.get(position)));
 
         applyCopyByRole();
         renderHistoryLoading();
@@ -176,5 +179,13 @@ public class HistoryFragment extends Fragment {
 
     private void applyEmptyStateByRole() {
         tvEmptyState.setText(isDriverMode ? R.string.history_empty_driver : R.string.history_empty_user);
+    }
+
+    private void openTripMessages(@NonNull History history) {
+        Intent intent = new Intent(requireContext(), ChatActivity.class);
+        intent.putExtra(ChatActivity.EXTRA_TRIP_ID, history.getTripId());
+        intent.putExtra(ChatActivity.EXTRA_HISTORY_MODE, true);
+        intent.putExtra(ChatActivity.EXTRA_TITLE, "Tin nhắn chuyến #" + history.getTripId());
+        startActivity(intent);
     }
 }

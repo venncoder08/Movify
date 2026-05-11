@@ -6,9 +6,10 @@ import android.os.Looper;
 import android.text.TextUtils;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.Filter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +17,21 @@ import vnuhcm.hcmus.movify.R;
 import vnuhcm.hcmus.movify.services.PlaceService;
 
 public class PlacesAutocompleteHelper {
+    private static final Filter NO_OP_FILTER = new Filter() {
+        @Override
+        protected FilterResults performFiltering(CharSequence constraint) {
+            FilterResults results = new FilterResults();
+            results.values = null;
+            results.count = 0;
+            return results;
+        }
+
+        @Override
+        protected void publishResults(CharSequence constraint, FilterResults results) {
+            // Intentionally no-op. The helper manages suggestion lists itself.
+        }
+    };
+
     public interface SpecialSuggestionListener {
         void onCurrentLocationSelected(AutoCompleteTextView targetView);
     }
@@ -30,8 +46,15 @@ public class PlacesAutocompleteHelper {
     private boolean isSettingText = false; // Flag to prevent TextWatcher interference
     private Handler handler = new Handler(Looper.getMainLooper());
     private Runnable pendingFetch;
-    private static final int DEBOUNCE_DELAY = 500; // 500ms debounce
-    private Map<String, List<String>> cache = new HashMap<>(); // Cache results
+    private static final int DEBOUNCE_DELAY_MS = 250;
+    private static final int MIN_REMOTE_QUERY_LENGTH = 2;
+    private static final int MAX_CACHE_ENTRIES = 30;
+    private final Map<String, List<String>> cache = new LinkedHashMap<String, List<String>>(16, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, List<String>> eldest) {
+            return size() > MAX_CACHE_ENTRIES;
+        }
+    };
 
     public PlacesAutocompleteHelper(Context context, AutoCompleteTextView autoCompleteTextView) {
         this(context, autoCompleteTextView, null, null);
@@ -54,7 +77,12 @@ public class PlacesAutocompleteHelper {
         this.currentLocationLabel = context.getString(R.string.current_location);
 
         // Setup ArrayAdapter for suggestions
-        adapter = new ArrayAdapter<>(context, android.R.layout.simple_dropdown_item_1line, predictions);
+        adapter = new ArrayAdapter<>(context, android.R.layout.simple_dropdown_item_1line, predictions) {
+            @Override
+            public Filter getFilter() {
+                return NO_OP_FILTER;
+            }
+        };
         autoCompleteTextView.setAdapter(adapter);
         autoCompleteTextView.setDropDownHeight(400);
         autoCompleteTextView.setThreshold(0);
@@ -94,10 +122,12 @@ public class PlacesAutocompleteHelper {
                     handler.removeCallbacks(pendingFetch);
                 }
 
-                if (!isSettingText && s.length() >= 1) {
-                    // Debounce: wait 500ms before fetching
-                    pendingFetch = () -> fetchPredictions(s.toString());
-                    handler.postDelayed(pendingFetch, DEBOUNCE_DELAY);
+                String query = s == null ? "" : s.toString().trim();
+                if (!isSettingText && query.length() >= MIN_REMOTE_QUERY_LENGTH) {
+                    pendingFetch = () -> fetchPredictions(query);
+                    handler.postDelayed(pendingFetch, DEBOUNCE_DELAY_MS);
+                } else if (!isSettingText) {
+                    showLocalPredictions(query);
                 } else if (s.length() == 0) {
                     showLocalPredictions("");
                 }
@@ -109,9 +139,29 @@ public class PlacesAutocompleteHelper {
     }
 
     private void fetchPredictions(String query) {
+        String normalizedQuery = query == null ? "" : query.trim();
+        if (normalizedQuery.length() < MIN_REMOTE_QUERY_LENGTH) {
+            showLocalPredictions(normalizedQuery);
+            return;
+        }
+
         // Check cache first
-        if (cache.containsKey(query)) {
-            updatePredictions(query, cache.get(query));
+        if (cache.containsKey(normalizedQuery)) {
+            updatePredictions(normalizedQuery, cache.get(normalizedQuery));
+            return;
+        }
+
+        for (Map.Entry<String, List<String>> entry : cache.entrySet()) {
+            if (normalizedQuery.startsWith(entry.getKey())) {
+                List<String> cachedSuggestions = filterSuggestions(normalizedQuery, entry.getValue());
+                if (!cachedSuggestions.isEmpty()) {
+                    updatePredictions(normalizedQuery, cachedSuggestions);
+                }
+                break;
+            }
+        }
+
+        if (!normalizedQuery.equals(autoCompleteTextView.getText().toString().trim())) {
             return;
         }
 
@@ -120,7 +170,7 @@ public class PlacesAutocompleteHelper {
             List<String> results = new ArrayList<>();
 
             try {
-                results = PlaceService.fetchAutocompleteSuggestions(context, query);
+                results = PlaceService.fetchAutocompleteSuggestions(context, normalizedQuery);
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
@@ -128,8 +178,8 @@ public class PlacesAutocompleteHelper {
             List<String> finalResults = results;
 
             // Cache and update UI on main thread
-            cache.put(query, finalResults);
-            handler.post(() -> updatePredictions(query, finalResults));
+            cache.put(normalizedQuery, finalResults);
+            handler.post(() -> updatePredictions(normalizedQuery, finalResults));
         }).start();
     }
 
@@ -164,6 +214,8 @@ public class PlacesAutocompleteHelper {
 
         if (autoCompleteTextView.hasFocus() && !mergedPredictions.isEmpty()) {
             autoCompleteTextView.showDropDown();
+        } else if (mergedPredictions.isEmpty()) {
+            autoCompleteTextView.dismissDropDown();
         }
     }
 
@@ -196,6 +248,18 @@ public class PlacesAutocompleteHelper {
         }
 
         target.add(value);
+    }
+
+    private List<String> filterSuggestions(String query, List<String> sourceSuggestions) {
+        List<String> filtered = new ArrayList<>();
+        String normalizedQuery = query == null ? "" : query.trim().toLowerCase();
+        for (String suggestion : sourceSuggestions) {
+            if (TextUtils.isEmpty(normalizedQuery)
+                    || suggestion.toLowerCase().contains(normalizedQuery)) {
+                addDistinct(filtered, suggestion);
+            }
+        }
+        return filtered;
     }
 
     public String getSelectedPlaceId(int position) {

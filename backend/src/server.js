@@ -1,6 +1,7 @@
 const app = require("./app");
 const env = require("./config/env");
 const os = require("os");
+const { initializeSocketServer } = require("./socket");
 
 // Get the actual IP address
 function getLocalIpAddress() {
@@ -17,7 +18,9 @@ function getLocalIpAddress() {
 
 const localIp = getLocalIpAddress();
 
-app.listen(env.port, "0.0.0.0", () => {
+const httpServer = initializeSocketServer(app);
+
+httpServer.listen(env.port, "0.0.0.0", () => {
   console.log(`Movify backend listening on http://localhost:${env.port}`);
   if (localIp !== "localhost") {
     console.log(`Also accessible at http://${localIp}:${env.port}`);

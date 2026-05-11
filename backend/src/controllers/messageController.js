@@ -1,4 +1,10 @@
 const prisma = require("../config/prisma");
+const { emitToAccounts } = require("../socket");
+const {
+  getConversationState,
+  findSharedActiveTrip,
+  serializeActiveTrip
+} = require("../services/messageTripService");
 
 const accountSelect = {
   ID: true,
@@ -29,7 +35,10 @@ function serializeParticipant(account) {
 function serializeMessage(message, currentUserId) {
   return {
     id: message.ID,
+    tripId: message.TripID ?? null,
     content: message.Content,
+    contentType: message.ContentType,
+    mediaUrl: message.MediaUrl ?? null,
     isRead: message.IsRead,
     createdAt: message.CreatedAt,
     updatedAt: message.UpdatedAt,
@@ -42,7 +51,7 @@ function serializeMessage(message, currentUserId) {
 }
 
 function buildMessagePreview(content, maxLength = 80) {
-  const normalized = content.replace(/\s+/g, " ").trim();
+  const normalized = String(content || "").replace(/\s+/g, " ").trim();
   if (normalized.length <= maxLength) {
     return normalized;
   }
@@ -116,9 +125,24 @@ async function listConversations(req, res) {
       }
     }
 
-    const items = Array.from(conversations.values()).sort(
-      (left, right) => new Date(right.updatedAt) - new Date(left.updatedAt)
-    );
+    const items = await Promise.all(Array.from(conversations.values()).map(async (conversation) => {
+      const state = await getConversationState(currentUserId, conversation.participant.id);
+      return {
+        ...conversation,
+        activeTrip: state.activeTrip,
+        canSend: state.canSend,
+        lastTripId: conversation.lastMessage.tripId
+      };
+    }));
+
+    items.sort((left, right) => {
+      const activeDelta = Number(Boolean(right.activeTrip)) - Number(Boolean(left.activeTrip));
+      if (activeDelta !== 0) {
+        return activeDelta;
+      }
+
+      return new Date(right.updatedAt) - new Date(left.updatedAt);
+    });
 
     res.status(200).json({
       data: {
@@ -155,45 +179,50 @@ async function getConversationMessages(req, res) {
       });
     }
 
-    const messages = await prisma.message.findMany({
-      where: {
-        DeletedAt: null,
-        OR: [
-          {
-            SenderID: currentUserId,
-            RecipientID: participantId
-          },
-          {
-            SenderID: participantId,
-            RecipientID: currentUserId
-          }
-        ]
-      },
-      orderBy: [
-        { CreatedAt: "asc" },
-        { ID: "asc" }
-      ],
-      include: {
-        Account_Message_SenderIDToAccount: {
-          select: accountSelect
+    const [messages, state] = await Promise.all([
+      prisma.message.findMany({
+        where: {
+          DeletedAt: null,
+          OR: [
+            {
+              SenderID: currentUserId,
+              RecipientID: participantId
+            },
+            {
+              SenderID: participantId,
+              RecipientID: currentUserId
+            }
+          ]
         },
-        Account_Message_RecipientIDToAccount: {
-          select: accountSelect
+        orderBy: [
+          { CreatedAt: "asc" },
+          { ID: "asc" }
+        ],
+        include: {
+          Account_Message_SenderIDToAccount: {
+            select: accountSelect
+          },
+          Account_Message_RecipientIDToAccount: {
+            select: accountSelect
+          }
         }
-      }
-    });
+      }),
+      getConversationState(currentUserId, participantId)
+    ]);
 
     const unreadCount = messages.filter(
       (message) =>
-        message.SenderID === participantId &&
-        message.RecipientID === currentUserId &&
-        !message.IsRead
+        message.SenderID === participantId
+        && message.RecipientID === currentUserId
+        && !message.IsRead
     ).length;
 
     res.status(200).json({
       data: {
         participant: serializeParticipant(participant),
         unreadCount,
+        canSend: state.canSend,
+        activeTrip: state.activeTrip,
         items: messages.map((message) => serializeMessage(message, currentUserId))
       }
     });
@@ -210,7 +239,9 @@ async function sendMessage(req, res) {
   try {
     const currentUserId = req.user.id;
     const participantId = Number(req.params.accountId);
-    const content = req.body.content.trim();
+    const contentType = req.body.contentType || "Text";
+    const content = String(req.body.content || "").trim();
+    const mediaUrl = String(req.body.mediaUrl || "").trim();
 
     if (participantId === currentUserId) {
       return res.status(400).json({
@@ -219,9 +250,10 @@ async function sendMessage(req, res) {
       });
     }
 
-    const [sender, participant] = await Promise.all([
+    const [sender, participant, activeTrip] = await Promise.all([
       findChatAccount(currentUserId),
-      findChatAccount(participantId)
+      findChatAccount(participantId),
+      findSharedActiveTrip(currentUserId, participantId)
     ]);
 
     if (!sender) {
@@ -238,12 +270,22 @@ async function sendMessage(req, res) {
       });
     }
 
+    if (!activeTrip) {
+      return res.status(409).json({
+        error: "Conflict",
+        message: "You can only send messages during an accepted or in-progress trip"
+      });
+    }
+
     const createdMessage = await prisma.$transaction(async (transaction) => {
       const message = await transaction.message.create({
         data: {
           SenderID: currentUserId,
           RecipientID: participantId,
+          TripID: activeTrip.ID,
           Content: content,
+          ContentType: contentType,
+          MediaUrl: mediaUrl || null,
           IsRead: false
         },
         include: {
@@ -260,7 +302,9 @@ async function sendMessage(req, res) {
         data: {
           AccountID: participantId,
           Title: "New message",
-          Body: `${sender.FullName || "Someone"}: ${buildMessagePreview(content)}`,
+          Body: contentType === "Image"
+            ? `${sender.FullName || "Someone"} sent you an image`
+            : `${sender.FullName || "Someone"}: ${buildMessagePreview(content)}`,
           IsRead: false
         }
       });
@@ -268,9 +312,30 @@ async function sendMessage(req, res) {
       return message;
     });
 
+    const serializedMessage = serializeMessage(createdMessage, currentUserId);
+    const activeTripPayload = serializeActiveTrip(activeTrip);
+
+    emitToAccounts([currentUserId], "message:new", {
+      participantId,
+      message: serializedMessage,
+      activeTrip: activeTripPayload,
+      canSend: true
+    });
+
+    emitToAccounts([participantId], "message:new", {
+      participantId: currentUserId,
+      message: serializedMessage,
+      activeTrip: activeTripPayload,
+      canSend: true
+    });
+
     res.status(201).json({
       message: "Message sent successfully",
-      data: serializeMessage(createdMessage, currentUserId)
+      data: {
+        message: serializedMessage,
+        activeTrip: activeTripPayload,
+        canSend: true
+      }
     });
   } catch (error) {
     console.error("Send message error:", error);
@@ -313,6 +378,18 @@ async function markConversationAsRead(req, res) {
       }
     });
 
+    if (result.count > 0) {
+      emitToAccounts([currentUserId], "conversation:read", {
+        participantId,
+        updatedCount: result.count
+      });
+
+      emitToAccounts([participantId], "conversation:read", {
+        participantId: currentUserId,
+        updatedCount: result.count
+      });
+    }
+
     res.status(200).json({
       message: "Conversation marked as read",
       data: {
@@ -328,9 +405,87 @@ async function markConversationAsRead(req, res) {
   }
 }
 
+async function getTripMessages(req, res) {
+  try {
+    const currentUserId = req.user.id;
+    const tripId = Number(req.params.id);
+
+    const trip = await prisma.trip.findFirst({
+      where: {
+        ID: tripId,
+        DeletedAt: null
+      },
+      select: {
+        ID: true,
+        Status: true,
+        UserID: true,
+        DriverID: true
+      }
+    });
+
+    if (!trip) {
+      return res.status(404).json({
+        error: "Not Found",
+        message: "Trip not found"
+      });
+    }
+
+    const isPassenger = trip.UserID === currentUserId;
+    const isDriver = trip.DriverID === currentUserId;
+    const isAdmin = req.user.role === "Admin";
+    if (!isPassenger && !isDriver && !isAdmin) {
+      return res.status(403).json({
+        error: "Forbidden",
+        message: "You do not have access to this trip conversation"
+      });
+    }
+
+    const messages = await prisma.message.findMany({
+      where: {
+        DeletedAt: null,
+        TripID: tripId
+      },
+      orderBy: [
+        { CreatedAt: "asc" },
+        { ID: "asc" }
+      ],
+      include: {
+        Account_Message_SenderIDToAccount: {
+          select: accountSelect
+        },
+        Account_Message_RecipientIDToAccount: {
+          select: accountSelect
+        }
+      }
+    });
+
+    const participantId = isPassenger ? trip.DriverID : trip.UserID;
+
+    res.status(200).json({
+      data: {
+        trip: {
+          id: trip.ID,
+          status: trip.Status
+        },
+        participantId: participantId ?? null,
+        canSend: false,
+        activeTrip: null,
+        items: messages.map((message) => serializeMessage(message, currentUserId))
+      }
+    });
+  } catch (error) {
+    console.error("Get trip messages error:", error);
+    res.status(500).json({
+      error: "Internal Server Error",
+      message: error.message
+    });
+  }
+}
+
 module.exports = {
   listConversations,
   getConversationMessages,
   sendMessage,
-  markConversationAsRead
+  markConversationAsRead,
+  getTripMessages
 };
