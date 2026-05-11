@@ -2,6 +2,7 @@ package vnuhcm.hcmus.movify.fragments;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -50,6 +51,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import vnuhcm.hcmus.movify.R;
+import vnuhcm.hcmus.movify.activities.ChatActivity;
 import vnuhcm.hcmus.movify.models.RoutePreview;
 import vnuhcm.hcmus.movify.models.Trip;
 import vnuhcm.hcmus.movify.adapters.DriverTripAdapter;
@@ -57,6 +59,7 @@ import vnuhcm.hcmus.movify.services.DriverTripService;
 import vnuhcm.hcmus.movify.services.RouteService;
 import vnuhcm.hcmus.movify.services.TripService;
 import vnuhcm.hcmus.movify.utils.CurrentLocationResolver;
+import vnuhcm.hcmus.movify.utils.MapDebugHelper;
 
 public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
 
@@ -68,6 +71,7 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
     private static final long LOCATION_TIMEOUT_SECONDS = 8L;
     private static final long DRIVER_LOCATION_UPDATE_INTERVAL_MS = 5000L;
     private static final long ACCEPTED_TRIP_POLL_INTERVAL_MS = 5000L;
+    private static final long NEARBY_TRIPS_POLL_INTERVAL_MS = 10000L;
     private static final double PICKUP_CONFIRM_RADIUS_METERS = 50d;
     private static final double DESTINATION_COMPLETE_RADIUS_METERS = 50d;
 
@@ -82,6 +86,7 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
     private Button btnRefreshTrips;
     private Button btnAcceptTrip;
     private TextView btnCancelTrip;
+    private TextView btnMessageTrip;
     private ProgressBar loadingProgressBar;
     private TextView emptyTripsText;
 
@@ -93,8 +98,10 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
     private LatLng driverLocation = null;
     private boolean navigatingToPickup = false;
     private boolean routingToDestination = false;
+    private boolean nearbyTripsLoading = false;
     private Runnable pendingDriverLocationUpdate;
     private Runnable pendingAcceptedTripPoll;
+    private Runnable pendingNearbyTripsPoll;
 
     // Threading
     private ExecutorService dataExecutor;
@@ -117,6 +124,7 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
         btnRefreshTrips = view.findViewById(R.id.btnRefreshTrips);
         btnAcceptTrip = view.findViewById(R.id.btnAcceptTrip);
         btnCancelTrip = view.findViewById(R.id.btnCancelTrip);
+        btnMessageTrip = view.findViewById(R.id.btnMessageTrip);
         loadingProgressBar = view.findViewById(R.id.loadingProgressBar);
         emptyTripsText = view.findViewById(R.id.emptyTripsText);
 
@@ -129,6 +137,7 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
         btnRefreshTrips.setOnClickListener(v -> refreshNearbyTrips());
         btnAcceptTrip.setOnClickListener(v -> handlePrimaryAction());
         btnCancelTrip.setOnClickListener(v -> showCancelAcceptedTripDialog());
+        btnMessageTrip.setOnClickListener(v -> openPassengerChat());
 
         // Request location permission and get map
         requestLocationPermission();
@@ -138,6 +147,8 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
 
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
+        } else {
+            MapDebugHelper.logMissingMapFragment("DriverMapFragment", R.id.mapDriver);
         }
     }
 
@@ -154,6 +165,20 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
         mMap = null;
         mapFragment = null;
         tripsAdapter = null;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (mMap != null) {
+            loadActiveTripOrNearby();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        stopNearbyTripsPolling();
     }
 
     private void setupTripsRecyclerView() {
@@ -193,6 +218,7 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
+        MapDebugHelper.logMapReady(requireContext(), "DriverMapFragment", googleMap);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(HCMC, CAMERA_ZOOM));
         enableMyLocation();
         loadActiveTripOrNearby();
@@ -218,7 +244,11 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
             Toast.makeText(requireContext(), "Bạn đang trong chuyến đã nhận", Toast.LENGTH_SHORT).show();
             return;
         }
+        if (nearbyTripsLoading) {
+            return;
+        }
 
+        nearbyTripsLoading = true;
         showLoading(true);
         Context appContext = requireContext().getApplicationContext();
 
@@ -243,16 +273,20 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
                 );
 
                 mainHandler.post(() -> {
+                    nearbyTripsLoading = false;
                     driverLocation = currentLocation;
                     nearbyTrips.clear();
                     nearbyTrips.addAll(trips);
                     updateTripsUI();
                     updateMapMarkers();
+                    scheduleNearbyTripsPolling();
                 });
             } catch (Exception e) {
                 Log.e(TAG, "Error fetching nearby trips", e);
                 mainHandler.post(() -> {
+                    nearbyTripsLoading = false;
                     showLoading(false);
+                    scheduleNearbyTripsPolling();
                     Toast.makeText(requireContext(), "Không tải được chuyến: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
             }
@@ -271,6 +305,8 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
         btnAcceptTrip.setText(R.string.accept_trip);
         btnCancelTrip.setVisibility(View.GONE);
         btnCancelTrip.setEnabled(false);
+        btnMessageTrip.setVisibility(View.GONE);
+        btnMessageTrip.setEnabled(false);
 
         if (nearbyTrips.isEmpty()) {
             tripsRecyclerView.setVisibility(View.GONE);
@@ -305,6 +341,8 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
         routeToPickupPoints.clear();
         btnCancelTrip.setVisibility(View.GONE);
         btnCancelTrip.setEnabled(false);
+        btnMessageTrip.setVisibility(View.GONE);
+        btnMessageTrip.setEnabled(false);
         nearbyTrips.clear();
         if (tripsAdapter != null) {
             tripsAdapter.notifyDataSetChanged();
@@ -312,6 +350,7 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
         if (mMap != null) {
             mMap.clear();
         }
+        stopNearbyTripsPolling();
         refreshNearbyTrips();
     }
 
@@ -348,8 +387,14 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
         boolean canCancel = selectedTrip != null
                 && "Accepted".equalsIgnoreCase(selectedTrip.getStatus())
                 && !isTripInProgress();
+        boolean canMessagePassenger = selectedTrip != null
+                && selectedTrip.getPassengerId() > 0
+                && ("Accepted".equalsIgnoreCase(selectedTrip.getStatus())
+                || "InProgress".equalsIgnoreCase(selectedTrip.getStatus()));
         btnCancelTrip.setVisibility(canCancel ? View.VISIBLE : View.GONE);
         btnCancelTrip.setEnabled(canCancel);
+        btnMessageTrip.setVisibility(canMessagePassenger ? View.VISIBLE : View.GONE);
+        btnMessageTrip.setEnabled(canMessagePassenger);
 
         if (selectedTrip == null) {
             emptyTripsText.setText("Đã nhận chuyến.");
@@ -509,6 +554,7 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
                     tripsAdapter.notifyDataSetChanged();
                     renderAcceptedTripPanel();
                     updateMapMarkers();
+                    stopNearbyTripsPolling();
                     startDriverLocationUpdates();
                     startAcceptedTripPolling();
 
@@ -606,6 +652,7 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
                     tripsAdapter.notifyDataSetChanged();
                     renderAcceptedTripPanel();
                     updateMapMarkers();
+                    stopNearbyTripsPolling();
                     startDriverLocationUpdates();
                     startAcceptedTripPolling();
                 });
@@ -1239,5 +1286,40 @@ public class DriverMapFragment extends Fragment implements OnMapReadyCallback {
 
     private void showLoading(boolean show) {
         loadingProgressBar.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    private void openPassengerChat() {
+        if (selectedTrip == null || selectedTrip.getPassengerId() <= 0 || !isAdded()) {
+            Toast.makeText(requireContext(), "Chưa có hành khách để nhắn tin", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Intent intent = new Intent(requireContext(), ChatActivity.class);
+        intent.putExtra(ChatActivity.EXTRA_ACCOUNT_ID, selectedTrip.getPassengerId());
+        intent.putExtra(ChatActivity.EXTRA_TITLE, selectedTrip.getPassengerFullName());
+        startActivity(intent);
+    }
+
+    private void scheduleNearbyTripsPolling() {
+        if (!isAdded()
+                || navigatingToPickup
+                || dataExecutor == null
+                || dataExecutor.isShutdown()) {
+            return;
+        }
+
+        if (pendingNearbyTripsPoll != null) {
+            mainHandler.removeCallbacks(pendingNearbyTripsPoll);
+        }
+
+        pendingNearbyTripsPoll = this::refreshNearbyTrips;
+        mainHandler.postDelayed(pendingNearbyTripsPoll, NEARBY_TRIPS_POLL_INTERVAL_MS);
+    }
+
+    private void stopNearbyTripsPolling() {
+        if (pendingNearbyTripsPoll != null) {
+            mainHandler.removeCallbacks(pendingNearbyTripsPoll);
+            pendingNearbyTripsPoll = null;
+        }
     }
 }

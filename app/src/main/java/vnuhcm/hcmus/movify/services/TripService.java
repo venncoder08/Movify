@@ -310,11 +310,19 @@ public final class TripService {
 
     private static void applyDriverInfo(@NonNull Trip trip, @NonNull JSONObject tripJson) {
         JSONObject driver = tripJson.optJSONObject("driver");
-        if (driver == null) {
+        if (driver != null) {
+            trip.setDriverId(driver.optInt("id", 0));
+            trip.setDriverFullName(driver.optString("fullName", ""));
+            trip.setDriverPhoneNumber(driver.optString("phoneNumber", ""));
+        }
+
+        JSONObject passenger = tripJson.optJSONObject("passenger");
+        if (passenger == null) {
             return;
         }
 
-        trip.setDriverFullName(driver.optString("fullName", ""));
-        trip.setDriverPhoneNumber(driver.optString("phoneNumber", ""));
+        trip.setPassengerId(passenger.optInt("id", 0));
+        trip.setPassengerFullName(passenger.optString("fullName", ""));
+        trip.setPassengerPhoneNumber(passenger.optString("phoneNumber", ""));
     }
 }

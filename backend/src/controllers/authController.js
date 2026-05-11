@@ -34,6 +34,16 @@ function serializeAccount(account) {
   };
 }
 
+function pickFirstDefined(...values) {
+  for (const value of values) {
+    if (value !== undefined) {
+      return value;
+    }
+  }
+
+  return undefined;
+}
+
 async function verifyGoogleIdToken(idToken) {
   if (!env.googleClientId) {
     const error = new Error("Google client ID is not configured");
@@ -301,18 +311,16 @@ async function updateProfile(req, res) {
       });
     }
 
-    const { 
-      Avatar,
-      FullName,
-      PhoneNumber,
-      Gender,
-      DateOfBirth,
-    } = req.body;
+    const avatar = pickFirstDefined(req.body.avatar, req.body.Avatar);
+    const fullName = pickFirstDefined(req.body.fullName, req.body.FullName);
+    const phoneNumber = pickFirstDefined(req.body.phoneNumber, req.body.PhoneNumber);
+    const gender = pickFirstDefined(req.body.gender, req.body.Gender);
+    const dateOfBirth = pickFirstDefined(req.body.dateOfBirth, req.body.DateOfBirth);
 
-    if (PhoneNumber) {
+    if (phoneNumber) {
       const existingPhoneUser = await prisma.account.findFirst({
         where: {
-          PhoneNumber,
+          PhoneNumber: phoneNumber,
           ID: { not: req.user.id }
         }
       });
@@ -328,11 +336,11 @@ async function updateProfile(req, res) {
     const updatedUser = await prisma.account.update({
       where: { ID: req.user.id },
       data: {
-        Avatar,
-        FullName,
-        PhoneNumber,
-        Gender,
-        DateOfBirth
+        Avatar: avatar,
+        FullName: fullName,
+        PhoneNumber: phoneNumber,
+        Gender: gender,
+        DateOfBirth: dateOfBirth
       }
     });
 

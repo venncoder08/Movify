@@ -17,6 +17,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import vnuhcm.hcmus.movify.R;
+import vnuhcm.hcmus.movify.utils.MapDebugHelper;
 
 public class MapFragment extends Fragment implements OnMapReadyCallback {
 
@@ -42,12 +43,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
+        } else {
+            MapDebugHelper.logMissingMapFragment("MapFragment", R.id.map);
         }
     }
 
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
+        MapDebugHelper.logMapReady(requireContext(), "MapFragment", googleMap);
 
         // Thiết lập vị trí mặc định
         LatLng hcmc = new LatLng(10.8231, 106.6297);

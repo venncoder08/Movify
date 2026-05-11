@@ -2,6 +2,7 @@ const express = require("express");
 const { authMiddleware } = require("../middlewares/authMiddleware");
 const { validateRequest } = require("../middlewares/validateRequest");
 const { createTrip, getActiveTrip, getTrip, updateDriverLocation, confirmPickup, completeTrip, cancelTrip, rateTrip } = require("../controllers/tripController");
+const { getTripMessages } = require("../controllers/messageController");
 const { createTripSchema, getActiveTripSchema, getTripSchema, updateDriverLocationSchema, confirmPickupSchema, completeTripSchema, cancelTripSchema, rateTripSchema } = require("../validations");
 
 const router = express.Router();
@@ -19,6 +20,7 @@ router.post("/", authMiddleware, validateRequest(createTripSchema), createTrip);
  * @access Authenticated user
  */
 router.get("/active", authMiddleware, validateRequest(getActiveTripSchema), getActiveTrip);
+router.get("/:id/messages", authMiddleware, validateRequest(getTripSchema), getTripMessages);
 
 /**
  * Get a trip status/details

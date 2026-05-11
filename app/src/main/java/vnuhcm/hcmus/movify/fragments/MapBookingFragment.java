@@ -45,6 +45,7 @@ import vnuhcm.hcmus.movify.models.PlaceDetails;
 import vnuhcm.hcmus.movify.models.RoutePreview;
 import vnuhcm.hcmus.movify.services.PlaceService;
 import vnuhcm.hcmus.movify.services.RouteService;
+import vnuhcm.hcmus.movify.utils.MapDebugHelper;
 
 public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
 
@@ -108,6 +109,8 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
 
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
+        } else {
+            MapDebugHelper.logMissingMapFragment("MapBookingFragment", R.id.mapBooking);
         }
     }
 
@@ -164,6 +167,7 @@ public class MapBookingFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
+        MapDebugHelper.logMapReady(requireContext(), "MapBookingFragment", googleMap);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(HCMC, 13f));
         enableMyLocation();
         scheduleMapUpdate();

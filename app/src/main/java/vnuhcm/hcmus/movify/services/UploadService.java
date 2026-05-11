@@ -42,6 +42,10 @@ public class UploadService {
         uploadMultipartImage(imageUri, jwtToken, IMAGE_UPLOAD_ENDPOINT, "image", "driver-document.jpg", callback);
     }
 
+    public void uploadChatImage(@NonNull Uri imageUri, String jwtToken, @NonNull UploadCallback callback) {
+        uploadMultipartImage(imageUri, jwtToken, IMAGE_UPLOAD_ENDPOINT, "image", "chat-image.jpg", callback);
+    }
+
     private void uploadMultipartImage(@NonNull Uri imageUri,
                                       String jwtToken,
                                       String endpoint,

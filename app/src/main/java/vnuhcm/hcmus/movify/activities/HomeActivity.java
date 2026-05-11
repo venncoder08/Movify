@@ -35,6 +35,7 @@ import vnuhcm.hcmus.movify.models.AccountProfile;
 import vnuhcm.hcmus.movify.models.NotificationFeed;
 import vnuhcm.hcmus.movify.services.AuthApiService;
 import vnuhcm.hcmus.movify.services.NotificationService;
+import vnuhcm.hcmus.movify.services.SocketManager;
 import vnuhcm.hcmus.movify.utils.DriverSearchNotificationHelper;
 import vnuhcm.hcmus.movify.utils.NotificationWorkScheduler;
 import vnuhcm.hcmus.movify.utils.SystemNotificationHelper;
@@ -67,6 +68,7 @@ public class HomeActivity extends AppCompatActivity implements BottomNavFragment
         authApiService = new AuthApiService(this);
         roleExecutor = Executors.newSingleThreadExecutor();
         notificationExecutor = Executors.newSingleThreadExecutor();
+        SocketManager.getInstance(this).connect();
 
         if (savedInstanceState != null) {
             currentTab = savedInstanceState.getString(STATE_CURRENT_TAB, BottomNavFragment.TAB_BOOKING);

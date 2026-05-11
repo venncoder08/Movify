@@ -17,8 +17,12 @@ public class Trip {
     private double driverCurrentLat;
     private double driverCurrentLng;
     private String driverLocationUpdatedAt;
+    private int driverId;
     private String driverFullName;
     private String driverPhoneNumber;
+    private int passengerId;
+    private String passengerFullName;
+    private String passengerPhoneNumber;
 
     public Trip() {
     }
@@ -189,6 +193,38 @@ public class Trip {
 
     public void setDriverPhoneNumber(String driverPhoneNumber) {
         this.driverPhoneNumber = driverPhoneNumber;
+    }
+
+    public int getDriverId() {
+        return driverId;
+    }
+
+    public void setDriverId(int driverId) {
+        this.driverId = driverId;
+    }
+
+    public int getPassengerId() {
+        return passengerId;
+    }
+
+    public void setPassengerId(int passengerId) {
+        this.passengerId = passengerId;
+    }
+
+    public String getPassengerFullName() {
+        return passengerFullName;
+    }
+
+    public void setPassengerFullName(String passengerFullName) {
+        this.passengerFullName = passengerFullName;
+    }
+
+    public String getPassengerPhoneNumber() {
+        return passengerPhoneNumber;
+    }
+
+    public void setPassengerPhoneNumber(String passengerPhoneNumber) {
+        this.passengerPhoneNumber = passengerPhoneNumber;
     }
 
     public boolean hasDriverLocation() {

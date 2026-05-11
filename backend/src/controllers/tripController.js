@@ -1,5 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const { stripCurrentLocationLabel } = require("../utils/locationLabel");
+const { emitConversationEligibilityForTrip } = require("../services/messageTripService");
 
 const prisma = new PrismaClient();
 
@@ -63,6 +64,14 @@ function isValidCoordinate(lat, lng) {
 
 function buildTripInclude() {
   return {
+    Account_Trip_UserIDToAccount: {
+      select: {
+        ID: true,
+        FullName: true,
+        PhoneNumber: true,
+        Avatar: true
+      }
+    },
     Account_Trip_DriverIDToAccount: {
       select: {
         ID: true,
@@ -196,6 +205,15 @@ function serializeTrip(trip) {
       phoneNumber: trip.Account_Trip_DriverIDToAccount.PhoneNumber,
       avatar: trip.Account_Trip_DriverIDToAccount.Avatar,
       vehicleType: trip.Account_Trip_DriverIDToAccount.VehicleType
+    };
+  }
+
+  if (trip.Account_Trip_UserIDToAccount) {
+    serialized.passenger = {
+      id: trip.Account_Trip_UserIDToAccount.ID,
+      fullName: trip.Account_Trip_UserIDToAccount.FullName,
+      phoneNumber: trip.Account_Trip_UserIDToAccount.PhoneNumber,
+      avatar: trip.Account_Trip_UserIDToAccount.Avatar
     };
   }
 
@@ -700,6 +718,7 @@ async function completeTrip(req, res) {
       };
     });
 
+    emitConversationEligibilityForTrip(result.trip);
     return res.status(200).json({
       data: {
         message: "Hoàn thành chuyến thành công",
@@ -798,6 +817,7 @@ async function cancelTrip(req, res) {
       };
     });
 
+    emitConversationEligibilityForTrip(result.trip);
     return res.status(200).json({
       data: {
         message: "Hủy chuyến thành công",

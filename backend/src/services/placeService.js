@@ -1,5 +1,6 @@
 const PlaceModel = require("../models/placeModel");
 const geoapifyRepository = require("../repositories/geoapifyRepository");
+const env = require("../config/env");
 const AppError = require("../utils/httpError");
 
 const COORDINATE_PATTERN = /(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})/;
@@ -104,13 +105,20 @@ const PLACE_INTENTS = [
     keywords: ["khach san", "nha nghi", "homestay", "hotel", "hostel"]
   }
 ];
+const autocompleteCache = new Map();
 
 async function autocomplete(query) {
-  if (!query) {
+  const normalizedQuery = String(query || "").trim();
+  if (!normalizedQuery) {
     return { suggestions: [] };
   }
 
-  const payload = await geoapifyRepository.fetchAutocompleteResults(query);
+  const cachedPayload = getCachedAutocomplete(normalizedQuery);
+  if (cachedPayload) {
+    return cachedPayload;
+  }
+
+  const payload = await geoapifyRepository.fetchAutocompleteResults(normalizedQuery);
   const suggestions = [];
   const seen = new Set();
 
@@ -123,7 +131,9 @@ async function autocomplete(query) {
     suggestions.push(label);
   }
 
-  return { suggestions };
+  const response = { suggestions };
+  setCachedAutocomplete(normalizedQuery, response);
+  return response;
 }
 
 async function geocode(query) {
@@ -657,3 +667,26 @@ module.exports = {
   recommendNearby,
   findPlaceByQuery
 };
+
+function getCachedAutocomplete(query) {
+  const cacheKey = query.toLowerCase();
+  const cached = autocompleteCache.get(cacheKey);
+  if (!cached) {
+    return null;
+  }
+
+  if (cached.expiresAt <= Date.now()) {
+    autocompleteCache.delete(cacheKey);
+    return null;
+  }
+
+  return cached.value;
+}
+
+function setCachedAutocomplete(query, value) {
+  const cacheKey = query.toLowerCase();
+  autocompleteCache.set(cacheKey, {
+    value,
+    expiresAt: Date.now() + Math.max(1000, env.autocompleteCacheTtlMs)
+  });
+}

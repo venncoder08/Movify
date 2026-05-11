@@ -278,10 +278,23 @@
                     android:textSize="14sp" />
 
                 <TextView
-                    android:id="@+id/btnCancelActiveTrip"
+                    android:id="@+id/btnMessageActiveTrip"
                     android:layout_width="match_parent"
                     android:layout_height="44dp"
                     android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_button_small"
+                    android:gravity="center"
+                    android:text="@string/message_open_driver"
+                    android:textColor="@color/white"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/btnCancelActiveTrip"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="8dp"
                     android:background="@drawable/bg_admin_action_danger"
                     android:text="@string/cancel_trip"
                     android:textColor="#D64545"

@@ -51,6 +51,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import vnuhcm.hcmus.movify.R;
+import vnuhcm.hcmus.movify.activities.ChatActivity;
 import vnuhcm.hcmus.movify.activities.TripRatingActivity;
 import vnuhcm.hcmus.movify.adapters.PromotionAdapter;
 import vnuhcm.hcmus.movify.models.AccountProfile;
@@ -130,6 +131,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
     private TextView tvActiveTripDriver;
     private TextView tvActiveTripDistance;
     private TextView btnCancelActiveTrip;
+    private TextView btnMessageActiveTrip;
     private RecyclerView rvPromotions;
     private SupportMapFragment activeTripMapFragment;
     private GoogleMap activeTripMap;
@@ -343,6 +345,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
         tvActiveTripDriver = view.findViewById(R.id.tvActiveTripDriver);
         tvActiveTripDistance = view.findViewById(R.id.tvActiveTripDistance);
         btnCancelActiveTrip = view.findViewById(R.id.btnCancelActiveTrip);
+        btnMessageActiveTrip = view.findViewById(R.id.btnMessageActiveTrip);
 
         rvPromotions = view.findViewById(R.id.rvPromotions);
     }
@@ -775,6 +778,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
 
     private void setupSearchDriverButton() {
         btnCancelActiveTrip.setOnClickListener(v -> showCancelActiveTripDialog());
+        btnMessageActiveTrip.setOnClickListener(v -> openDriverChat());
         btnSearchDriver.setOnClickListener(v -> {
             if (isSearchingDriver) {
                 stopSearchCountdown(true);
@@ -991,6 +995,7 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
     private void setActiveTripMode(boolean active) {
         setVisible(activeTripContainer, active);
         setVisible(btnCancelActiveTrip, false);
+        setVisible(btnMessageActiveTrip, false);
         setVisible(locationContainer, !active);
         setVisible(routeSummaryContainer, !active && currentRoutePreview != null);
         setVisible(tvChooseVehicle, !active);
@@ -1010,8 +1015,13 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
 
         boolean inProgress = "InProgress".equalsIgnoreCase(trip.getStatus());
         boolean canCancel = !inProgress && "Accepted".equalsIgnoreCase(trip.getStatus());
+        boolean canMessageDriver = trip.getDriverId() > 0
+                && ("Accepted".equalsIgnoreCase(trip.getStatus())
+                || "InProgress".equalsIgnoreCase(trip.getStatus()));
         setVisible(btnCancelActiveTrip, canCancel);
         btnCancelActiveTrip.setEnabled(canCancel);
+        setVisible(btnMessageActiveTrip, canMessageDriver);
+        btnMessageActiveTrip.setEnabled(canMessageDriver);
         tvActiveTripStatus.setText(inProgress
                 ? "Chuyến đi đang diễn ra"
                 : "Tài xế đang đến điểm đón");
@@ -1272,6 +1282,18 @@ public class BookingFragment extends Fragment implements OnMapReadyCallback {
         }
 
         confirmPassengerPickup();
+    }
+
+    private void openDriverChat() {
+        if (activeTrip == null || activeTrip.getDriverId() <= 0 || !isAdded()) {
+            Toast.makeText(requireContext(), "Chưa có tài xế để nhắn tin", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Intent intent = new Intent(requireContext(), ChatActivity.class);
+        intent.putExtra(ChatActivity.EXTRA_ACCOUNT_ID, activeTrip.getDriverId());
+        intent.putExtra(ChatActivity.EXTRA_TITLE, activeTrip.getDriverFullName());
+        startActivity(intent);
     }
 
     private void showCancelActiveTripDialog() {
