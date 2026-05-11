@@ -16,6 +16,10 @@ The server listens on `0.0.0.0:${PORT}` and exposes:
 - `GET /api/places/autocomplete?q=...`
 - `GET /api/places/geocode?q=...`
 - `GET /api/routes/preview?pickup=...&destination=...`
+- `GET /api/messages`
+- `GET /api/messages/:accountId`
+- `POST /api/messages/:accountId`
+- `PATCH /api/messages/:accountId/read`
 
 ## Database
 

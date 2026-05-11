@@ -13,6 +13,7 @@ const notificationRoutes = require("./notificationRoutes");
 const historyRoutes = require("./historyRoutes");
 const driverRequestRoutes = require("./driverRequestRoutes");
 const driverRoutes = require("./driverRoutes");
+const messageRoutes = require("./messageRoutes");
 const uploadRoutes = require("./uploadRoutes");
 const tripRoutes = require("./tripRoutes");
 
@@ -31,6 +32,7 @@ function mountRoutes(app) {
   app.use("/api/history", historyRoutes);
   app.use("/api/driver-requests", driverRequestRoutes);
   app.use("/api/driver", driverRoutes);
+  app.use("/api/messages", messageRoutes);
   app.use("/api/uploads", uploadRoutes);
   app.use("/api/trips", tripRoutes);
 }
@@ -49,6 +51,7 @@ module.exports = {
   historyRoutes,
   driverRequestRoutes,
   driverRoutes,
+  messageRoutes,
   uploadRoutes,
   tripRoutes,
   mountRoutes
