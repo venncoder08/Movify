@@ -8,6 +8,18 @@ At the same time, this project helps the team gain hands-on experience in mobile
 
 ---
 
+## 📸 Screenshots
+
+| Ride Booking | Conversations | Real-time Chat |
+|:---:|:---:|:---:|
+| <img src="docs/images/booking.png" width="230" alt="Ride booking screen"> | <img src="docs/images/chat-list.png" width="230" alt="Conversation list"> | <img src="docs/images/chat.png" width="230" alt="Driver–customer chat"> |
+
+| Trip History | Notifications | Trip Rating |
+|:---:|:---:|:---:|
+| <img src="docs/images/trip-history.png" width="230" alt="Trip history"> | <img src="docs/images/notifications.png" width="230" alt="Notifications"> | <img src="docs/images/trip-rating.png" width="230" alt="Trip rating"> |
+
+---
+
 ## 📌 Core Features
 
 ### 🔐 General Features
